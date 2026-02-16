@@ -88,7 +88,7 @@ namespace RealmStudioShapeRenderingLib
 
         public void PanBy(SKPoint deltaPixels)
         {
-            Pan += deltaPixels;
+            Pan = new SKPoint(Pan.X + deltaPixels.X, Pan.Y + deltaPixels.Y);
         }
 
         public void SetPan(SKPoint pan)

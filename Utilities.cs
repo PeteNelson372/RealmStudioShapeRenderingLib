@@ -3,14 +3,14 @@ using System;
 
 namespace RealmStudioShapeRenderingLib
 {
-    internal static class Utilities
+    public static class Utilities
     {
-        internal static float Clamp(float value, float min, float max)
+        public static float Clamp(float value, float min, float max)
         {
             return Math.Min(Math.Max(value, min), max);
         }
 
-        internal static SKColor LerpColor(SKColor a, SKColor b, float t)
+        public static SKColor LerpColor(SKColor a, SKColor b, float t)
         {
             if (t < 0f) t = 0f;
             if (t > 1f) t = 1f;

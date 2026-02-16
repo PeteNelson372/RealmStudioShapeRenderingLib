@@ -72,10 +72,16 @@
             _renderDirty = true;
         }
 
+        protected override void SetGeometry(SKPath path)
+        {
+            base.SetGeometry(path);
+            InvalidateRenderCache();
+        }
+
         // -------------------------------------------------
         // Shape2D.Render (pure render entry point)
         // -------------------------------------------------
-
+        
         public override void Render(SKCanvas canvas)
         {
             if (HitPath.IsEmpty)

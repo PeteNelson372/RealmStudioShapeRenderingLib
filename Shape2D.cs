@@ -33,12 +33,13 @@ namespace RealmStudioShapeRenderingLib
         // Geometry lifecycle
         // -------------------------------------------------
 
-        protected void SetGeometry(SKPath newGeometry)
+        protected virtual void SetGeometry(SKPath newGeometry)
         {
             _cachedPath.Dispose();
             _cachedPath = newGeometry;
 
             HitPath = new SKPath(_cachedPath);
+
             RebuildPerimeter();
         }
 

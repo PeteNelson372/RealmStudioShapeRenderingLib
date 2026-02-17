@@ -32,6 +32,8 @@ namespace RealmStudioShapeRenderingLib
         // Base land fill & outline (non-gradient)
         // -------------------------------------------------
 
+        public bool UseTextureBackground { get; set; } = true;
+
         public SKColor LandformBackgroundColor { get; set; } = new (140, 180, 120);
 
         public SKColor LandformOutlineColor { get; set; } = new(62, 55, 40);
@@ -45,6 +47,10 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
 
         public bool EnableInteriorShading { get; set; } = true;
+
+        public float InteriorShadingDepth { get; set; } = 200f;
+
+        public int InteriorShadingSteps { get; set; } = 32;
 
         /// <summary>
         /// How far inland the shading reaches (world units)
@@ -81,23 +87,17 @@ namespace RealmStudioShapeRenderingLib
         /// <summary>
         /// Controls how quickly shading falls off inward
         /// </summary>
-        public float FalloffPower { get; set; } = 2.2f;
-
-        // -------------------------------------------------
-        // Optional textured fill (handled elsewhere)
-        // -------------------------------------------------
-
-        public bool FillWithTexture { get; set; } = true;
+        public float FalloffPower { get; set; } = 1.8f;
 
 
         public LandformShadingSettings Clone()
         {
             return new LandformShadingSettings()
             {
+                UseTextureBackground = UseTextureBackground,
                 MaxAlpha = MaxAlpha,
                 MinAlpha = MinAlpha,
                 FalloffPower = FalloffPower,
-                FillWithTexture = FillWithTexture,
                 LandformBackgroundColor = LandformBackgroundColor,
                 LandformOutlineColor = LandformOutlineColor,
                 LandformOutlineWidth = LandformOutlineWidth,

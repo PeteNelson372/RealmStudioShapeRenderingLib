@@ -22,32 +22,40 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
-using System.Threading.Channels;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class CoastlineSettings
     {
-        public List<CoastlineBand> Bands { get; } = [];
+        public List<CoastlineBand> Bands { get; } = new List<CoastlineBand>();
 
 
         // User selection
         public LandformCoastlineStyle CoastlineStyle { get; set; }
-            = LandformCoastlineStyle.HatchPattern;
+            = LandformCoastlineStyle.UniformBlend;
 
         // Common numeric parameters
         public int EffectDistance { get; set; } = 120;
         public int BandCount { get; set; } = 8;
 
         // Base color
-        public SKColor CoastlineColor { get; set; } = new(187, 156, 195, 183);
+        public SKColor CoastlineColor { get; set; } = SKColor.Parse("#BB9CC3B7");
 
         // User-Defined Bands
-        public List<CoastlineBand> UserBands = [];
+        public List<CoastlineBand> UserBands = new List<CoastlineBand>();
 
         // Alpha falloff
-        public byte MaxAlpha { get; set; } = 180;
+        public byte MaxAlpha { get; set; } = 110;
         public byte MinAlpha { get; set; } = 20;
+
+        public float DepthScale { get; set; } = 0.35f;   // % of min dimension
+
+        public float ExteriorCurvePower { get; set; } = 2.0f;
+
+        /// <summary>
+        /// Controls how quickly shading falls off outward
+        /// </summary>
+        public float FalloffPower { get; set; } = 1.8f;
 
         // Textures
         public string? HatchTextureId { get; set; }

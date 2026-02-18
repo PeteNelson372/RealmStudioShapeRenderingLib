@@ -5,6 +5,12 @@
     using System.Collections.Generic;
     using System.Diagnostics;
 
+    public enum LandformRenderMode
+    {
+        Interactive,
+        Final
+    }
+
     public sealed class Landform : PaintedShape, IRequiresAssetResolution
     {
         // -------------------------------------------------
@@ -19,7 +25,11 @@
         public CoastlineSettings Coastline { get; set; } = new();
         public LandformShadingSettings Shading { get; set; } = new();
 
+        public LandformRenderMode RenderMode { get; set; } = LandformRenderMode.Final;
+
         private SKImage? _interiorShadingMask;
+
+        private SKRect _exteriorMaskBounds;
 
         private SKBitmap? _distanceBitmap;
         private int _distanceW;
@@ -103,6 +113,13 @@
             if (HitPath.IsEmpty)
                 return;
 
+            if (RenderMode == LandformRenderMode.Interactive)
+            {
+                RenderCoastline(canvas);
+                RenderFast(canvas);
+                return;
+            }
+
             if (_renderDirty)
             {
                 RebuildRenderCache();
@@ -123,16 +140,10 @@
             _renderCache?.Dispose();
             _renderCache = null;
 
-            _interiorShadingMask?.Dispose();
-            _interiorShadingMask = BuildInteriorShadingMask();
-
             using var recorder = new SKPictureRecorder();
             var canvas = recorder.BeginRecording(Bounds);
 
-            if (_resolvedCoastlineBands != null)
-            {
-                RenderCoastline(canvas, _resolvedCoastlineBands);
-            }
+            RenderCoastline(canvas);
 
             RenderBaseFill(canvas);
 
@@ -142,6 +153,9 @@
             }
             else
             {
+                _interiorShadingMask?.Dispose();
+                _interiorShadingMask = BuildInteriorShadingMask();
+
                 RenderInteriorShading(canvas);
             }
 
@@ -153,54 +167,46 @@
 
         private SKImage? BuildInteriorShadingMask()
         {
-            var s = Shading;
-
-            if (!s.EnableInteriorShading || s.LandShadingDepth <= 0)
+            if (HitPath.IsEmpty)
                 return null;
 
-            var bounds = HitPath.Bounds;
-
-            int w = (int)Math.Ceiling(bounds.Width);
-            int h = (int)Math.Ceiling(bounds.Height);
+            var bounds = Bounds;
+            int w = (int)MathF.Ceiling(bounds.Width);
+            int h = (int)MathF.Ceiling(bounds.Height);
 
             if (w <= 0 || h <= 0)
                 return null;
 
-            if (_distanceBitmap == null || _distanceW != w || _distanceH != h)
-            {
-                _distanceBitmap?.Dispose();
-                _distanceBitmap = new SKBitmap(w, h, SKColorType.Alpha8, SKAlphaType.Premul);
-                _distanceW = w;
-                _distanceH = h;
-            }
+            using var bitmap = new SKBitmap(
+                w,
+                h,
+                SKColorType.Alpha8,
+                SKAlphaType.Premul);
 
-            var canvas = new SKCanvas(_distanceBitmap);
-
-            canvas.Clear(SKColors.Transparent);
-            canvas.Translate(-bounds.Left, -bounds.Top);
-
-            // 1️ Draw filled landform mask (white = inside)
-            using (var fill = new SKPaint
+            using (var canvas = new SKCanvas(bitmap))
             {
-                Style = SKPaintStyle.Fill,
-                Color = SKColors.White,
-                IsAntialias = true
-            })
-            {
+                canvas.Clear(SKColors.Transparent);
+                canvas.Translate(-bounds.Left, -bounds.Top);
+
+                using var fill = new SKPaint
+                {
+                    Style = SKPaintStyle.Fill,
+                    Color = SKColors.White
+                };
+
                 canvas.DrawPath(HitPath, fill);
             }
 
-            canvas.Flush();
+            // Depth scaled to landform size
+            float minDim = MathF.Min(bounds.Width, bounds.Height);
+            ushort maxDepth = (ushort)Math.Clamp(
+                (int)(minDim * Shading.DepthScale),
+                1,
+                ushort.MaxValue);
 
-            float maxDepth = s.LandShadingDepth;
+            ushort[] dist = ComputeDistanceField(bitmap, w, h, maxDepth);
 
-            ushort uMaxDepth = (ushort)Math.Clamp((int)MathF.Round(Shading.LandShadingDepth), 1, ushort.MaxValue);
-
-            // 2️ Distance transform (two-pass)
-            ushort[] distance = ComputeDistanceField(_distanceBitmap, w, h, uMaxDepth);
-
-            // 3️ Convert distance to alpha
-            var pixels = _distanceBitmap.GetPixelSpan();
+            var pixels = bitmap.GetPixelSpan();
 
             for (int y = 0; y < h; y++)
             {
@@ -211,23 +217,27 @@
                     if (pixels[idx] == 0)
                         continue;
 
-                    float dist = distance[idx];
+                    ushort d = dist[idx];
 
-                    if (dist > maxDepth)
+                    float normalized = 1f - (d / (float)maxDepth);
+                    if (normalized <= 0f)
                     {
                         pixels[idx] = 0;
+                        continue;
                     }
-                    else
-                    {
-                        float t = 1f - (dist / maxDepth);
-                        byte alpha = (byte)(s.MaxAlpha * t);
-                        pixels[idx] = alpha;
-                    }
+
+                    float shaped = MathF.Pow(normalized, Shading.InteriorCurvePower);
+
+                    float alphaFloat = Shading.MaxAlpha * shaped;
+
+                    pixels[idx] = (byte)Math.Clamp(alphaFloat, 0f, 255f);
                 }
             }
 
-            return SKImage.FromBitmap(_distanceBitmap);
+            return SKImage.FromBitmap(bitmap);
         }
+
+
 
         private static ushort[] ComputeDistanceField(
             SKBitmap bitmap,
@@ -240,7 +250,9 @@
             ushort[] dist = new ushort[w * h];
             var pixels = bitmap.GetPixelSpan();
 
-            // Initialize
+            // Initialize:
+            // White (ocean) = INF
+            // Black (land) = 0
             for (int i = 0; i < dist.Length; i++)
             {
                 dist[i] = pixels[i] > 0 ? INF : (ushort)0;
@@ -260,16 +272,13 @@
                     ushort min = current;
 
                     if (x > 0)
-                        min = Math.Min(min, (ushort)(dist[idx - 1] + 1));
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx - 1] + 1, maxDepth));
                     if (y > 0)
-                        min = Math.Min(min, (ushort)(dist[idx - w] + 1));
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx - w] + 1, maxDepth));
                     if (x > 0 && y > 0)
-                        min = Math.Min(min, (ushort)(dist[idx - w - 1] + 1));
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx - w - 1] + 1, maxDepth));
                     if (x < w - 1 && y > 0)
-                        min = Math.Min(min, (ushort)(dist[idx - w + 1] + 1));
-
-                    if (min > maxDepth)
-                        min = maxDepth;
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx - w + 1] + 1, maxDepth));
 
                     dist[idx] = min;
                 }
@@ -289,16 +298,13 @@
                     ushort min = current;
 
                     if (x < w - 1)
-                        min = Math.Min(min, (ushort)(dist[idx + 1] + 1));
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx + 1] + 1, maxDepth));
                     if (y < h - 1)
-                        min = Math.Min(min, (ushort)(dist[idx + w] + 1));
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx + w] + 1, maxDepth));
                     if (x < w - 1 && y < h - 1)
-                        min = Math.Min(min, (ushort)(dist[idx + w + 1] + 1));
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx + w + 1] + 1, maxDepth));
                     if (x > 0 && y < h - 1)
-                        min = Math.Min(min, (ushort)(dist[idx + w - 1] + 1));
-
-                    if (min > maxDepth)
-                        min = maxDepth;
+                        min = Math.Min(min, (ushort)Math.Min(dist[idx + w - 1] + 1, maxDepth));
 
                     dist[idx] = min;
                 }
@@ -308,6 +314,41 @@
         }
 
 
+
+        private void RenderFast(SKCanvas canvas)
+        {
+            RenderBaseFill(canvas);
+
+            var center = new SKPoint(Bounds.MidX, Bounds.MidY);
+
+            float radius = Math.Max(Bounds.Width, Bounds.Height) * 0.5f;
+
+            using var shader = SKShader.CreateRadialGradient(
+                center,
+                radius,
+                new[]
+                {
+                    Shading.LandformBackgroundColor.WithAlpha(0),
+                    Shading.LandformOutlineColor.WithAlpha(Shading.MaxAlpha),
+                },
+                new float[] { 0f, 1f },
+                SKShaderTileMode.Clamp);
+
+            using var paint = new SKPaint
+            {
+                Style = SKPaintStyle.Fill,
+                Shader = shader,
+                BlendMode = SKBlendMode.Multiply,
+                IsAntialias = true
+            };
+
+            canvas.Save();
+            canvas.ClipPath(HitPath, SKClipOperation.Intersect, true);
+            canvas.DrawRect(Bounds, paint);
+            canvas.Restore();
+
+            RenderOutline(canvas);
+        }
 
 
         private void RenderBaseFill(SKCanvas canvas)
@@ -326,16 +367,12 @@
                 shader = colorShader;
             }
 
-            using var paint = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                Shader = shader,
-                IsAntialias = true
-            };
+            SKPaint p = PaintObjects.LandBaseFillPaint.Clone();
+            p.Shader = shader;
 
             canvas.Save();
             canvas.ClipPath(HitPath, SKClipOperation.Intersect, true);
-            canvas.DrawPath(HitPath, paint);
+            canvas.DrawPath(HitPath, p);
             canvas.Restore();
         }
 
@@ -344,94 +381,55 @@
         // Coastline rendering (outside landform)
         // -------------------------------------------------
 
-        private void RenderCoastline(
-            SKCanvas canvas,
-            IReadOnlyList<CoastlineBand> bands)
+        private void RenderCoastline(SKCanvas canvas)
         {
-            if (bands.Count == 0)
-                return;
-
-            var bounds = Bounds;
-
-            canvas.Save();
-            canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
-
-            foreach (var band in bands)
+            switch (Coastline.CoastlineStyle)
             {
-                RenderCoastBand(canvas, band, bounds);
+                case LandformCoastlineStyle.None:
+                    break;
+                case LandformCoastlineStyle.UniformBlend:
+                    RenderUniformBlendCoastline(canvas);
+                    break;
+                default:
+                    throw new NotSupportedException($"Unsupported coastline style: {Coastline.CoastlineStyle}");
             }
-
-            canvas.Restore();
         }
 
-        private void RenderCoastBand(
-            SKCanvas canvas,
-            CoastlineBand band,
-            SKRect bounds)
+        private void RenderUniformBlendCoastline(SKCanvas canvas)
         {
-            float width = band.EndDistance - band.StartDistance;
-            if (width <= 0)
+            if (PerimeterPath == null || PerimeterPath.IsEmpty)
                 return;
 
-            int steps = Math.Max(6, (int)(width / 6f));
-            float maxRadius = MathF.Max(bounds.Width, bounds.Height);
+            float depth = Coastline.EffectDistance;
+            int steps = 24; // tweak for smoothness
+
+            canvas.Save();
+
+            // Clip OUTSIDE land
+            canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
 
             for (int i = 0; i < steps; i++)
             {
-                float rawT = i / (float)(steps - 1);
-                float t = MathF.Pow(rawT, band.FalloffPower);
+                float t = i / (float)(steps - 1);
 
-                float distance = band.StartDistance + width * rawT;
-                float alpha = band.Alpha * (1f - t);
+                float width = depth * t;
+                float alphaFactor = 1f - t;
+                alphaFactor = MathF.Pow(alphaFactor, Coastline.FalloffPower);
 
-                if (alpha <= 0.001f)
-                    continue;
+                byte alpha = (byte)(Coastline.MaxAlpha * alphaFactor);
 
-                using var paint = CreateCoastPaint(band, alpha);
-                using var expanded = new SKPath(PerimeterPath);
+                using var paint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = width,
+                    Color = Coastline.CoastlineColor.WithAlpha(alpha),
+                    IsAntialias = true
+                };
 
-                float scale = 1f + distance / maxRadius;
-
-                expanded.Transform(
-                    SKMatrix.CreateScale(
-                        scale,
-                        scale,
-                        bounds.MidX,
-                        bounds.MidY));
-
-                canvas.DrawPath(expanded, paint);
-            }
-        }
-
-        private static SKPaint CreateCoastPaint(
-            CoastlineBand band,
-            float alpha)
-        {
-            var color = band.Color.WithAlpha(
-                (byte)(band.Color.Alpha * alpha));
-
-            var colorShader = SKShader.CreateColor(color);
-            SKShader shader = colorShader;
-
-            if (band.TextureImage != null)
-            {
-                var textureShader = SKShader.CreateImage(
-                    band.TextureImage,
-                    SKShaderTileMode.Repeat,
-                    SKShaderTileMode.Repeat);
-
-                shader = SKShader.CreateCompose(
-                    colorShader,
-                    textureShader,
-                    SKBlendMode.Modulate);
+                canvas.DrawPath(PerimeterPath, paint);
             }
 
-            return new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true,
-                Shader = shader
-            };
+            canvas.Restore();
         }
 
         // -------------------------------------------------
@@ -457,6 +455,7 @@
             canvas.DrawImage(_interiorShadingMask, bounds.Left, bounds.Top, paint);
             canvas.Restore();
         }
+
         private void RenderInteriorGradient(SKCanvas canvas)
         {
             var s = Shading;
@@ -465,7 +464,7 @@
                 return;
 
             var bounds = HitPath.Bounds;
-            var center = LandformShadingSettings.ComputeCentroid(HitPath);
+            var center = Utilities.ComputeCentroid(HitPath);
 
             float maxRadius = s.LandShadingDepth;
 
@@ -539,6 +538,48 @@
 
             InvalidateRenderCache();
         }
-    }
 
+        // Noise functions
+
+        private static float Noise2D(int x, int y, int seed)
+        {
+            unchecked
+            {
+                int n = x;
+                n = (n << 13) ^ n;
+                int hash = (n * (n * n * 15731 + 789221) + 1376312589);
+
+                n = y ^ hash ^ seed;
+                n = (n << 13) ^ n;
+                hash = (n * (n * n * 15731 + 789221) + 1376312589);
+
+                // Map to 0–1
+                return 0.5f * (1f + (hash & 0x7fffffff) / (float)int.MaxValue);
+            }
+        }
+
+        private static float SmoothNoise(float x, float y, int seed)
+        {
+            int x0 = (int)MathF.Floor(x);
+            int y0 = (int)MathF.Floor(y);
+            int x1 = x0 + 1;
+            int y1 = y0 + 1;
+
+            float sx = x - x0;
+            float sy = y - y0;
+
+            float n00 = Noise2D(x0, y0, seed);
+            float n10 = Noise2D(x1, y0, seed);
+            float n01 = Noise2D(x0, y1, seed);
+            float n11 = Noise2D(x1, y1, seed);
+
+            float ix0 = Utilities.Lerp(n00, n10, sx);
+            float ix1 = Utilities.Lerp(n01, n11, sx);
+
+            return Utilities.Lerp(ix0, ix1, sy);
+        }
+
+
+
+    }
 }

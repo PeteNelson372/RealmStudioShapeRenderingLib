@@ -45,6 +45,18 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
+        public static readonly SKPaint LandBaseFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+        };
+
+        public static readonly SKPaint MaskFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.White,
+        };
+
         public static readonly SKPaint LandColorPaint = new()
         {
             Style = SKPaintStyle.Fill,

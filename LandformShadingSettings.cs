@@ -77,7 +77,7 @@ namespace RealmStudioShapeRenderingLib
         /// <summary>
         /// Alpha near the coast
         /// </summary>
-        public byte MaxAlpha { get; set; } = 180;
+        public byte MaxAlpha { get; set; } = 110;
 
         /// <summary>
         /// Alpha deeper inland
@@ -88,6 +88,15 @@ namespace RealmStudioShapeRenderingLib
         /// Controls how quickly shading falls off inward
         /// </summary>
         public float FalloffPower { get; set; } = 1.8f;
+
+        public bool EnableNoise { get; set; } = true;
+        public float NoiseStrength { get; set; } = 0.1f;   // 0–0.5 recommended
+        public float NoiseScale { get; set; } = 0.02f;     // smaller = larger features
+        public int NoiseSeed { get; set; } = 1337;
+
+        public float DepthScale { get; set; } = 0.35f;   // % of min dimension
+
+        public float InteriorCurvePower { get; set; } = 2.0f;
 
 
         public LandformShadingSettings Clone()
@@ -108,13 +117,6 @@ namespace RealmStudioShapeRenderingLib
                 CoastColor = CoastColor,
                 InlandColor = InlandColor,
             };
-        }
-
-
-        public static SKPoint ComputeCentroid(SKPath path)
-        {
-            var bounds = path.Bounds;
-            return new SKPoint(bounds.MidX, bounds.MidY);
         }
     }
 

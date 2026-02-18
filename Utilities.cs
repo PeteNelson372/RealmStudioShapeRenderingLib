@@ -1,5 +1,4 @@
 ﻿using SkiaSharp;
-using System;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -8,6 +7,11 @@ namespace RealmStudioShapeRenderingLib
         public static float Clamp(float value, float min, float max)
         {
             return Math.Min(Math.Max(value, min), max);
+        }
+
+        public static float Lerp(float a, float b, float t)
+        {
+            return a + (b - a) * t;
         }
 
         public static SKColor LerpColor(SKColor a, SKColor b, float t)
@@ -21,6 +25,12 @@ namespace RealmStudioShapeRenderingLib
             byte aCh = (byte)(a.Alpha + (b.Alpha - a.Alpha) * t);
 
             return new SKColor(r, g, bch, aCh);
+        }
+
+        public static SKPoint ComputeCentroid(SKPath path)
+        {
+            var bounds = path.Bounds;
+            return new SKPoint(bounds.MidX, bounds.MidY);
         }
     }
 }

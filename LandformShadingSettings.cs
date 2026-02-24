@@ -75,12 +75,12 @@ namespace RealmStudioShapeRenderingLib
             = new SKColor(140, 180, 120);
 
         /// <summary>
-        /// Alpha near the coast
+        /// Alpha inland
         /// </summary>
         public byte MaxAlpha { get; set; } = 110;
 
         /// <summary>
-        /// Alpha deeper inland
+        /// Alpha near the coast (0 = no shading at coast, 255 = full shading at coast)
         /// </summary>
         public byte MinAlpha { get; set; } = 20;
 

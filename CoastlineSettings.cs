@@ -27,22 +27,15 @@ namespace RealmStudioShapeRenderingLib
 {
     public class CoastlineSettings
     {
-        public List<CoastlineBand> Bands { get; } = new List<CoastlineBand>();
-
-
         // User selection
         public LandformCoastlineStyle CoastlineStyle { get; set; }
             = LandformCoastlineStyle.UniformBlend;
 
         // Common numeric parameters
         public int EffectDistance { get; set; } = 120;
-        public int BandCount { get; set; } = 8;
 
         // Base color
         public SKColor CoastlineColor { get; set; } = SKColor.Parse("#BB9CC3B7");
-
-        // User-Defined Bands
-        public List<CoastlineBand> UserBands = new List<CoastlineBand>();
 
         // Alpha falloff
         public byte MaxAlpha { get; set; } = 110;
@@ -62,6 +55,9 @@ namespace RealmStudioShapeRenderingLib
         public string? DashTextureId { get; set; }
         public string? CircularTextureId { get; set; }
 
+        public SKImage? HatchTexture { get; set; }
+        public SKImage? DashTexture { get; set; }
+
         // other parameters
         public int TextureOpacity { get; set; }
         public int TextureScale { get; set; }
@@ -76,7 +72,6 @@ namespace RealmStudioShapeRenderingLib
             {
                 CoastlineStyle = CoastlineStyle,
                 EffectDistance = EffectDistance,
-                BandCount = BandCount,
                 CoastlineColor = CoastlineColor,
                 MaxAlpha = MaxAlpha,
                 MinAlpha = MinAlpha,
@@ -88,12 +83,6 @@ namespace RealmStudioShapeRenderingLib
                 HatchBlendMode = HatchBlendMode,
                 PaintGradient = PaintGradient,
             };
-
-            foreach (var band in Bands)
-                clone.Bands.Add(band.Clone());
-
-            foreach (var band in UserBands)
-                clone.UserBands.Add(band.Clone());
 
             return clone;
         }

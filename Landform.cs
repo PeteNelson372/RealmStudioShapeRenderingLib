@@ -1,9 +1,9 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
+    using SkiaSharp.Views.Desktop;
     using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
+    using System.Drawing;
 
     public enum LandformRenderMode
     {
@@ -29,23 +29,24 @@
 
         private SKImage? _interiorShadingMask;
 
-        private SKRect _exteriorMaskBounds;
-
-        private SKBitmap? _distanceBitmap;
-        private int _distanceW;
-        private int _distanceH;
+        private SKPaint CoastlineFillPaint { get; set; } = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+        };
 
         // -------------------------------------------------
         // Runtime-resolved state
         // -------------------------------------------------
 
-        private ICoastlineStyle? _resolvedCoastlineStyle;
-        private IReadOnlyList<CoastlineBand>? _resolvedCoastlineBands;
         private SKImage? _resolvedFillTexture;
+        private SKImage? _resolvedHatchTexture;
+        private SKImage? _resolvedDashTexture;
+
         private SKShader? _resolvedTextureShader;
 
         private SKPicture? _renderCache;
-        private bool _renderDirty = true;
+        private bool _renderModified = true;
 
         // -------------------------------------------------
         // Geometry change hook
@@ -59,9 +60,7 @@
 
         public void InvalidateRenderCache()
         {
-            _renderDirty = true;
-            _resolvedCoastlineStyle = null;
-            _resolvedCoastlineBands = null;
+            _renderModified = true;
         }
 
         // -------------------------------------------------
@@ -70,12 +69,16 @@
 
         public void ResolveRenderAssets(IAssetProvider assets)
         {
-            // Resolve coastline style & bands
-            _resolvedCoastlineStyle =
-                CoastlineStyleFactory.Create(Coastline, assets);
+            // Resolve coastline style
+            if (Coastline.HatchTextureId != null)
+            {
+                _resolvedHatchTexture = assets.GetImage(Coastline.HatchTextureId);
+            }
 
-            _resolvedCoastlineBands =
-                _resolvedCoastlineStyle.CreateBands(this);
+            if (Coastline.DashTextureId != null)
+            {
+                _resolvedDashTexture = assets.GetImage(Coastline.DashTextureId);
+            }
 
             // Resolve base fill texture
             _resolvedFillTexture = null;
@@ -120,7 +123,7 @@
                 return;
             }
 
-            if (_renderDirty)
+            if (_renderModified)
             {
                 RebuildRenderCache();
             }
@@ -162,7 +165,7 @@
             RenderOutline(canvas);
 
             _renderCache = recorder.EndRecording();
-            _renderDirty = false;
+            _renderModified = false;
         }
 
         private SKImage? BuildInteriorShadingMask()
@@ -236,8 +239,6 @@
 
             return SKImage.FromBitmap(bitmap);
         }
-
-
 
         private static ushort[] ComputeDistanceField(
             SKBitmap bitmap,
@@ -381,48 +382,95 @@
         // Coastline rendering (outside landform)
         // -------------------------------------------------
 
+        /*
+        [Description("None")]
+        None = 0,
+        [Description("Uniform Band")]
+        UniformBand,
+        [Description("Uniform Blend")]
+        UniformBlend,
+        [Description("Uniform Outline")]
+        UniformOutline,
+        [Description("Three-Tiered")]
+        ThreeTiered,
+        [Description("Circular Pattern")]
+        CircularPattern,
+        [Description("Dash Pattern")]
+        DashPattern,
+        [Description("Hatch Pattern")]
+        HatchPattern,
+        [Description("User Defined")]
+        UserDefined
+        */
+
         private void RenderCoastline(SKCanvas canvas)
         {
             switch (Coastline.CoastlineStyle)
             {
                 case LandformCoastlineStyle.None:
                     break;
-                case LandformCoastlineStyle.UniformBlend:
-                    RenderUniformBlendCoastline(canvas);
+                case LandformCoastlineStyle.UniformBand:
+                    RenderUniformBand(canvas);
                     break;
+                case LandformCoastlineStyle.UniformBlend:
+                    RenderUniformBlend(canvas);
+                    break;
+                case LandformCoastlineStyle.UniformOutline:
+                    RenderUniformOutline(canvas);
+                    break;
+                case LandformCoastlineStyle.ThreeTiered:
+                    RenderThreeTiered(canvas);
+                    break;
+                case LandformCoastlineStyle.CircularPattern:
+                    RenderCircularPatternCoastline(canvas);
+                    break;
+                case LandformCoastlineStyle.DashPattern:
+                    if (Coastline.DashTexture != null)
+                    {
+                        RenderDashPattern(canvas, Coastline.DashTexture);
+                    }
+                    else
+                    {
+                        // Fallback to uniform band if texture is missing
+                        RenderUniformBand(canvas);
+                    }
+
+                    break;
+                case LandformCoastlineStyle.HatchPattern:
+                    if (Coastline.HatchTexture != null)
+                    {
+                        RenderHatchPattern(canvas, Coastline.HatchTexture);
+                    }
+                    else
+                    {
+                        // Fallback to uniform band if texture is missing
+                        RenderUniformBand(canvas);
+                    }
+                    break;
+                case LandformCoastlineStyle.UserDefined:
+                    break; // TODO: user-defined rendering
                 default:
                     throw new NotSupportedException($"Unsupported coastline style: {Coastline.CoastlineStyle}");
             }
         }
 
-        private void RenderUniformBlendCoastline(SKCanvas canvas)
+        private void RenderUniformOutline(SKCanvas canvas)
         {
-            if (PerimeterPath == null || PerimeterPath.IsEmpty)
-                return;
-
             float depth = Coastline.EffectDistance;
-            int steps = 24; // tweak for smoothness
+
+            float[] bands = { 1f, 0.1f };
+            byte[] alphas = { 80, 180 };
 
             canvas.Save();
-
-            // Clip OUTSIDE land
             canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
 
-            for (int i = 0; i < steps; i++)
+            for (int i = 0; i < bands.Count(); i++)
             {
-                float t = i / (float)(steps - 1);
-
-                float width = depth * t;
-                float alphaFactor = 1f - t;
-                alphaFactor = MathF.Pow(alphaFactor, Coastline.FalloffPower);
-
-                byte alpha = (byte)(Coastline.MaxAlpha * alphaFactor);
-
                 using var paint = new SKPaint
                 {
                     Style = SKPaintStyle.Stroke,
-                    StrokeWidth = width,
-                    Color = Coastline.CoastlineColor.WithAlpha(alpha),
+                    StrokeWidth = depth * bands[i],
+                    Color = Coastline.CoastlineColor.WithAlpha(alphas[i]),
                     IsAntialias = true
                 };
 
@@ -431,6 +479,267 @@
 
             canvas.Restore();
         }
+
+
+        private void RenderBaseCoastFade(SKCanvas canvas)
+        {
+            RenderStrokeFade(
+                canvas,
+                Coastline.EffectDistance,
+                24,
+                t =>
+                {
+                    float fade = 1f - t;
+                    fade = MathF.Pow(fade, Coastline.FalloffPower * 0.9f);
+
+                    return new SKPaint
+                    {
+                        Color = Coastline.CoastlineColor
+                            .WithAlpha((byte)(Coastline.MaxAlpha * fade))
+                    };
+                });
+        }
+
+        private void RenderCircularPatternCoastline(SKCanvas canvas)
+        {
+            float depth = Coastline.EffectDistance;
+
+            float wavelength = 12f;      // closer rings
+            float ringThickness = 4f;
+
+            int ringCount = (int)(depth / wavelength);
+
+            canvas.Save();
+            canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
+
+            // 1️. Draw soft base fade
+            RenderBaseCoastFade(canvas);
+
+            // 2️. Draw ripple crests
+            for (int i = 1; i <= ringCount; i++)
+            {
+                float centerDistance = i * wavelength;
+
+                float outerWidth = centerDistance + ringThickness * 0.5f;
+                float innerWidth = centerDistance - ringThickness * 0.5f;
+                if (innerWidth < 0) innerWidth = 0;
+
+                float t = centerDistance / depth;
+                float fade = 1f - t;
+                fade = MathF.Pow(fade, Coastline.FalloffPower);
+
+                // Crest stronger than base
+                byte alpha = (byte)Math.Min(
+                    255,
+                    Coastline.MaxAlpha * 1.4f * fade);
+
+                using var outerPaint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = outerWidth * 2f,
+                    IsAntialias = true
+                };
+
+                using var innerPaint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = innerWidth * 2f,
+                    IsAntialias = true
+                };
+
+                using var outerPath = new SKPath();
+                using var innerPath = new SKPath();
+
+                outerPaint.GetFillPath(PerimeterPath, outerPath);
+                innerPaint.GetFillPath(PerimeterPath, innerPath);
+
+                using var ringPath = outerPath.Op(innerPath, SKPathOp.Difference);
+
+                if (ringPath != null && ringPath.PointCount > 0)
+                {
+                    using var paint = new SKPaint
+                    {
+                        Style = SKPaintStyle.Fill,
+                        Color = Coastline.CoastlineColor.WithAlpha(alpha),
+                        IsAntialias = true
+                    };
+
+                    canvas.DrawPath(ringPath, paint);
+                }
+            }
+
+            canvas.Restore();
+        }
+
+        private void RenderStrokeFade(
+            SKCanvas canvas,
+            float depth,
+            int steps,
+            Func<float, SKPaint> paintFactory)
+        {
+            canvas.Save();
+
+            // Only draw outside land
+            canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
+
+            for (int i = 0; i < steps; i++)
+            {
+                float t = i / (float)(steps - 1);
+
+                float width = depth * t;
+
+                using var paint = paintFactory(t);
+                paint.Style = SKPaintStyle.Stroke;
+                paint.StrokeWidth = width;
+                paint.IsAntialias = true;
+
+                canvas.DrawPath(PerimeterPath, paint);
+            }
+
+            canvas.Restore();
+        }
+
+        private void RenderUniformBlend(SKCanvas canvas)
+        {
+            RenderStrokeFade(
+                canvas,
+                Coastline.EffectDistance,
+                24,
+                t =>
+                {
+                    float fade = 1f - t;
+                    fade = MathF.Pow(fade, Coastline.FalloffPower);
+
+                    return new SKPaint
+                    {
+                        Color = Coastline.CoastlineColor
+                            .WithAlpha((byte)(Coastline.MaxAlpha * fade))
+                    };
+                });
+        }
+
+        private void RenderUniformBand(SKCanvas canvas)
+        {
+            using var paint = new SKPaint
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = Coastline.EffectDistance,
+                Color = Coastline.CoastlineColor.WithAlpha(Coastline.MaxAlpha),
+                IsAntialias = true
+            };
+
+            canvas.Save();
+            canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
+            canvas.DrawPath(PerimeterPath, paint);
+            canvas.Restore();
+        }
+
+        private void RenderThreeTiered(SKCanvas canvas)
+        {
+            float depth = Coastline.EffectDistance;
+
+            float[] bands = { 0.33f, 0.66f, 1f };
+            byte[] alphas = { 180, 100, 40 };
+
+            canvas.Save();
+            canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
+
+            for (int i = 0; i < bands.Count(); i++)
+            {
+                using var paint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = depth * bands[i],
+                    Color = Coastline.CoastlineColor.WithAlpha(alphas[i]),
+                    IsAntialias = true
+                };
+
+                canvas.DrawPath(PerimeterPath, paint);
+            }
+
+            canvas.Restore();
+        }
+
+        private void RenderHatchPattern(SKCanvas canvas, SKImage hatchTexture)
+        {
+            float depth = Coastline.EffectDistance;
+            int steps = 24;
+
+            RenderStrokeFade(
+                canvas,
+                depth,
+                steps,
+                t =>
+                {
+                    float fade = 1f - t;
+                    fade = MathF.Pow(fade, Coastline.FalloffPower);
+
+                    byte alpha = (byte)(Coastline.MaxAlpha * fade);
+
+                    // Base color shader (with falloff alpha)
+                    var colorShader = SKShader.CreateColor(
+                        Coastline.CoastlineColor.WithAlpha(alpha));
+
+                    // Hatch texture shader
+                    var hatchShader = SKShader.CreateImage(
+                        hatchTexture,
+                        SKShaderTileMode.Repeat,
+                        SKShaderTileMode.Repeat);
+
+                    // Combine color shading × texture
+                    var composed = SKShader.CreateCompose(
+                        colorShader,
+                        hatchShader,
+                        SKBlendMode.Modulate);
+
+                    return new SKPaint
+                    {
+                        Shader = composed,
+                        IsAntialias = true
+                    };
+                });
+        }
+
+        private void RenderDashPattern(SKCanvas canvas, SKImage dashTexture)
+        {
+            float depth = Coastline.EffectDistance;
+            int steps = 24;
+
+            RenderStrokeFade(
+                canvas,
+                depth,
+                steps,
+                t =>
+                {
+                    float fade = 1f - t;
+                    fade = MathF.Pow(fade, Coastline.FalloffPower);
+
+                    byte alpha = (byte)(Coastline.MaxAlpha * fade);
+
+                    // Base color shader (with falloff alpha)
+                    var colorShader = SKShader.CreateColor(
+                        Coastline.CoastlineColor.WithAlpha(alpha));
+
+                    // Dash texture shader
+                    var dashShader = SKShader.CreateImage(
+                        dashTexture,
+                        SKShaderTileMode.Repeat,
+                        SKShaderTileMode.Repeat);
+
+                    // Combine color shading × texture
+                    var composed = SKShader.CreateCompose(
+                        colorShader,
+                        dashShader,
+                        SKBlendMode.Modulate);
+
+                    return new SKPaint
+                    {
+                        Shader = composed,
+                        IsAntialias = true
+                    };
+                });
+        }
+
 
         // -------------------------------------------------
         // Interior shading
@@ -517,8 +826,36 @@
 
         public void ResolveAssets(IAssetProvider assets)
         {
-            _resolvedFillTexture = null;
-            _resolvedTextureShader = null;
+
+            // Resolve coastline style
+            // TODO: resolved textures will need to be nulled out when the coastline style changes on selected landform
+            if (Coastline.HatchTextureId != null)
+            {
+                SKImage? hatchImage = assets.GetImage(Coastline.HatchTextureId);
+
+                if (hatchImage != null)
+                {
+                    SKBitmap hatchBitmap = SKBitmap.FromImage(hatchImage);
+
+                    SKBitmap resizedSKBitmap = hatchBitmap.Resize(new SKImageInfo(100, 100), SKSamplingOptions.Default);
+
+                    Coastline.HatchTexture = SKImage.FromBitmap(resizedSKBitmap);
+                }
+            }
+
+            if (Coastline.DashTextureId != null)
+            {
+                SKImage? dashImage = assets.GetImage(Coastline.DashTextureId);
+
+                if (dashImage != null)
+                {
+                        SKBitmap dashBitmap = SKBitmap.FromImage(dashImage);
+
+                        SKBitmap resizedSKBitmap = dashBitmap.Resize(new SKImageInfo(100, 100), SKSamplingOptions.Default);
+
+                        Coastline.DashTexture = SKImage.FromBitmap(resizedSKBitmap);
+                }
+            }
 
             if (Shading.UseTextureBackground &&
                 !string.IsNullOrEmpty(Shading.LandformTextureId))

@@ -8,6 +8,13 @@ namespace RealmStudioShapeRenderingLib
     {
         public string Id => Guid.NewGuid().ToString();
 
+        public event Action? GeometryChanged;
+
+        protected virtual void OnGeometryChanged()
+        {
+            GeometryChanged?.Invoke();
+        }
+
         // -------------------------------------------------
         // Geometry ownership
         // -------------------------------------------------
@@ -41,6 +48,8 @@ namespace RealmStudioShapeRenderingLib
             HitPath = new SKPath(_cachedPath);
 
             RebuildPerimeter();
+
+            OnGeometryChanged();
         }
 
         /// <summary>

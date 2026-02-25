@@ -343,5 +343,40 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 2,
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
+
+        public static readonly SKPaint LandformRenderFastPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            BlendMode = SKBlendMode.Multiply,
+            IsAntialias = true
+        };
+
+        public static readonly SKPaint LandformRippleRingPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+
+        public static readonly SKPaint CoastlineBasePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true
+        };
+
+        public static readonly SKPaint LandformInteriorShadingPaint = new()
+        {
+            BlendMode = SKBlendMode.Multiply,
+            IsAntialias = true
+        };
+
+        public static readonly SKPaint LandformInteriorGradientPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            BlendMode = SKBlendMode.Multiply,
+            IsAntialias = true
+        };
+
+
     }
+       
 }

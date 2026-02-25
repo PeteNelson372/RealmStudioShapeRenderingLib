@@ -56,19 +56,6 @@ namespace RealmStudioShapeRenderingLib
         public SKRect LayerRect { get; set; } = SKRect.Empty; // the size of the MapLayer; should be same as map width and height
 
         // -------------------------------------------------
-        // Render cache (runtime only)
-        // -------------------------------------------------
-
-        [XmlIgnore]
-        private SKSurface? _cachedSurface;
-
-        [XmlIgnore]
-        private bool _modified = true;
-
-        [XmlIgnore]
-        private SKSizeI _cachedSize;
-
-        // -------------------------------------------------
         // Shape management
         // -------------------------------------------------
 
@@ -78,102 +65,22 @@ namespace RealmStudioShapeRenderingLib
                 return;
 
             _shapes.Add(shape);
-            Invalidate();
         }
 
         public void Remove(Shape2D shape)
         {
-            if (_shapes.Remove(shape))
-            {
-                Invalidate();
-            }
+            _shapes.Remove(shape);
+
         }
 
         public void Clear()
         {
-            if (_shapes.Count == 0)
-                return;
-
             _shapes.Clear();
-            Invalidate();
         }
 
-        // -------------------------------------------------
-        // Invalidation
-        // -------------------------------------------------
-
-        public void Invalidate()
-        {
-            _modified = true;
-        }
 
         // -------------------------------------------------
-        // Rendering
-        // -------------------------------------------------
-
-        public void Render(SKCanvas canvas)
-        {
-            if (!ShowLayer)
-                return;
-
-            ArgumentNullException.ThrowIfNull(canvas);
-
-            // Lazy rebuild
-            if (_modified || _cachedSurface == null)
-            {
-                RebuildCache();
-            }
-
-            // Draw cached layer at origin (world space)
-            using var paint = new SKPaint
-            {
-                BlendMode = SKBlendMode.SrcOver
-            };
-
-            canvas.DrawSurface(_cachedSurface!, 0, 0, paint);
-        }
-
-        private void RebuildCache()
-        {
-            SKSizeI size = new((int)LayerRect.Width, (int)LayerRect.Height);
-
-            // Reallocate surface if needed
-            if (_cachedSurface == null ||  _cachedSize != size)
-            {
-                _cachedSurface?.Dispose();
-
-                _cachedSurface = SKSurface.Create(
-                    new SKImageInfo(
-                        (int)LayerRect.Width,
-                        (int)LayerRect.Height,
-                        SKColorType.Rgba8888,
-                        SKAlphaType.Premul));
-
-                _cachedSize = new SKSizeI((int)LayerRect.Width, (int)LayerRect.Height);
-            }
-
-            var surfaceCanvas = _cachedSurface.Canvas;
-
-            // Clear to transparent
-            surfaceCanvas.Clear(SKColors.Transparent);
-
-            // IMPORTANT:
-            // Shapes render in world space, so we render at identity transform
-            surfaceCanvas.Save();
-            surfaceCanvas.ResetMatrix();
-
-            foreach (var shape in _shapes)
-            {
-                shape.Render(surfaceCanvas);
-            }
-
-            surfaceCanvas.Restore();
-
-            _modified = false;
-        }
-
-        // -------------------------------------------------
-        // Hit testing (unchanged)
+        // Hit testing
         // -------------------------------------------------
 
         public Shape2D? HitTest(SKPoint worldPos)

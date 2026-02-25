@@ -34,6 +34,8 @@ namespace RealmStudioShapeRenderingLib
         // Common numeric parameters
         public int EffectDistance { get; set; } = 120;
 
+        public float UniformOutlineOuterRingRatio { get; set; } = 0.15f;
+
         // Base color
         public SKColor CoastlineColor { get; set; } = SKColor.Parse("#BB9CC3B7");
 

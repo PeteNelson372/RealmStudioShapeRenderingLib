@@ -94,6 +94,7 @@ namespace RealmStudioShapeRenderingLib
         InteriorWallDraw,
         InteriorWallEdit,
         InteriorWallErase,
+        ShapeSelect,
     }
 
     public enum LandGradientDirection

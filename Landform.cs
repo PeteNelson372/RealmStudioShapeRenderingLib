@@ -2,7 +2,6 @@
 {
     using SkiaSharp;
     using System;
-    using System.Drawing;
 
     public enum LandformRenderMode
     {
@@ -15,6 +14,7 @@
         // -------------------------------------------------
         // Serialized settings (data-only)
         // -------------------------------------------------
+
         public string LandformName { get; set; } = string.Empty;
 
         public string LandformDescription { get; set; } = string.Empty;
@@ -43,7 +43,28 @@
 
         private bool _renderModified = true;
 
+        public bool IsInteractive { get; private set; }
 
+
+        public void CloneSettingsFrom(Landform source)
+        {
+            Shading = source.Shading.Clone();
+            Coastline = source.Coastline.Clone();
+
+            LandformName = source.LandformName;
+            LandformDescription = source.LandformDescription;
+        }
+
+        public void BeginInteractive()
+        {
+            IsInteractive = true;
+        }
+
+        public void EndInteractive()
+        {
+            IsInteractive = false;
+            InvalidateRenderCache();
+        }
 
         protected override void RebuildPerimeter()
         {
@@ -56,8 +77,36 @@
             _renderModified = true;
         }
 
+        public void RenderCoastlineFinal(SKCanvas canvas)
+        {
+            if (_coastlineCache == null || _renderModified)
+                RebuildRenderCache();
+
+            if (_coastlineCache != null)
+                canvas.DrawPicture(_coastlineCache);
+        }
+
+        public void RenderInteriorFinal(SKCanvas canvas)
+        {
+            if (_interiorCache == null || _renderModified)
+                RebuildRenderCache();
+
+            if (_interiorCache != null)
+                canvas.DrawPicture(_interiorCache);
+        }
+
+        public void RenderCoastlineInteractive(SKCanvas canvas)
+        {
+            RenderCoastline(canvas);   // live perimeter-based rendering
+        }
+
+        public void RenderInteriorFast(SKCanvas canvas)
+        {
+            RenderFast(canvas);        // radial gradient version
+        }
+
         // -------------------------------------------------
-        // Resolve phase (called by scene / layer / renderer)
+        // Resolve phase
         // -------------------------------------------------
 
         public void ResolveRenderAssets(IAssetProvider assets)
@@ -83,16 +132,36 @@
             InvalidateRenderCache();
         }
 
+        // -------------------------------------------------
+        // Geometry management
+        // -------------------------------------------------
+
+        public void ClearGeometry()
+        {
+            SetGeometry(new SKPath());
+        }
+
+        public void ReplaceGeometry(SKPath newPath)
+        {
+            if (newPath == null || newPath.IsEmpty)
+            {
+                ClearGeometry();
+                return;
+            }
+
+            SetGeometry(new SKPath(newPath));
+        }
+
         protected override void SetGeometry(SKPath path)
         {
             base.SetGeometry(path);
             InvalidateRenderCache();
         }
 
+
         // -------------------------------------------------
         // Rendering
         // -------------------------------------------------
-
         public override void Render(SKCanvas canvas)
         {
             // the Render method only handles interactive mode
@@ -347,8 +416,6 @@
 
             return dist;
         }
-
-
 
         private void RenderFast(SKCanvas canvas)
         {
@@ -684,7 +751,9 @@
                     return new SKPaint
                     {
                         Color = Coastline.CoastlineColor
-                            .WithAlpha((byte)(Coastline.MaxAlpha * fade))
+                            .WithAlpha((byte)(Coastline.MaxAlpha * fade)),
+                        StrokeCap = SKStrokeCap.Round,
+                        StrokeJoin = SKStrokeJoin.Round
                     };
                 });
         }
@@ -694,6 +763,8 @@
             var paint = PaintObjects.CoastlineBasePaint;
             paint.StrokeWidth = Coastline.EffectDistance;
             paint.Color = Coastline.CoastlineColor.WithAlpha(Coastline.MaxAlpha);
+            paint.StrokeCap = SKStrokeCap.Round;
+            paint.StrokeJoin = SKStrokeJoin.Round;
 
             canvas.Save();
             canvas.ClipPath(HitPath, SKClipOperation.Difference, true);
@@ -716,6 +787,8 @@
                 var paint = PaintObjects.CoastlineBasePaint;
                 paint.StrokeWidth = depth * bands[i];
                 paint.Color = Coastline.CoastlineColor.WithAlpha(alphas[i]);
+                paint.StrokeCap = SKStrokeCap.Round;
+                paint.StrokeJoin = SKStrokeJoin.Round;
 
                 canvas.DrawPath(PerimeterPath, paint);
             }
@@ -758,7 +831,9 @@
                     return new SKPaint
                     {
                         Shader = composed,
-                        IsAntialias = true
+                        IsAntialias = true,
+                        StrokeCap = SKStrokeCap.Round,
+                        StrokeJoin = SKStrokeJoin.Round,
                     };
                 });
         }
@@ -798,7 +873,9 @@
                     return new SKPaint
                     {
                         Shader = composed,
-                        IsAntialias = true
+                        IsAntialias = true,
+                        StrokeCap = SKStrokeCap.Round,
+                        StrokeJoin = SKStrokeJoin.Round,
                     };
                 });
         }

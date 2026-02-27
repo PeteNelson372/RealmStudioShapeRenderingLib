@@ -36,6 +36,8 @@ namespace RealmStudioShapeRenderingLib
         /// </summary>
         public virtual SKRect Bounds => HitPath.Bounds;
 
+        public bool IsSelected { get; set; } = false;
+
         // -------------------------------------------------
         // Geometry lifecycle
         // -------------------------------------------------

@@ -116,8 +116,8 @@ namespace RealmStudioShapeRenderingLib
         UniformOutline,
         [Description("Three-Tiered")]
         ThreeTiered,
-        [Description("Circular Pattern")]
-        CircularPattern,
+        [Description("Ripple Pattern")]
+        RipplePattern,
         [Description("Dash Pattern")]
         DashPattern,
         [Description("Hatch Pattern")]

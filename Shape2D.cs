@@ -39,7 +39,7 @@ namespace RealmStudioShapeRenderingLib
         public bool IsSelected { get; set; } = false;
 
         // -------------------------------------------------
-        // Geometry lifecycle
+        // Geometry
         // -------------------------------------------------
 
         protected virtual void SetGeometry(SKPath newGeometry)
@@ -49,6 +49,29 @@ namespace RealmStudioShapeRenderingLib
 
             HitPath = new SKPath(_cachedPath);
 
+            RebuildPerimeter();
+
+            OnGeometryChanged();
+        }
+
+        public virtual void RestoreGeometry(SKPath path)
+        {
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
+
+            SetGeometry(new SKPath(path));
+        }
+
+        public virtual SKPath CloneGeometry()
+        {
+            return new SKPath(HitPath);
+        }
+
+        public virtual void Translate(float dx, float dy)
+        {
+            var matrix = SKMatrix.CreateTranslation(dx, dy);
+
+            HitPath.Transform(matrix);
             RebuildPerimeter();
 
             OnGeometryChanged();

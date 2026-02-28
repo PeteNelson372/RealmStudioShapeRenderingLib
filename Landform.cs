@@ -2,6 +2,7 @@
 {
     using SkiaSharp;
     using System;
+    using System.Diagnostics;
 
     public enum LandformRenderMode
     {
@@ -105,32 +106,6 @@
             RenderFast(canvas);        // radial gradient version
         }
 
-        // -------------------------------------------------
-        // Resolve phase
-        // -------------------------------------------------
-
-        public void ResolveRenderAssets(IAssetProvider assets)
-        {
-            // Resolve base fill texture
-            _resolvedFillTexture = null;
-
-            if (Shading.UseTextureBackground &&
-                !string.IsNullOrEmpty(Shading.LandformTextureId))
-            {
-                _resolvedFillTexture =
-                    assets.GetImage(Shading.LandformTextureId);
-            }
-
-            if (_resolvedFillTexture != null)
-            {
-                _resolvedTextureShader = SKShader.CreateImage(
-                    _resolvedFillTexture,
-                    SKShaderTileMode.Repeat,
-                    SKShaderTileMode.Repeat);
-            }
-
-            InvalidateRenderCache();
-        }
 
         // -------------------------------------------------
         // Geometry management
@@ -158,6 +133,11 @@
             InvalidateRenderCache();
         }
 
+        protected override void OnGeometryChanged()
+        {
+            base.OnGeometryChanged();
+            InvalidateRenderCache();
+        }
 
         // -------------------------------------------------
         // Rendering
@@ -477,27 +457,6 @@
         // Coastline rendering (outside landform)
         // -------------------------------------------------
 
-        /*
-        [Description("None")]
-        None = 0,
-        [Description("Uniform Band")]
-        UniformBand,
-        [Description("Uniform Blend")]
-        UniformBlend,
-        [Description("Uniform Outline")]
-        UniformOutline,
-        [Description("Three-Tiered")]
-        ThreeTiered,
-        [Description("Circular Pattern")]
-        CircularPattern,
-        [Description("Dash Pattern")]
-        DashPattern,
-        [Description("Hatch Pattern")]
-        HatchPattern,
-        [Description("User Defined")]
-        UserDefined
-        */
-
         private void RenderCoastline(SKCanvas canvas)
         {
             switch (Coastline.CoastlineStyle)
@@ -516,8 +475,8 @@
                 case LandformCoastlineStyle.ThreeTiered:
                     RenderThreeTiered(canvas);
                     break;
-                case LandformCoastlineStyle.CircularPattern:
-                    RenderCircularPatternCoastline(canvas);
+                case LandformCoastlineStyle.RipplePattern:
+                    RenderRipplePatternCoastline(canvas);
                     break;
                 case LandformCoastlineStyle.DashPattern:
                     if (Coastline.DashTexture != null)
@@ -642,7 +601,7 @@
                 });
         }
 
-        private void RenderCircularPatternCoastline(SKCanvas canvas)
+        private void RenderRipplePatternCoastline(SKCanvas canvas)
         {
             float depth = Coastline.EffectDistance;
 
@@ -957,10 +916,8 @@
 
         public void ResolveAssets(IAssetProvider assets)
         {
-
             // Resolve coastline style
-            // TODO: resolved textures will need to be nulled out when the coastline style changes on selected landform
-            if (Coastline.HatchTextureId != null)
+            if (Coastline.HatchTextureId != null && Coastline.HatchTexture == null)
             {
                 SKImage? hatchImage = assets.GetImage(Coastline.HatchTextureId);
 
@@ -974,7 +931,7 @@
                 }
             }
 
-            if (Coastline.DashTextureId != null)
+            if (Coastline.DashTextureId != null && Coastline.DashTexture == null)
             {
                 SKImage? dashImage = assets.GetImage(Coastline.DashTextureId);
 

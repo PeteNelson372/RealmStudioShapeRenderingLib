@@ -40,6 +40,10 @@ namespace RealmStudioShapeRenderingLib
 
         public string? LandformTextureId { get; set; }
 
+        public float? LandformTextureScale { get; set; } = 1.0f;
+
+        public bool LandformTextureMirror { get; set; }
+
         public int LandformOutlineWidth { get; set; } = 2;
 
         // -------------------------------------------------

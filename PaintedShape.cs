@@ -4,6 +4,7 @@ namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
     using System;
+    using System.Diagnostics;
 
     /// <summary>
     /// A painted, blob-style shape built from stamped circular brush strokes.
@@ -102,7 +103,7 @@ namespace RealmStudioShapeRenderingLib
             SetGeometry(result);
         }
 
-        public void RestoreGeometry(SKPath geometry)
+        public override void RestoreGeometry(SKPath geometry)
         {
             // Defensive copy so caller can't mutate internal state
             SetGeometry(new SKPath(geometry));
@@ -144,6 +145,99 @@ namespace RealmStudioShapeRenderingLib
 
             canvas.DrawPath(HitPath, fill);
             canvas.DrawPath(PerimeterPath, outline);
+        }
+
+        // used in rendering landforms and water bodies
+        public static ushort[] ComputeDistanceField(
+            SKBitmap maskBitmap,
+            int width,
+            int height,
+            ushort maxDepth)
+        {
+            ushort[] dist = new ushort[width * height];
+            var pixels = maskBitmap.Pixels;
+
+            Queue<int> queue = new();
+
+            // Initialize:
+            // White (ocean) = INF
+            // Black (land) = 0
+            for (int i = 0; i < dist.Length; i++)
+            {
+                dist[i] = maxDepth;
+            }
+
+            // Forward pass
+            for (int y = 1; y < height - 1; y++)
+            {
+                int row = y * width;
+
+                for (int x = 1; x < width - 1; x++)
+                {
+                    int idx = row + x;
+
+                    if (pixels[idx].Alpha == 0)
+                    {
+                        continue;
+                    }
+
+                    bool boundary =
+                        pixels[idx - 1].Alpha == 0 ||
+                        pixels[idx + 1].Alpha == 0 ||
+                        pixels[idx - width].Alpha == 0 ||
+                        pixels[idx + width].Alpha == 0;
+
+                    if (boundary)
+                    {
+                        dist[idx] = 0;
+                        queue.Enqueue(idx);
+                    }
+                }
+            }
+
+            while (queue.Count > 0)
+            {
+                int idx = queue.Dequeue();
+                ushort current = dist[idx];
+
+                if (current > maxDepth)
+                {
+                    continue;
+                }
+
+                int x = idx % width;
+                int y = idx / width;
+
+                void TryVisit(int nx, int ny)
+                {
+                    if (nx < 0 || ny < 0 || nx >= width || ny >= height)
+                    {
+                        return;
+                    }
+
+                    int nidx = ny * width + nx;
+
+                    if (pixels[nidx].Alpha == 0)
+                    {
+                        return;
+                    }
+
+                    ushort next = (ushort)(current + 1);
+
+                    if (next < dist[nidx])
+                    {
+                        dist[nidx] = next;
+                        queue.Enqueue(nidx);
+                    }
+                }
+
+                TryVisit(x - 1, y);
+                TryVisit(x + 1, y);
+                TryVisit(x, y - 1);
+                TryVisit(x, y + 1);
+            }
+
+            return dist;
         }
 
         // -------------------------------------------------

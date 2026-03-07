@@ -1,5 +1,6 @@
 ﻿#nullable enable
 
+using RealmStudioShapeRenderingLib;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -72,6 +73,10 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlAttribute("theme")]
         public string MapTheme { get; set; } = string.Empty;
+
+        public MapBackgroundSettings Background { get; set; } = new();
+
+        public OceanSettings Ocean { get; set; } = new();
 
         // -------------------------------------------------
         // External integrations

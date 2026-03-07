@@ -63,7 +63,15 @@
 
         public void EndInteractive()
         {
+            RenderMode = LandformRenderMode.Final;
             IsInteractive = false;
+
+            _interiorCache?.Dispose();
+            _interiorCache = null;
+
+            _coastlineCache?.Dispose();
+            _coastlineCache = null;
+
             InvalidateRenderCache();
         }
 
@@ -321,80 +329,6 @@
             }
 
             return SKImage.FromBitmap(bitmap);
-        }
-
-        private static ushort[] ComputeDistanceField(
-            SKBitmap bitmap,
-            int w,
-            int h,
-            ushort maxDepth)
-        {
-            const ushort INF = ushort.MaxValue;
-
-            ushort[] dist = new ushort[w * h];
-            var pixels = bitmap.GetPixelSpan();
-
-            // Initialize:
-            // White (ocean) = INF
-            // Black (land) = 0
-            for (int i = 0; i < dist.Length; i++)
-            {
-                dist[i] = pixels[i] > 0 ? INF : (ushort)0;
-            }
-
-            // Forward pass
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    int idx = y * w + x;
-
-                    ushort current = dist[idx];
-                    if (current == 0)
-                        continue;
-
-                    ushort min = current;
-
-                    if (x > 0)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx - 1] + 1, maxDepth));
-                    if (y > 0)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx - w] + 1, maxDepth));
-                    if (x > 0 && y > 0)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx - w - 1] + 1, maxDepth));
-                    if (x < w - 1 && y > 0)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx - w + 1] + 1, maxDepth));
-
-                    dist[idx] = min;
-                }
-            }
-
-            // Backward pass
-            for (int y = h - 1; y >= 0; y--)
-            {
-                for (int x = w - 1; x >= 0; x--)
-                {
-                    int idx = y * w + x;
-
-                    ushort current = dist[idx];
-                    if (current == 0)
-                        continue;
-
-                    ushort min = current;
-
-                    if (x < w - 1)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx + 1] + 1, maxDepth));
-                    if (y < h - 1)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx + w] + 1, maxDepth));
-                    if (x < w - 1 && y < h - 1)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx + w + 1] + 1, maxDepth));
-                    if (x > 0 && y < h - 1)
-                        min = Math.Min(min, (ushort)Math.Min(dist[idx + w - 1] + 1, maxDepth));
-
-                    dist[idx] = min;
-                }
-            }
-
-            return dist;
         }
 
         private void RenderFast(SKCanvas canvas)

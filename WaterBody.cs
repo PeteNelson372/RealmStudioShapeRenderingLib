@@ -60,7 +60,7 @@ namespace RealmStudioShapeRenderingLib
             canvas.Restore();
         }
 
-        private void RenderShoreline(SKCanvas canvas)
+        protected virtual void RenderShoreline(SKCanvas canvas)
         {
             canvas.Save();
 

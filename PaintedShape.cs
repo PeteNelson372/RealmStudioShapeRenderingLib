@@ -4,7 +4,6 @@ namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
     using System;
-    using System.Diagnostics;
 
     /// <summary>
     /// A painted, blob-style shape built from stamped circular brush strokes.

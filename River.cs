@@ -6,8 +6,6 @@ namespace RealmStudioShapeRenderingLib
     {
         public List<SKPoint> ControlPoints { get; } = [];
 
-        public float Width { get; set; } = 20f;
-
         public bool SourceFade { get; set; } = true;
 
         public float VariationSeed { get; set; }
@@ -25,7 +23,7 @@ namespace RealmStudioShapeRenderingLib
         public void RebuildGeometry()
         {
             var centerline = BezierBuilder.BuildSpline(ControlPoints);
-            var geom = RiverGeometryBuilder.BuildRiverPolygon(centerline, Width, SourceFade, VariationSeed);
+            var geom = RiverGeometryBuilder.BuildRiverPolygon(centerline, RenderSettings.RiverWidth, SourceFade, VariationSeed);
 
             SKPath riverPath = geom.Polygon;
 
@@ -33,8 +31,6 @@ namespace RealmStudioShapeRenderingLib
 
             _leftBank = geom.LeftBank;
             _rightBank = geom.RightBank;
-
-            InvalidateRenderCache();
         }
 
         public void BeginInteractive()
@@ -45,24 +41,9 @@ namespace RealmStudioShapeRenderingLib
         public void EndInteractive()
         {
             IsInteractive = false;
-
-            InvalidateRenderCache();
         }
 
-        public override void Render(SKCanvas canvas)
-        {
-            if (HitPath.IsEmpty) return;
-
-            if (IsInteractive)
-            {
-                RenderInteractive(canvas);
-                return;
-            }
-
-            base.Render(canvas);
-        }
-
-        private void RenderInteractive(SKCanvas canvas)
+        public void RenderInteractive(SKCanvas canvas)
         {
             using var paint = new SKPaint()
             {
@@ -72,41 +53,44 @@ namespace RealmStudioShapeRenderingLib
             };
 
             canvas.DrawPath(HitPath, paint);
+
+            RenderShoreline(canvas);
         }
 
         protected override void RenderShoreline(SKCanvas canvas)
         {
-            if (_leftBank == null || _rightBank == null) return;
+            if (_leftBank == null || _rightBank == null || _leftBank.Count <= 0 || _rightBank.Count <= 0) return;
 
             using var paint = new SKPaint()
             {
-                Style= SKPaintStyle.Stroke,
+                Style = SKPaintStyle.Stroke,
                 StrokeWidth = RenderSettings.ShorelineWidth,
                 Color = RenderSettings.ShorelineColor,
+                BlendMode = SKBlendMode.SrcOver,
                 IsAntialias = true,
             };
 
-            using var path = new SKPath();
+            using var leftpath = new SKPath();
 
-            path.MoveTo(_leftBank[0]);
+            leftpath.MoveTo(_leftBank[0]);
 
             for (int i = 1; i < _leftBank.Count; i++)
             {
-                path.LineTo(_leftBank[i]);
+                leftpath.LineTo(_leftBank[i]);
             }
 
-            canvas.DrawPath(path, paint);
+            canvas.DrawPath(leftpath, paint);
 
-            path.Reset();
+            using var rightpath = new SKPath();
 
-            path.MoveTo(_rightBank[0]);
+            rightpath.MoveTo(_rightBank[0]);
 
-            for (int i = 0; i < _rightBank.Count; ++i)
+            for (int i = 1; i < _rightBank.Count; ++i)
             {
-                path.MoveTo(_rightBank[i]);
+                rightpath.LineTo(_rightBank[i]);
             }
 
-            canvas.DrawPath(path, paint);
+            canvas.DrawPath(rightpath, paint);
         }
     }
 }

@@ -60,30 +60,45 @@
 
                 float variation = MathF.Sin(i * 0.45f + variationSeed) * 0.08f;
 
-                float variationFactor = Math.Clamp(1f + variation, 0.85f, 1.15f);
+                float variationFactor = Math.Clamp(1f + variation, 0.9f, 1.1f);
 
                 float halfWidth = halfBaseWidth * widthFactor * curvatureFactor * variationFactor;
 
                 float denom = Dot(bisector, normalNext);
 
-                float scale = halfWidth / MathF.Max(0.2F, MathF.Abs(denom));
+                float scale;
 
-                const float maxMiter = 2.5F;
+                if (MathF.Abs(denom) < 0.25f || float.IsNaN(denom))
+                {
+                    // fallback to simple perpendicular offset
+                    var dir = Normalize(new SKPoint(
+                        dirPrev.X + dirNext.X,
+                        dirPrev.Y + dirNext.Y));
 
-                scale = MathF.Min(scale, halfWidth * maxMiter);
+                    var normal = new SKPoint(-dir.Y, dir.X);
 
+                    var offset = new SKPoint(
+                        normal.X * halfWidth,
+                        normal.Y * halfWidth);
 
-                var offset = new SKPoint(
-                    bisector.X * scale,
-                    bisector.Y * scale);
+                    left.Add(new SKPoint(p.X + offset.X, p.Y + offset.Y));
+                    right.Add(new SKPoint(p.X - offset.X, p.Y - offset.Y));
+                }
+                else
+                {
+                    scale = halfWidth / denom;
 
-                left.Add(new SKPoint(
-                    p.X + offset.X,
-                    p.Y + offset.Y));
+                    const float maxMiter = 2.5f;
+                    scale = Math.Clamp(scale, -halfWidth * maxMiter, halfWidth * maxMiter);
 
-                right.Add(new SKPoint(
-                    p.X - offset.X,
-                    p.Y - offset.Y));
+                    var offset = new SKPoint(
+                        bisector.X * scale,
+                        bisector.Y * scale);
+
+                    left.Add(new SKPoint(p.X + offset.X, p.Y + offset.Y));
+                    right.Add(new SKPoint(p.X - offset.X, p.Y - offset.Y));
+                }
+
             }
 
             var path = new SKPath();

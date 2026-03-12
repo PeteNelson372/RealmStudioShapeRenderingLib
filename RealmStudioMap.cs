@@ -91,7 +91,15 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlArray("MapLayers")]
         [XmlArrayItem("Layer")]
-        public List<MapLayer> MapLayers { get; set; } = new();
+        public List<MapLayer> MapLayers { get; set; } = [];
+
+        // -------------------------------------------------
+        // Water Systems
+        // -------------------------------------------------
+
+        [XmlArray("WaterSystems")]
+        [XmlArrayItem("WaterSystem")]
+        public List<WaterSystem> WaterSystems { get; set; } = [];
 
         // -------------------------------------------------
         // Saved state

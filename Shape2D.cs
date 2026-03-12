@@ -6,7 +6,7 @@ namespace RealmStudioShapeRenderingLib
 
     public abstract class Shape2D : IShape2D
     {
-        public string Id => Guid.NewGuid().ToString();
+        public string Id { get; } = Guid.NewGuid().ToString();
 
         public event Action? GeometryChanged;
 

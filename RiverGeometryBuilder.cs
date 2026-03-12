@@ -12,6 +12,8 @@
         {
             centerline = Resample(centerline, width * 0.25f);
 
+            centerline = ApplyMeanderNoise(centerline, width, variationSeed);
+
             int count = centerline.Count;
             var left = new List<SKPoint>(count);
             var right = new List<SKPoint>(count);
@@ -38,9 +40,13 @@
                 var normalPrev = new SKPoint(-dirPrev.Y, dirPrev.X);
                 var normalNext = new SKPoint(-dirNext.Y, dirNext.X);
 
-                var bisector = Normalize(new SKPoint(
+                var bisectorRaw = new SKPoint(
                     normalPrev.X + normalNext.X,
-                    normalPrev.Y + normalNext.Y));
+                    normalPrev.Y + normalNext.Y);
+
+                var bisector = IsNearlyZero(bisectorRaw)
+                    ? normalNext
+                    : Normalize(bisectorRaw);
 
                 float t = i / (float)(count - 1);
 
@@ -58,11 +64,22 @@
 
                 float curvatureFactor = 1f + curvature * curvatureStrength;
 
-                float variation = MathF.Sin(i * 0.45f + variationSeed) * 0.08f;
+                float v1 = MathF.Sin(i * 0.18f + variationSeed) * 0.16f;
+                float v2 = MathF.Sin(i * 0.90f + variationSeed * 1.9f) * 0.09f;
+                float v3 = MathF.Sin(i * 3.20f + variationSeed * 3.4f) * 0.05f;
+                float v4 = MathF.Sin(i * 7.50f + variationSeed * 5.1f) * 0.025f;
 
-                float variationFactor = Math.Clamp(1f + variation, 0.9f, 1.1f);
+                float amp = 0.85f + 0.35f * MathF.Sin(i * 0.11f + variationSeed * 0.6f);
+
+                float variationFactor = 1f + (v1 + v2 + v3 + v4) * amp;
+                variationFactor = Math.Clamp(variationFactor, 0.72f, 1.35f);
 
                 float halfWidth = halfBaseWidth * widthFactor * curvatureFactor * variationFactor;
+
+                float asym = MathF.Sin(i * 1.35f + variationSeed * 4.7f) * 0.10f;
+
+                float leftHalfWidth = halfWidth * (1f + asym);
+                float rightHalfWidth = halfWidth * (1f - asym);
 
                 float denom = Dot(bisector, normalNext);
 
@@ -70,33 +87,61 @@
 
                 if (MathF.Abs(denom) < 0.25f || float.IsNaN(denom))
                 {
-                    // fallback to simple perpendicular offset
                     var dir = Normalize(new SKPoint(
                         dirPrev.X + dirNext.X,
                         dirPrev.Y + dirNext.Y));
 
                     var normal = new SKPoint(-dir.Y, dir.X);
 
-                    var offset = new SKPoint(
-                        normal.X * halfWidth,
-                        normal.Y * halfWidth);
+                    var leftOffset = new SKPoint(
+                        normal.X * leftHalfWidth,
+                        normal.Y * leftHalfWidth);
 
-                    left.Add(new SKPoint(p.X + offset.X, p.Y + offset.Y));
-                    right.Add(new SKPoint(p.X - offset.X, p.Y - offset.Y));
+                    var rightOffset = new SKPoint(
+                        normal.X * rightHalfWidth,
+                        normal.Y * rightHalfWidth);
+
+                    left.Add(new SKPoint(p.X + leftOffset.X, p.Y + leftOffset.Y));
+                    right.Add(new SKPoint(p.X - rightOffset.X, p.Y - rightOffset.Y));
                 }
                 else
                 {
                     scale = halfWidth / denom;
 
                     const float maxMiter = 2.5f;
-                    scale = Math.Clamp(scale, -halfWidth * maxMiter, halfWidth * maxMiter);
 
-                    var offset = new SKPoint(
-                        bisector.X * scale,
-                        bisector.Y * scale);
+                    if (MathF.Abs(scale) > halfWidth * maxMiter)
+                    {
+                        var leftOffset = new SKPoint(
+                            normalNext.X * leftHalfWidth,
+                            normalNext.Y * leftHalfWidth);
 
-                    left.Add(new SKPoint(p.X + offset.X, p.Y + offset.Y));
-                    right.Add(new SKPoint(p.X - offset.X, p.Y - offset.Y));
+                        var rightOffset = new SKPoint(
+                            normalNext.X * rightHalfWidth,
+                            normalNext.Y * rightHalfWidth);
+
+                        left.Add(new SKPoint(p.X + leftOffset.X, p.Y + leftOffset.Y));
+                        right.Add(new SKPoint(p.X - rightOffset.X, p.Y - rightOffset.Y));
+                    }
+                    else
+                    {
+                        float leftScale = leftHalfWidth / denom;
+                        float rightScale = rightHalfWidth / denom;
+
+                        leftScale = Math.Clamp(leftScale, -leftHalfWidth * maxMiter, leftHalfWidth * maxMiter);
+                        rightScale = Math.Clamp(rightScale, -rightHalfWidth * maxMiter, rightHalfWidth * maxMiter);
+
+                        var leftOffset = new SKPoint(
+                            bisector.X * leftScale,
+                            bisector.Y * leftScale);
+
+                        var rightOffset = new SKPoint(
+                            bisector.X * rightScale,
+                            bisector.Y * rightScale);
+
+                        left.Add(new SKPoint(p.X + leftOffset.X, p.Y + leftOffset.Y));
+                        right.Add(new SKPoint(p.X - rightOffset.X, p.Y - rightOffset.Y));
+                    }
                 }
 
             }
@@ -127,6 +172,107 @@
             return returnGeometry;
         }
 
+        public static List<SKPoint> ApplyMeanderNoise(
+            IReadOnlyList<SKPoint> centerline,
+            float width,
+            float seed)
+        {
+            int count = centerline.Count;
+            var result = new List<SKPoint>(count);
+
+            float dist = 0f;
+
+            for (int i = 0; i < count; i++)
+            {
+                var p = centerline[i];
+
+                if (i > 0)
+                    dist += SKPoint.Distance(centerline[i - 1], centerline[i]);
+
+                var dirPrev = GetPrevDirection(centerline, i);
+                var dirNext = GetNextDirection(centerline, i);
+
+                var dir = Normalize(new SKPoint(
+                    dirPrev.X + dirNext.X,
+                    dirPrev.Y + dirNext.Y));
+
+                var normal = new SKPoint(-dir.Y, dir.X);
+
+                // wavelength scales with river width
+                float s = dist / width;
+
+                float n1 = MathF.Sin(s * 0.30f + seed) * 0.9f;
+                float n2 = MathF.Sin(s * 0.90f + seed * 1.7f) * 0.35f;
+                float n3 = MathF.Sin(s * 2.50f + seed * 3.3f) * 0.15f;
+
+                float noise = n1 + n2 + n3;
+
+                float offset = noise * width * 0.6f;
+
+                var displaced = new SKPoint(
+                    p.X + normal.X * offset,
+                    p.Y + normal.Y * offset);
+
+                result.Add(displaced);
+            }
+
+            return result;
+        }
+
+        /*
+        public static List<SKPoint> ApplyMeanderNoise(
+            IReadOnlyList<SKPoint> centerline,
+            float width,
+            float seed)
+        {
+            int count = centerline.Count;
+
+            var result = new List<SKPoint>(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                var p = centerline[i];
+
+                var dirPrev = GetPrevDirection(centerline, i);
+                var dirNext = GetNextDirection(centerline, i);
+
+                var dir = Normalize(new SKPoint(
+                    dirPrev.X + dirNext.X,
+                    dirPrev.Y + dirNext.Y));
+
+                var normal = new SKPoint(-dir.Y, dir.X);
+
+                // layered smooth noise
+                float n1 = MathF.Sin(i * 0.18f + seed) * 0.8f;
+                float n2 = MathF.Sin(i * 0.55f + seed * 1.7f) * 0.35f;
+                float n3 = MathF.Sin(i * 1.7f + seed * 3.1f) * 0.15f;
+
+                float noise = n1 + n2 + n3;
+
+                // displacement proportional to river width
+                float offset = noise * width * 0.4f;
+
+                var displaced = new SKPoint(
+                    p.X + normal.X * offset,
+                    p.Y + normal.Y * offset);
+
+                result.Add(displaced);
+            }
+
+            return result;
+        }
+        */
+
+        static float LengthSquared(SKPoint v)
+        {
+            return v.X * v.X + v.Y * v.Y;
+        }
+
+        static bool IsNearlyZero(SKPoint v)
+        {
+            return LengthSquared(v) < 1e-6f;
+        }
+
         private static SKPoint GetPrevDirection(IReadOnlyList<SKPoint> pts, int i)
         {
             if (i == 0)
@@ -151,7 +297,7 @@
                 pts[i + 1].Y - pts[i].Y));
         }
 
-        private static SKPoint Normalize(SKPoint v)
+        public static SKPoint Normalize(SKPoint v)
         {
             float len = MathF.Sqrt(v.X * v.X + v.Y * v.Y);
 
@@ -163,10 +309,11 @@
             return new SKPoint(v.X / len, v.Y / len);
         }
 
-        private static float Dot(SKPoint a, SKPoint b)
+        public static float Dot(SKPoint a, SKPoint b)
         {
             return a.X * b.X + a.Y * b.Y;
         }
+
 
         private static float DistanceToPath(SKPoint p, SKPath perimeter)
         {

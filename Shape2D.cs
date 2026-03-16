@@ -56,8 +56,7 @@ namespace RealmStudioShapeRenderingLib
 
         public virtual void RestoreGeometry(SKPath path)
         {
-            if (path == null)
-                throw new ArgumentNullException(nameof(path));
+            ArgumentNullException.ThrowIfNull(path);
 
             SetGeometry(new SKPath(path));
         }
@@ -88,6 +87,22 @@ namespace RealmStudioShapeRenderingLib
         }
 
         // -------------------------------------------------
+        // Undo / Redo Support
+        // -------------------------------------------------
+
+        public virtual IShapeState CaptureState()
+        {
+            return new Shape2DState(new SKPath(HitPath));
+        }
+
+        public virtual void RestoreState(IShapeState state)
+        {
+            RestoreGeometry(((Shape2DState)state).Geometry);
+            OnGeometryChanged();
+        }
+
+
+        // -------------------------------------------------
         // Rendering
         // -------------------------------------------------
 
@@ -108,6 +123,11 @@ namespace RealmStudioShapeRenderingLib
 
             canvas.DrawPath(HitPath, paint);
         }
+    }
+
+    public class Shape2DState(SKPath geometry) : IShapeState
+    {
+        public SKPath Geometry { get; } = geometry;        
     }
 
 }

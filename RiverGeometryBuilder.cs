@@ -219,49 +219,6 @@
             return result;
         }
 
-        /*
-        public static List<SKPoint> ApplyMeanderNoise(
-            IReadOnlyList<SKPoint> centerline,
-            float width,
-            float seed)
-        {
-            int count = centerline.Count;
-
-            var result = new List<SKPoint>(count);
-
-            for (int i = 0; i < count; i++)
-            {
-                var p = centerline[i];
-
-                var dirPrev = GetPrevDirection(centerline, i);
-                var dirNext = GetNextDirection(centerline, i);
-
-                var dir = Normalize(new SKPoint(
-                    dirPrev.X + dirNext.X,
-                    dirPrev.Y + dirNext.Y));
-
-                var normal = new SKPoint(-dir.Y, dir.X);
-
-                // layered smooth noise
-                float n1 = MathF.Sin(i * 0.18f + seed) * 0.8f;
-                float n2 = MathF.Sin(i * 0.55f + seed * 1.7f) * 0.35f;
-                float n3 = MathF.Sin(i * 1.7f + seed * 3.1f) * 0.15f;
-
-                float noise = n1 + n2 + n3;
-
-                // displacement proportional to river width
-                float offset = noise * width * 0.4f;
-
-                var displaced = new SKPoint(
-                    p.X + normal.X * offset,
-                    p.Y + normal.Y * offset);
-
-                result.Add(displaced);
-            }
-
-            return result;
-        }
-        */
 
         static float LengthSquared(SKPoint v)
         {

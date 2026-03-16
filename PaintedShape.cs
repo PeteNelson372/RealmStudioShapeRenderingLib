@@ -3,7 +3,6 @@
 namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
-    using System;
 
     /// <summary>
     /// A painted, blob-style shape built from stamped circular brush strokes.
@@ -46,7 +45,7 @@ namespace RealmStudioShapeRenderingLib
                 return;
 
             float minDistance = BrushRadius * BrushSpacing;
-            if (Distance(_lastPoint.Value, point) < minDistance)
+            if (Utilities.Distance(_lastPoint.Value, point) < minDistance)
                 return;
 
             _lastPoint = point;
@@ -146,8 +145,7 @@ namespace RealmStudioShapeRenderingLib
             canvas.DrawPath(PerimeterPath, outline);
         }
 
-        // used in rendering landforms and water bodies
-        public static ushort[] ComputeDistanceField(
+        public static ushort[] ComputeDistanceFieldFast(
             SKBitmap maskBitmap,
             int width,
             int height,
@@ -156,17 +154,120 @@ namespace RealmStudioShapeRenderingLib
             ushort[] dist = new ushort[width * height];
             var pixels = maskBitmap.Pixels;
 
-            Queue<int> queue = new();
+            const ushort INF = ushort.MaxValue;
 
-            // Initialize:
-            // White (ocean) = INF
-            // Black (land) = 0
-            for (int i = 0; i < dist.Length; i++)
+            // ------------------------------------------------
+            // Initialization (parallel)
+            // ------------------------------------------------
+
+            Parallel.For(0, dist.Length, i =>
             {
-                dist[i] = maxDepth;
+                dist[i] = INF;
+            });
+
+            // ------------------------------------------------
+            // Detect shoreline boundary (parallel by rows)
+            // ------------------------------------------------
+
+            Parallel.For(1, height - 1, y =>
+            {
+                int row = y * width;
+
+                for (int x = 1; x < width - 1; x++)
+                {
+                    int idx = row + x;
+
+                    if (pixels[idx].Alpha == 0)
+                        continue;
+
+                    if (pixels[idx - 1].Alpha == 0 ||
+                        pixels[idx + 1].Alpha == 0 ||
+                        pixels[idx - width].Alpha == 0 ||
+                        pixels[idx + width].Alpha == 0)
+                    {
+                        dist[idx] = 0;
+                    }
+                }
+            });
+
+            // ------------------------------------------------
+            // Forward pass (must remain sequential)
+            // ------------------------------------------------
+
+            for (int y = 1; y < height; y++)
+            {
+                int row = y * width;
+
+                for (int x = 1; x < width; x++)
+                {
+                    int idx = row + x;
+
+                    if (dist[idx] == 0)
+                        continue;
+
+                    ushort best = dist[idx];
+
+                    best = Math.Min(best, (ushort)(dist[idx - 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx - width] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx - width - 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx - width + 1] + 1));
+
+                    dist[idx] = best;
+                }
             }
 
-            // Forward pass
+            // ------------------------------------------------
+            // Backward pass (must remain sequential)
+            // ------------------------------------------------
+
+            for (int y = height - 2; y >= 0; y--)
+            {
+                int row = y * width;
+
+                for (int x = width - 2; x >= 0; x--)
+                {
+                    int idx = row + x;
+
+                    ushort best = dist[idx];
+
+                    best = Math.Min(best, (ushort)(dist[idx + 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx + width] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx + width + 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx + width - 1] + 1));
+
+                    if (best > maxDepth)
+                        best = maxDepth;
+
+                    dist[idx] = best;
+                }
+            }
+
+            return dist;
+        }
+
+        /*
+        // used in rendering landforms and water bodies
+        public static ushort[] ComputeDistanceFieldFast(
+            SKBitmap maskBitmap,
+            int width,
+            int height,
+            ushort maxDepth)
+        {
+            ushort[] dist = new ushort[width * height];
+            var pixels = maskBitmap.Pixels;
+
+            const ushort INF = ushort.MaxValue;
+
+            // Initialize
+            for (int i = 0; i < dist.Length; i++)
+            {
+                if (pixels[i].Alpha == 0)
+                    dist[i] = INF;
+                else
+                    dist[i] = INF;
+            }
+
+            // Detect shoreline boundary
             for (int y = 1; y < height - 1; y++)
             {
                 int row = y * width;
@@ -176,78 +277,68 @@ namespace RealmStudioShapeRenderingLib
                     int idx = row + x;
 
                     if (pixels[idx].Alpha == 0)
-                    {
                         continue;
-                    }
 
-                    bool boundary =
-                        pixels[idx - 1].Alpha == 0 ||
+                    if (pixels[idx - 1].Alpha == 0 ||
                         pixels[idx + 1].Alpha == 0 ||
                         pixels[idx - width].Alpha == 0 ||
-                        pixels[idx + width].Alpha == 0;
-
-                    if (boundary)
+                        pixels[idx + width].Alpha == 0)
                     {
                         dist[idx] = 0;
-                        queue.Enqueue(idx);
                     }
                 }
             }
 
-            while (queue.Count > 0)
+            // Forward pass
+            for (int y = 1; y < height; y++)
             {
-                int idx = queue.Dequeue();
-                ushort current = dist[idx];
+                int row = y * width;
 
-                if (current > maxDepth)
+                for (int x = 1; x < width; x++)
                 {
-                    continue;
+                    int idx = row + x;
+
+                    if (dist[idx] == 0)
+                        continue;
+
+                    ushort best = dist[idx];
+
+                    best = Math.Min(best, (ushort)(dist[idx - 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx - width] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx - width - 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx - width + 1] + 1));
+
+                    dist[idx] = best;
                 }
+            }
 
-                int x = idx % width;
-                int y = idx / width;
+            // Backward pass
+            for (int y = height - 2; y >= 0; y--)
+            {
+                int row = y * width;
 
-                void TryVisit(int nx, int ny)
+                for (int x = width - 2; x >= 0; x--)
                 {
-                    if (nx < 0 || ny < 0 || nx >= width || ny >= height)
-                    {
-                        return;
-                    }
+                    int idx = row + x;
 
-                    int nidx = ny * width + nx;
+                    ushort best = dist[idx];
 
-                    if (pixels[nidx].Alpha == 0)
-                    {
-                        return;
-                    }
+                    best = Math.Min(best, (ushort)(dist[idx + 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx + width] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx + width + 1] + 1));
+                    best = Math.Min(best, (ushort)(dist[idx + width - 1] + 1));
 
-                    ushort next = (ushort)(current + 1);
+                    dist[idx] = best;
 
-                    if (next < dist[nidx])
-                    {
-                        dist[nidx] = next;
-                        queue.Enqueue(nidx);
-                    }
+                    if (dist[idx] > maxDepth)
+                        dist[idx] = maxDepth;
                 }
-
-                TryVisit(x - 1, y);
-                TryVisit(x + 1, y);
-                TryVisit(x, y - 1);
-                TryVisit(x, y + 1);
             }
 
             return dist;
         }
 
-        // -------------------------------------------------
-        // Helpers
-        // -------------------------------------------------
+        */
 
-        private static float Distance(SKPoint a, SKPoint b)
-        {
-            float dx = a.X - b.X;
-            float dy = a.Y - b.Y;
-            return MathF.Sqrt(dx * dx + dy * dy);
-        }
     }
 }

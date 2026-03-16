@@ -2,6 +2,12 @@
 
 namespace RealmStudioShapeRenderingLib
 {
+
+    public class RiverState : IShapeState
+    {
+        public List<SKPoint> ControlPoints = [];
+    }
+
     public class River : WaterBody
     {
         public List<SKPoint> ControlPoints { get; } = [];
@@ -9,8 +15,6 @@ namespace RealmStudioShapeRenderingLib
         public bool SourceFade { get; set; } = true;
 
         public float VariationSeed { get; set; }
-
-        public bool IsInteractive { get; set; } = true;
 
         private List<SKPoint>? _leftBank;
         private List<SKPoint>? _rightBank;
@@ -33,14 +37,29 @@ namespace RealmStudioShapeRenderingLib
             _rightBank = geom.RightBank;
         }
 
-        public void BeginInteractive()
+        // -------------------------------------------------
+        // Undo / Redo Support
+        // -------------------------------------------------
+
+        public override IShapeState CaptureState()
         {
-            IsInteractive = true;
+            RiverState state = new()
+            {
+                ControlPoints = [.. ControlPoints]
+            };
+
+            return state;
         }
 
-        public void EndInteractive()
+        public override void RestoreState(IShapeState state)
         {
-            IsInteractive = false;
+            var s = (RiverState)state;
+
+            ControlPoints.Clear();
+
+            ControlPoints.AddRange(s.ControlPoints);
+
+            OnGeometryChanged();
         }
 
         public void RenderInteractive(SKCanvas canvas)
@@ -93,4 +112,5 @@ namespace RealmStudioShapeRenderingLib
             canvas.DrawPath(rightpath, paint);
         }
     }
+
 }

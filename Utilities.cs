@@ -32,5 +32,113 @@ namespace RealmStudioShapeRenderingLib
             var bounds = path.Bounds;
             return new SKPoint(bounds.MidX, bounds.MidY);
         }
+
+        // -------------------------------------------------
+        // Helpers
+        // -------------------------------------------------
+
+        public static float Distance(SKPoint a, SKPoint b)
+        {
+            return SKPoint.Distance(a, b);
+        }
+
+        public static List<SKPoint> SimplifyContour(List<SKPoint> pts, float tolerance = 0.5f)
+        {
+            if (pts.Count < 3)
+                return pts;
+
+            var result = new List<SKPoint>
+            {
+                pts[0]
+            };
+
+            for (int i = 1; i < pts.Count - 1; i++)
+            {
+                var a = result[^1];
+                var b = pts[i];
+                var c = pts[i + 1];
+
+                float area = MathF.Abs(
+                    (b.X - a.X) * (c.Y - a.Y) -
+                    (b.Y - a.Y) * (c.X - a.X));
+
+                if (area > tolerance)
+                    result.Add(b);
+            }
+
+            result.Add(pts[^1]);
+
+            return result;
+        }
+
+        public static SKPath SimplifyPath(SKPath path)
+        {
+            var contours = ExtractContours(path);
+
+            var newPath = new SKPath();
+
+            foreach (var contour in contours)
+            {
+                var simplified = SimplifyContour([.. contour.Points]);
+
+                if (simplified.Count < 3)
+                    continue;
+
+                newPath.MoveTo(simplified[0]);
+
+                for (int i = 1; i < simplified.Count; i++)
+                    newPath.LineTo(simplified[i]);
+
+                newPath.Close();
+            }
+
+            return newPath;
+        }
+
+        public static List<SKPath> ExtractContours(SKPath path)
+        {
+            var result = new List<SKPath>();
+
+            if (path == null || path.IsEmpty)
+                return result;
+
+            using var measure = new SKPathMeasure(path, false);
+
+            do
+            {
+                float length = measure.Length;
+                if (length <= 0f)
+                    continue;
+
+                var contourPath = new SKPath();
+
+                const int sampleCount = 128; // increase if shapes are complex
+                bool first = true;
+
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    float distance = length * i / (sampleCount - 1);
+
+                    if (measure.GetPosition(distance, out var pt))
+                    {
+                        if (first)
+                        {
+                            contourPath.MoveTo(pt);
+                            first = false;
+                        }
+                        else
+                        {
+                            contourPath.LineTo(pt);
+                        }
+                    }
+                }
+
+                contourPath.Close();
+                result.Add(contourPath);
+
+            } while (measure.NextContour());
+
+            return result;
+        }
     }
 }

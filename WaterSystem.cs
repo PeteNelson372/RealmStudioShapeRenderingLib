@@ -20,8 +20,10 @@ namespace RealmStudioShapeRenderingLib
 
         private SKImage? _shadingMask;
         private bool _renderModified = true;
+        private bool _geometryModified = true;
         private int _maskOriginX = 0;
         private int _maskOriginY = 0;
+        private bool _interactive;
 
         public void Add(WaterBody body)
         {
@@ -36,14 +38,12 @@ namespace RealmStudioShapeRenderingLib
                 RenderSettings = WaterRenderSettings.Clone(body.RenderSettings);
                 return;
             }
-
-            using var union = MergedGeometry.Op(body.HitPath, SKPathOp.Union);
-
-            if (union != null && !union.IsEmpty)
+            else
             {
-                MergedGeometry?.Dispose();
-                MergedGeometry = new SKPath(union);
+                body.RenderSettings = WaterRenderSettings.Clone(RenderSettings);
             }
+
+            _geometryModified = true;
 
             InvalidateRenderCache();
         }
@@ -51,33 +51,90 @@ namespace RealmStudioShapeRenderingLib
         public void Remove(WaterBody body)
         {
             WaterBodies.Remove(body);
-            RebuildMergedGeometry();
+            body.WaterSystem = null;
+
+            _geometryModified = true;
 
             InvalidateRenderCache();
         }
 
-        public void RebuildMergedGeometry()
+        private void EnsureMergedGeometry()
         {
+            if (!_geometryModified)
+            {
+                return;
+            }
+
             MergedGeometry?.Dispose();
-            MergedGeometry = new();
+            MergedGeometry = new SKPath();
+
+            if (WaterBodies.Count == 0)
+            {
+                _geometryModified = false;
+                return;
+            }
+
+            var processed = new HashSet<WaterBody>();
 
             foreach (var body in WaterBodies)
             {
-                if (MergedGeometry.IsEmpty)
-                {
-                    MergedGeometry = new(body.HitPath);
-                }
-                else
-                {
-                    using var union = MergedGeometry.Op(body.HitPath, SKPathOp.Union);
+                if (processed.Contains(body))
+                    continue;
 
-                    if (union != null)
+                // Start a cluster
+                var clusterUnion = new SKPath(body.HitPath);
+                processed.Add(body);
+
+                bool expanded;
+
+                do
+                {
+                    expanded = false;
+
+                    foreach (var other in WaterBodies)
                     {
-                        MergedGeometry.Dispose();
-                        MergedGeometry = new SKPath(union);
+                        if (processed.Contains(other))
+                        {
+                            continue;
+                        }
+
+                        if (!clusterUnion.Bounds.IntersectsWith(other.Bounds))
+                        {
+                            continue;
+                        }
+
+                        using var union = clusterUnion.Op(other.HitPath, SKPathOp.Union);
+
+                        if (union != null && !union.IsEmpty)
+                        {
+                            clusterUnion.Dispose();
+                            clusterUnion = new SKPath(union);
+
+                            processed.Add(other);
+                            expanded = true;
+                        }
                     }
-                }
+
+                } while (expanded);
+
+                // Append cluster to final geometry
+                MergedGeometry.AddPath(clusterUnion);
+
+                clusterUnion.Dispose();
             }
+
+            _geometryModified = false;
+        }
+
+        public void BeginInteractive()
+        {
+            _interactive = true;
+        }
+
+        public void EndInteractive()
+        {
+            _interactive = false;
+            InvalidateRenderCache();
         }
 
         public void Render(SKCanvas canvas)
@@ -87,16 +144,52 @@ namespace RealmStudioShapeRenderingLib
                 return;
             }
 
-            RenderInterior(canvas, MergedGeometry);
-            RenderShoreline(canvas, MergedGeometry);            
+            EnsureMergedGeometry();
+
+            if (_interactive)
+            {
+                RenderInteractive(canvas);
+            }
+            else
+            {
+                RenderInterior(canvas, MergedGeometry);
+                RenderShoreline(canvas, MergedGeometry);
+            }
         }
 
 
+        private void RenderInteractive(SKCanvas canvas)
+        {
+            if (MergedGeometry == null || MergedGeometry.IsEmpty)
+                return;
+
+            using var fill = new SKPaint
+            {
+                Style = SKPaintStyle.Fill,
+                Color = RenderSettings.ShallowWaterColor,
+                IsAntialias = true
+            };
+
+            using var shoreline = new SKPaint
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = RenderSettings.ShorelineWidth,
+                Color = RenderSettings.ShorelineColor,
+                IsAntialias = true
+            };
+
+            canvas.DrawPath(MergedGeometry, fill);
+            canvas.DrawPath(MergedGeometry, shoreline);
+        }
+        
         private SKImage? BuildWaterShadingMask(SKPath geometry)
         {
             var bounds = geometry.Bounds;
 
-            float padding = Math.Max(RenderSettings.ShallowDepth, RenderSettings.ShelfDepth) + 2;
+            float shelfDepth = Math.Max(RenderSettings.ShelfDepth, RenderSettings.RiverWidth * 0.18f);
+            float shallowDepth = RenderSettings.ShallowDepth;
+
+            float padding = Math.Max(shallowDepth, shelfDepth) + 2;
 
             bounds.Inflate(padding, padding);
 
@@ -105,7 +198,6 @@ namespace RealmStudioShapeRenderingLib
 
             int width = (int)MathF.Ceiling(bounds.Right) - _maskOriginX;
             int height = (int)MathF.Ceiling(bounds.Bottom) - _maskOriginY;
-
 
             if (width <= 0 || height <= 0)
                 return null;
@@ -122,13 +214,17 @@ namespace RealmStudioShapeRenderingLib
                 {
                     Style = SKPaintStyle.Fill,
                     Color = SKColors.White,
-                    IsAntialias = false,
+                    IsAntialias = true
                 };
 
                 canvas.DrawPath(MergedGeometry, paint);
             }
 
-            ushort[] dist = PaintedShape.ComputeDistanceField(maskBitmap, width, height, (ushort)RenderSettings.ShallowDepth);
+            ushort[] dist = PaintedShape.ComputeDistanceFieldFast(
+                maskBitmap,
+                width,
+                height,
+                (ushort)shallowDepth);
 
             using var output = new SKBitmap(width, height);
 
@@ -137,6 +233,7 @@ namespace RealmStudioShapeRenderingLib
             for (int y = 0; y < height; y++)
             {
                 int row = y * width;
+
                 for (int x = 0; x < width; x++)
                 {
                     int idx = row + x;
@@ -149,17 +246,16 @@ namespace RealmStudioShapeRenderingLib
 
                     ushort d = dist[idx];
 
-                    float t = Math.Clamp((float)d / RenderSettings.ShallowDepth, 0f, 1f);
+                    float t = Math.Clamp((float)d / shallowDepth, 0f, 1f);
 
                     t = MathF.Sqrt(t);
-
                     t = MathF.Pow(t, RenderSettings.DeepBias);
 
-                    var color = SKColors.Transparent;
+                    SKColor color;
 
-                    if (d < RenderSettings.ShelfDepth)
+                    if (d < shelfDepth)
                     {
-                        float shelfT = (float)d / RenderSettings.ShelfDepth;
+                        float shelfT = (float)d / shelfDepth;
 
                         var shelfColor = Utilities.LerpColor(
                             RenderSettings.ShallowWaterColor,
@@ -185,6 +281,7 @@ namespace RealmStudioShapeRenderingLib
 
             return SKImage.FromBitmap(output);
         }
+        
 
         public void InvalidateRenderCache()
         {

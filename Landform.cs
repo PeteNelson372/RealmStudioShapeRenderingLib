@@ -161,7 +161,6 @@
             {
                 RenderCoastline(canvas);
                 RenderFast(canvas);
-                return;
             }
         }
 
@@ -297,7 +296,7 @@
                 1,
                 ushort.MaxValue);
 
-            ushort[] dist = ComputeDistanceField(bitmap, w, h, maxDepth);
+            ushort[] dist = ComputeDistanceFieldFast(bitmap, w, h, maxDepth);
 
             var pixels = bitmap.GetPixelSpan();
 

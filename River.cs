@@ -12,9 +12,9 @@ namespace RealmStudioShapeRenderingLib
     {
         public List<SKPoint> ControlPoints { get; } = [];
 
-        public bool SourceFade { get; set; } = true;
-
         public float VariationSeed { get; set; }
+
+        public EditablePolylineEditor Editor { get; }
 
         private List<SKPoint>? _leftBank;
         private List<SKPoint>? _rightBank;
@@ -22,12 +22,24 @@ namespace RealmStudioShapeRenderingLib
         public River()
         {
             VariationSeed = Random.Shared.NextSingle() * 1000f;
+            Editor = new EditablePolylineEditor(ControlPoints)
+            {
+                OnChanged = () =>
+                {
+                    RebuildGeometry();
+                }
+            };
         }
 
         public void RebuildGeometry()
         {
+            if (ControlPoints.Count < 2)
+            {
+                return;
+            }
+
             var centerline = BezierBuilder.BuildSpline(ControlPoints);
-            var geom = RiverGeometryBuilder.BuildRiverPolygon(centerline, RenderSettings.RiverWidth, SourceFade, VariationSeed);
+            var geom = RiverGeometryBuilder.BuildRiverPolygon(centerline, RenderSettings.RiverWidth, RenderSettings.RiverSourceFadeIn, VariationSeed);
 
             SKPath riverPath = geom.Polygon;
 

@@ -4,7 +4,7 @@ namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
 
-    public abstract class Shape2D : IShape2D
+    public abstract class Shape2D : IShape2D, ISelectable
     {
         public string Id { get; } = Guid.NewGuid().ToString();
 
@@ -122,6 +122,15 @@ namespace RealmStudioShapeRenderingLib
             };
 
             canvas.DrawPath(HitPath, paint);
+        }
+
+        // -------------------------------------------------
+        // HitTest
+        // -------------------------------------------------
+        public virtual bool HitTest(SKPoint worldPos)
+        {
+            return Bounds.Contains(worldPos) &&
+                   HitPath.Contains(worldPos.X, worldPos.Y);
         }
     }
 

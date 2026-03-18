@@ -2,7 +2,7 @@
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class WaterSystem
+    public class WaterSystem : ISelectable
     {
         public string Id { get; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -17,6 +17,9 @@ namespace RealmStudioShapeRenderingLib
         public SKRect Bounds { get; private set; }
 
         public WaterRenderSettings RenderSettings { get; set; } = new();
+
+        public bool IsSelected { get; set; }
+        
 
         private SKImage? _shadingMask;
         private bool _renderModified = true;
@@ -56,6 +59,11 @@ namespace RealmStudioShapeRenderingLib
             _geometryModified = true;
 
             InvalidateRenderCache();
+        }
+
+        public void GeometryModified()
+        {
+            _geometryModified = true; 
         }
 
         private void EnsureMergedGeometry()
@@ -181,7 +189,7 @@ namespace RealmStudioShapeRenderingLib
             canvas.DrawPath(MergedGeometry, fill);
             canvas.DrawPath(MergedGeometry, shoreline);
         }
-        
+
         private SKImage? BuildWaterShadingMask(SKPath geometry)
         {
             var bounds = geometry.Bounds;
@@ -202,7 +210,7 @@ namespace RealmStudioShapeRenderingLib
             if (width <= 0 || height <= 0)
                 return null;
 
-            using var maskBitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+            using var maskBitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
 
             using (var canvas = new SKCanvas(maskBitmap))
             {
@@ -210,14 +218,19 @@ namespace RealmStudioShapeRenderingLib
 
                 canvas.Translate(-_maskOriginX, -_maskOriginY);
 
+                using var geom = new SKPath(geometry)
+                {
+                    FillType = SKPathFillType.EvenOdd
+                };
+
                 using var paint = new SKPaint
                 {
                     Style = SKPaintStyle.Fill,
                     Color = SKColors.White,
-                    IsAntialias = true
+                    IsAntialias = false
                 };
 
-                canvas.DrawPath(MergedGeometry, paint);
+                canvas.DrawPath(geom, paint);
             }
 
             ushort[] dist = PaintedShape.ComputeDistanceFieldFast(
@@ -226,62 +239,62 @@ namespace RealmStudioShapeRenderingLib
                 height,
                 (ushort)shallowDepth);
 
-            using var output = new SKBitmap(width, height);
-
-            var maskPixels = maskBitmap.Pixels;
-
-            for (int y = 0; y < height; y++)
+            // --------------------------------------------
+            // Ensure LUT exists
+            // --------------------------------------------
+            if (RenderSettings.DepthColorLUT == null ||
+                RenderSettings.DepthColorLUT.Length != (int)shallowDepth + 1)
             {
-                int row = y * width;
+                RenderSettings.DepthColorLUT = Utilities.BuildWaterColorLUT(RenderSettings);
+            }
 
-                for (int x = 0; x < width; x++)
+            var lut = RenderSettings.DepthColorLUT!;
+            var deepColor = RenderSettings.DeepWaterColor;
+
+            using var output = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+            output.Erase(SKColors.Transparent);
+
+            unsafe
+            {
+                byte* maskBase = (byte*)maskBitmap.GetPixels().ToPointer();
+                int maskRowBytes = maskBitmap.RowBytes;
+
+                byte* outBase = (byte*)output.GetPixels().ToPointer();
+                int outRowBytes = output.RowBytes;
+
+                var lutLocal = lut;           // local copy for speed
+                var deepLocal = deepColor;
+                int lutLen = lutLocal.Length;
+
+                // --------------------------------------------
+                // PARALLEL ROW PROCESSING
+                // --------------------------------------------
+                Parallel.For(0, height, y =>
                 {
-                    int idx = row + x;
+                    SKColor* maskRow = (SKColor*)(maskBase + y * maskRowBytes);
+                    SKColor* outRow = (SKColor*)(outBase + y * outRowBytes);
 
-                    if (maskPixels[idx].Alpha == 0)
+                    int row = y * width;
+
+                    for (int x = 0; x < width; x++)
                     {
-                        output.SetPixel(x, y, SKColors.Transparent);
-                        continue;
+                        int idx = row + x;
+
+                        if (maskRow[x].Alpha != 0)
+                        {
+                            ushort d = dist[idx];
+
+                            outRow[x] = (d >= lutLen)
+                                ? deepLocal
+                                : lutLocal[d];
+                        }
                     }
-
-                    ushort d = dist[idx];
-
-                    float t = Math.Clamp((float)d / shallowDepth, 0f, 1f);
-
-                    t = MathF.Sqrt(t);
-                    t = MathF.Pow(t, RenderSettings.DeepBias);
-
-                    SKColor color;
-
-                    if (d < shelfDepth)
-                    {
-                        float shelfT = (float)d / shelfDepth;
-
-                        var shelfColor = Utilities.LerpColor(
-                            RenderSettings.ShallowWaterColor,
-                            SKColors.White.WithAlpha(120),
-                            0.35f);
-
-                        color = Utilities.LerpColor(
-                            shelfColor,
-                            RenderSettings.ShallowWaterColor,
-                            shelfT);
-                    }
-                    else
-                    {
-                        color = Utilities.LerpColor(
-                            RenderSettings.ShallowWaterColor,
-                            RenderSettings.DeepWaterColor,
-                            t);
-                    }
-
-                    output.SetPixel(x, y, color);
-                }
+                });
             }
 
             return SKImage.FromBitmap(output);
         }
-        
+
 
         public void InvalidateRenderCache()
         {
@@ -334,6 +347,14 @@ namespace RealmStudioShapeRenderingLib
             };
 
             canvas.DrawPath(geometry, paint);
+        }
+
+        public bool HitTest(SKPoint worldPos)
+        {
+            if (!Bounds.Contains(worldPos))
+                return false;
+
+            return MergedGeometry?.Contains(worldPos.X, worldPos.Y) == true;
         }
     }
 }

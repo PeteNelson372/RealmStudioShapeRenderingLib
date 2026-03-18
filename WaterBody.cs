@@ -30,11 +30,13 @@ namespace RealmStudioShapeRenderingLib
                 return;
             }
 
+            WaterSystem?.GeometryModified();
             SetGeometry(new SKPath(newPath));
         }
 
         public void ClearGeometry()
         {
+            WaterSystem?.GeometryModified();
             SetGeometry(new SKPath());
         }
 

@@ -140,5 +140,44 @@ namespace RealmStudioShapeRenderingLib
 
             return result;
         }
+
+        public static SKColor[] BuildWaterColorLUT(WaterRenderSettings settings)
+        {
+            int maxDepth = (int)settings.ShallowDepth;
+
+            var lut = new SKColor[maxDepth + 1];
+
+            for (int d = 0; d <= maxDepth; d++)
+            {
+                float t = (float)d / maxDepth;
+
+                t = MathF.Sqrt(t);
+                t = MathF.Pow(t, settings.DeepBias);
+
+                if (d < settings.ShelfDepth)
+                {
+                    float shelfT = (float)d / settings.ShelfDepth;
+
+                    var shelfColor = Utilities.LerpColor(
+                        settings.ShallowWaterColor,
+                        SKColors.White.WithAlpha(120),
+                        0.35f);
+
+                    lut[d] = Utilities.LerpColor(
+                        shelfColor,
+                        settings.ShallowWaterColor,
+                        shelfT);
+                }
+                else
+                {
+                    lut[d] = Utilities.LerpColor(
+                        settings.ShallowWaterColor,
+                        settings.DeepWaterColor,
+                        t);
+                }
+            }
+
+            return lut;
+        }
     }
 }

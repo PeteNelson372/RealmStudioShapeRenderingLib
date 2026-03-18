@@ -14,7 +14,10 @@ namespace RealmStudioShapeRenderingLib
         public float ShallowDepth { get; set; } = 30f;
         public bool LinkWaterColors { get; set; } = true;
         public float RiverWidth { get; set; } = 16f;
+        public bool RiverSourceFadeIn { get; set; } = true;
         public float BankFadeDepth { get; set; } = 8f;
+
+        public SKColor[]? DepthColorLUT;
 
         public static WaterRenderSettings Clone(WaterRenderSettings other)
         {
@@ -30,7 +33,9 @@ namespace RealmStudioShapeRenderingLib
                 ShallowDepth = other.ShallowDepth,
                 LinkWaterColors = other.LinkWaterColors,
                 RiverWidth = other.RiverWidth,
+                RiverSourceFadeIn = other.RiverSourceFadeIn,
                 BankFadeDepth = other.BankFadeDepth,
+                DepthColorLUT = other.DepthColorLUT == null ? null : (SKColor[])other.DepthColorLUT.Clone(),
             };
 
             return clone;

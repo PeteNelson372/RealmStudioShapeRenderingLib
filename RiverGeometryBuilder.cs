@@ -178,6 +178,12 @@
             float seed)
         {
             int count = centerline.Count;
+
+            if (centerline.Count < 2)
+            {
+                return (List<SKPoint>)centerline;
+            }
+
             var result = new List<SKPoint>(count);
 
             float dist = 0f;
@@ -232,10 +238,17 @@
 
         private static SKPoint GetPrevDirection(IReadOnlyList<SKPoint> pts, int i)
         {
+            if (pts.Count < 2)
+            {
+                return new SKPoint();
+            }
+
             if (i == 0)
+            {
                 return Normalize(new SKPoint(
                     pts[1].X - pts[0].X,
                     pts[1].Y - pts[0].Y));
+            }
 
             return Normalize(new SKPoint(
                 pts[i].X - pts[i - 1].X,
@@ -244,10 +257,17 @@
 
         private static SKPoint GetNextDirection(IReadOnlyList<SKPoint> pts, int i)
         {
+            if (pts.Count < 2)
+            {
+                return new SKPoint();
+            }
+
             if (i == pts.Count - 1)
+            {
                 return Normalize(new SKPoint(
                     pts[i].X - pts[i - 1].X,
                     pts[i].Y - pts[i - 1].Y));
+            }
 
             return Normalize(new SKPoint(
                 pts[i + 1].X - pts[i].X,

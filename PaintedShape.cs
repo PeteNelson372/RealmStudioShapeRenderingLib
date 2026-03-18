@@ -178,7 +178,9 @@ namespace RealmStudioShapeRenderingLib
                     int idx = row + x;
 
                     if (pixels[idx].Alpha == 0)
+                    {
                         continue;
+                    }
 
                     if (pixels[idx - 1].Alpha == 0 ||
                         pixels[idx + 1].Alpha == 0 ||
@@ -203,7 +205,9 @@ namespace RealmStudioShapeRenderingLib
                     int idx = row + x;
 
                     if (dist[idx] == 0)
+                    {
                         continue;
+                    }
 
                     ushort best = dist[idx];
 
@@ -236,109 +240,15 @@ namespace RealmStudioShapeRenderingLib
                     best = Math.Min(best, (ushort)(dist[idx + width - 1] + 1));
 
                     if (best > maxDepth)
-                        best = maxDepth;
-
-                    dist[idx] = best;
-                }
-            }
-
-            return dist;
-        }
-
-        /*
-        // used in rendering landforms and water bodies
-        public static ushort[] ComputeDistanceFieldFast(
-            SKBitmap maskBitmap,
-            int width,
-            int height,
-            ushort maxDepth)
-        {
-            ushort[] dist = new ushort[width * height];
-            var pixels = maskBitmap.Pixels;
-
-            const ushort INF = ushort.MaxValue;
-
-            // Initialize
-            for (int i = 0; i < dist.Length; i++)
-            {
-                if (pixels[i].Alpha == 0)
-                    dist[i] = INF;
-                else
-                    dist[i] = INF;
-            }
-
-            // Detect shoreline boundary
-            for (int y = 1; y < height - 1; y++)
-            {
-                int row = y * width;
-
-                for (int x = 1; x < width - 1; x++)
-                {
-                    int idx = row + x;
-
-                    if (pixels[idx].Alpha == 0)
-                        continue;
-
-                    if (pixels[idx - 1].Alpha == 0 ||
-                        pixels[idx + 1].Alpha == 0 ||
-                        pixels[idx - width].Alpha == 0 ||
-                        pixels[idx + width].Alpha == 0)
                     {
-                        dist[idx] = 0;
+                        best = maxDepth;
                     }
-                }
-            }
-
-            // Forward pass
-            for (int y = 1; y < height; y++)
-            {
-                int row = y * width;
-
-                for (int x = 1; x < width; x++)
-                {
-                    int idx = row + x;
-
-                    if (dist[idx] == 0)
-                        continue;
-
-                    ushort best = dist[idx];
-
-                    best = Math.Min(best, (ushort)(dist[idx - 1] + 1));
-                    best = Math.Min(best, (ushort)(dist[idx - width] + 1));
-                    best = Math.Min(best, (ushort)(dist[idx - width - 1] + 1));
-                    best = Math.Min(best, (ushort)(dist[idx - width + 1] + 1));
 
                     dist[idx] = best;
-                }
-            }
-
-            // Backward pass
-            for (int y = height - 2; y >= 0; y--)
-            {
-                int row = y * width;
-
-                for (int x = width - 2; x >= 0; x--)
-                {
-                    int idx = row + x;
-
-                    ushort best = dist[idx];
-
-                    best = Math.Min(best, (ushort)(dist[idx + 1] + 1));
-                    best = Math.Min(best, (ushort)(dist[idx + width] + 1));
-                    best = Math.Min(best, (ushort)(dist[idx + width + 1] + 1));
-                    best = Math.Min(best, (ushort)(dist[idx + width - 1] + 1));
-
-                    dist[idx] = best;
-
-                    if (dist[idx] > maxDepth)
-                        dist[idx] = maxDepth;
                 }
             }
 
             return dist;
         }
-
-        */
-
     }
 }

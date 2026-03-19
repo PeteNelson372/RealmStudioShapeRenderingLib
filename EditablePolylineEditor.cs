@@ -5,6 +5,9 @@ namespace RealmStudioShapeRenderingLib
     public class EditablePolylineEditor
     {
         public List<SKPoint> _points;
+        private int _hoverIndex = -1;
+        private int _activeIndex = -1;
+        private bool _isDragging = false;
 
         public Action? OnChanged;
 
@@ -142,30 +145,71 @@ namespace RealmStudioShapeRenderingLib
         }
 
         // ----------------------------
+        // Mouse interaction
+        // ----------------------------
+
+        public void OnMouseDown(SKPoint worldPos, float hitRadius)
+        {
+            int hit = HitTestEditable(worldPos, hitRadius);
+
+            if (hit >= 0)
+            {
+                _activeIndex = hit;
+                _isDragging = true;
+            }
+        }
+
+        public void OnMouseMove(SKPoint worldPos, float hitRadius)
+        {
+            if (_isDragging && _activeIndex >= 0)
+            {
+                DragHandle(worldPos);
+                SmoothPoints(1, 0.3f);
+                return;
+            }
+
+            _hoverIndex = HitTestEditable(worldPos, hitRadius);
+        }
+
+        public void OnMouseUp()
+        {
+            RebuildEditablePoints();
+
+            _isDragging = false;
+            _activeIndex = -1;
+        }
+
+
+        // ----------------------------
         // Editing (with falloff)
         // ----------------------------
 
-        public void MoveEditable(int editableIndex, SKPoint newPos, int influence = 9)
+        private void DragHandle(SKPoint newPos)
         {
-            int centerIdx = EditableIndices[editableIndex];
-            var oldPos = _points[centerIdx];
+            int pointIndex = EditableIndices[_activeIndex];
+            var oldPos = _points[pointIndex];
 
-            var delta = new SKPoint(newPos.X - oldPos.X, newPos.Y - oldPos.Y);
+            float dx = newPos.X - oldPos.X;
+            float dy = newPos.Y - oldPos.Y;
 
-            for (int i = -influence; i <= influence; i++)
+            const int falloffRange = 10;
+
+            for (int i = -falloffRange; i <= falloffRange; i++)
             {
-                int idx = centerIdx + i;
+                int idx = pointIndex + i;
 
                 if (idx < 0 || idx >= _points.Count)
                     continue;
 
-                float t = 1f - (Math.Abs(i) / (float)(influence + 1));
+                //float t = 1f - MathF.Abs(i) / (float)falloffRange;
+                //t = t * t; // smooth falloff
 
-                t = t * t; // quadratic falloff
+                float sigma = falloffRange * 0.5f;
+                float t = MathF.Exp(-(i * i) / (2 * sigma * sigma));
 
                 _points[idx] = new SKPoint(
-                    _points[idx].X + delta.X * t,
-                    _points[idx].Y + delta.Y * t);
+                    _points[idx].X + dx * t,
+                    _points[idx].Y + dy * t);
             }
 
             NotifyChanged();
@@ -201,6 +245,27 @@ namespace RealmStudioShapeRenderingLib
         // Rendering helpers
         // ----------------------------
 
+        public void SmoothPoints(int iterations = 1, float strength = 0.5f)
+        {
+            for (int it = 0; it < iterations; it++)
+            {
+                for (int i = 1; i < _points.Count - 1; i++)
+                {
+                    var prev = _points[i - 1];
+                    var next = _points[i + 1];
+                    var current = _points[i];
+
+                    var avg = new SKPoint(
+                        (prev.X + next.X) * 0.5f,
+                        (prev.Y + next.Y) * 0.5f);
+
+                    _points[i] = new SKPoint(
+                        current.X + (avg.X - current.X) * strength,
+                        current.Y + (avg.Y - current.Y) * strength);
+                }
+            }
+        }
+
         public void RenderEditableHandles(SKCanvas canvas, float zoom)
         {
             if (!IsEditing)
@@ -213,11 +278,39 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
+            using var hoverpaint = new SKPaint
+            {
+                Style = SKPaintStyle.Fill,
+                Color = SKColors.Purple,
+                IsAntialias = true
+            };
+
             float r = 4f / zoom;
 
             foreach (var idx in EditableIndices)
             {
-                canvas.DrawCircle(_points[idx], r, paint);
+                if (idx == _hoverIndex)
+                {
+                    canvas.DrawCircle(_points[idx], r, hoverpaint);
+                }
+                else
+                {
+                    canvas.DrawCircle(_points[idx], r, paint);
+                }
+            }
+
+            for (int i = 0; i < EditableIndices.Count; i++)
+            {
+                int idx = EditableIndices[i];
+
+                if (i == _hoverIndex)
+                {
+                    canvas.DrawCircle(_points[idx], r, hoverpaint);
+                }
+                else
+                {
+                    canvas.DrawCircle(_points[idx], r, paint);
+                }
             }
 
             if (SelectedEditableIndex != null)

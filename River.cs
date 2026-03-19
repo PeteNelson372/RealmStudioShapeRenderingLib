@@ -27,6 +27,8 @@ namespace RealmStudioShapeRenderingLib
                 OnChanged = () =>
                 {
                     RebuildGeometry();
+                    WaterSystem?.GeometryModified();
+                    WaterSystem?.InvalidateRenderCache();
                 }
             };
         }

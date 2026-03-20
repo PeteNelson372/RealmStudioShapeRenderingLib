@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.Timers;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -41,7 +42,11 @@ namespace RealmStudioShapeRenderingLib
             }
 
             var centerline = BezierBuilder.BuildSpline(ControlPoints);
-            var geom = RiverGeometryBuilder.BuildRiverPolygon(centerline, RenderSettings.RiverWidth, RenderSettings.RiverSourceFadeIn, VariationSeed);
+            var geom = RiverGeometryBuilder.BuildRiverPolygon(centerline,
+                RenderSettings.RiverWidth,
+                RenderSettings.RiverSourceFadeIn,
+                VariationSeed,
+                RenderSettings.MeanderStrength);
 
             SKPath riverPath = geom.Polygon;
 
@@ -72,6 +77,11 @@ namespace RealmStudioShapeRenderingLib
             ControlPoints.Clear();
 
             ControlPoints.AddRange(s.ControlPoints);
+
+            RebuildGeometry();
+
+            WaterSystem!.GeometryModified();
+            WaterSystem.InvalidateRenderCache();
 
             OnGeometryChanged();
         }

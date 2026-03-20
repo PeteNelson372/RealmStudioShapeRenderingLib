@@ -41,10 +41,6 @@ namespace RealmStudioShapeRenderingLib
                 RenderSettings = WaterRenderSettings.Clone(body.RenderSettings);
                 return;
             }
-            else
-            {
-                body.RenderSettings = WaterRenderSettings.Clone(RenderSettings);
-            }
 
             _geometryModified = true;
 

@@ -17,10 +17,29 @@ namespace RealmStudioShapeRenderingLib
 
         public bool IsEditing { get; set; }
 
-        private void NotifyChanged()
+        private readonly static SKPaint ControlPointPaint = new()
         {
-            OnChanged?.Invoke();
-        }
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            StrokeWidth = 2,
+            Color = SKColors.LightYellow,
+        };
+
+        private readonly static SKPaint ControlPointOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            StrokeWidth = 1,
+            Color = SKColors.Black
+        };
+
+        private readonly static SKPaint SelectedControlPointPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            StrokeWidth = 2,
+            Color = SKColors.BlueViolet,
+        };
 
         public bool IsDrawing { get; private set; }
 
@@ -29,6 +48,11 @@ namespace RealmStudioShapeRenderingLib
         public EditablePolylineEditor(List<SKPoint> points)
         {
             _points = points;
+        }
+
+        private void NotifyChanged()
+        {
+            OnChanged?.Invoke();
         }
 
         // ----------------------------------
@@ -48,10 +72,12 @@ namespace RealmStudioShapeRenderingLib
 
         public void ContinueDraw(SKPoint worldPos, bool ctrl, bool shift)
         {
-            if (!IsDrawing || _lastPoint == null)
+            if (!IsDrawing || _points.Count < 1)
+            {
                 return;
+            }
 
-            var constrained = ApplyConstraints(_lastPoint.Value, worldPos, ctrl, shift);
+            var constrained = ApplyConstraints(_points[0], worldPos, ctrl, shift);
 
             _points.Add(constrained);
             _lastPoint = constrained;
@@ -69,36 +95,52 @@ namespace RealmStudioShapeRenderingLib
             NotifyChanged();
         }
 
+        float? _lockedAngle = null;
+
         private SKPoint ApplyConstraints(SKPoint origin, SKPoint p, bool ctrl, bool shift)
         {
             var dx = p.X - origin.X;
             var dy = p.Y - origin.Y;
 
             if (!ctrl && !shift)
+            {
+                _lockedAngle = null;
                 return p;
+            }
 
             float angle = MathF.Atan2(dy, dx);
             float length = MathF.Sqrt(dx * dx + dy * dy);
 
             if (ctrl)
             {
+                _lockedAngle = null;
                 // Axis lock (0° or 90°)
                 if (MathF.Abs(dx) > MathF.Abs(dy))
+                {
                     return new SKPoint(origin.X + dx, origin.Y);
+                }
                 else
+                {
                     return new SKPoint(origin.X, origin.Y + dy);
+                }
             }
 
             if (shift)
             {
-                // Snap to 5° increments
-                const float step = MathF.PI / 36f; // 5 degrees
+                // Snap to 5 degree increments
 
-                float snapped = MathF.Round(angle / step) * step;
+                if (_lockedAngle == null)
+                {
+                    const float step = MathF.PI / 36f; // 5 degrees
+                    _lockedAngle = MathF.Round(angle / step) * step;
+                }
 
-                return new SKPoint(
-                    origin.X + MathF.Cos(snapped) * length,
-                    origin.Y + MathF.Sin(snapped) * length);
+                if (_lockedAngle != null)
+                {
+                    return new SKPoint(
+                        origin.X + MathF.Cos(_lockedAngle.Value) * length,
+                        origin.Y + MathF.Sin(_lockedAngle.Value) * length);
+                }
             }
 
             return p;
@@ -201,9 +243,6 @@ namespace RealmStudioShapeRenderingLib
                 if (idx < 0 || idx >= _points.Count)
                     continue;
 
-                //float t = 1f - MathF.Abs(i) / (float)falloffRange;
-                //t = t * t; // smooth falloff
-
                 float sigma = falloffRange * 0.5f;
                 float t = MathF.Exp(-(i * i) / (2 * sigma * sigma));
 
@@ -269,35 +308,11 @@ namespace RealmStudioShapeRenderingLib
         public void RenderEditableHandles(SKCanvas canvas, float zoom)
         {
             if (!IsEditing)
+            {
                 return;
-
-            using var paint = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                Color = SKColors.Orange,
-                IsAntialias = true
-            };
-
-            using var hoverpaint = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                Color = SKColors.Purple,
-                IsAntialias = true
-            };
+            }
 
             float r = 4f / zoom;
-
-            foreach (var idx in EditableIndices)
-            {
-                if (idx == _hoverIndex)
-                {
-                    canvas.DrawCircle(_points[idx], r, hoverpaint);
-                }
-                else
-                {
-                    canvas.DrawCircle(_points[idx], r, paint);
-                }
-            }
 
             for (int i = 0; i < EditableIndices.Count; i++)
             {
@@ -305,11 +320,12 @@ namespace RealmStudioShapeRenderingLib
 
                 if (i == _hoverIndex)
                 {
-                    canvas.DrawCircle(_points[idx], r, hoverpaint);
+                    canvas.DrawCircle(_points[idx], r + 1, SelectedControlPointPaint);
                 }
                 else
                 {
-                    canvas.DrawCircle(_points[idx], r, paint);
+                    canvas.DrawCircle(_points[idx], r, ControlPointPaint);
+                    canvas.DrawCircle(_points[idx], r + 1, ControlPointOutlinePaint);
                 }
             }
 

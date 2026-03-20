@@ -16,6 +16,7 @@ namespace RealmStudioShapeRenderingLib
         public float RiverWidth { get; set; } = 16f;
         public bool RiverSourceFadeIn { get; set; } = true;
         public float BankFadeDepth { get; set; } = 8f;
+        public float MeanderStrength { get; set; } = 1.0f;
 
         public SKColor[]? DepthColorLUT;
 
@@ -35,6 +36,7 @@ namespace RealmStudioShapeRenderingLib
                 RiverWidth = other.RiverWidth,
                 RiverSourceFadeIn = other.RiverSourceFadeIn,
                 BankFadeDepth = other.BankFadeDepth,
+                MeanderStrength = other.MeanderStrength,
                 DepthColorLUT = other.DepthColorLUT == null ? null : (SKColor[])other.DepthColorLUT.Clone(),
             };
 

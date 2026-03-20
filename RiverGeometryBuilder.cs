@@ -8,11 +8,19 @@
             IReadOnlyList<SKPoint> centerline,
             float width,
             bool sourceFade,
-            float variationSeed)
+            float variationSeed,
+            float meanderStrength)
         {
+            meanderStrength = Utilities.Clamp(meanderStrength, 0f, 1.7f);
+
+            float strength = MathF.Sqrt(meanderStrength);
+            float highFreqStrength = strength * 0.4f;
+
             centerline = Resample(centerline, width * 0.25f);
 
-            centerline = ApplyMeanderNoise(centerline, width, variationSeed);
+            centerline = ApplyMeanderNoise(centerline, width, variationSeed, strength);
+
+            centerline = LimitCurvature(centerline, 0.8f);
 
             int count = centerline.Count;
             var left = new List<SKPoint>(count);
@@ -64,26 +72,26 @@
 
                 float curvatureFactor = 1f + curvature * curvatureStrength;
 
-                float v1 = MathF.Sin(i * 0.18f + variationSeed) * 0.16f;
-                float v2 = MathF.Sin(i * 0.90f + variationSeed * 1.9f) * 0.09f;
-                float v3 = MathF.Sin(i * 3.20f + variationSeed * 3.4f) * 0.05f;
-                float v4 = MathF.Sin(i * 7.50f + variationSeed * 5.1f) * 0.025f;
+                float v1 = MathF.Sin(i * 0.18f + variationSeed) * 0.16f * strength;
+                float v2 = MathF.Sin(i * 0.90f + variationSeed * 1.9f) * 0.09f * strength;
+
+                float v3 = MathF.Sin(i * 3.20f + variationSeed * 3.4f) * 0.05f * highFreqStrength;
+                float v4 = MathF.Sin(i * 7.50f + variationSeed * 5.1f) * 0.025f * highFreqStrength;
 
                 float amp = 0.85f + 0.35f * MathF.Sin(i * 0.11f + variationSeed * 0.6f);
+                amp = 1f + (amp - 1f) * strength;
 
                 float variationFactor = 1f + (v1 + v2 + v3 + v4) * amp;
-                variationFactor = Math.Clamp(variationFactor, 0.72f, 1.35f);
+                variationFactor = Math.Clamp(variationFactor, 0.8f, 1.25f);
 
                 float halfWidth = halfBaseWidth * widthFactor * curvatureFactor * variationFactor;
 
-                float asym = MathF.Sin(i * 1.35f + variationSeed * 4.7f) * 0.10f;
+                float asym = MathF.Sin(i * 1.35f + variationSeed * 4.7f) * 0.10f * strength * 0.8f;
 
                 float leftHalfWidth = halfWidth * (1f + asym);
                 float rightHalfWidth = halfWidth * (1f - asym);
 
                 float denom = Dot(bisector, normalNext);
-
-                float scale;
 
                 if (MathF.Abs(denom) < 0.25f || float.IsNaN(denom))
                 {
@@ -106,44 +114,25 @@
                 }
                 else
                 {
-                    scale = halfWidth / denom;
-
                     const float maxMiter = 2.5f;
 
-                    if (MathF.Abs(scale) > halfWidth * maxMiter)
-                    {
-                        var leftOffset = new SKPoint(
-                            normalNext.X * leftHalfWidth,
-                            normalNext.Y * leftHalfWidth);
+                    float leftScale = leftHalfWidth / denom;
+                    float rightScale = rightHalfWidth / denom;
 
-                        var rightOffset = new SKPoint(
-                            normalNext.X * rightHalfWidth,
-                            normalNext.Y * rightHalfWidth);
+                    leftScale = Math.Clamp(leftScale, -leftHalfWidth * maxMiter, leftHalfWidth * maxMiter);
+                    rightScale = Math.Clamp(rightScale, -rightHalfWidth * maxMiter, rightHalfWidth * maxMiter);
 
-                        left.Add(new SKPoint(p.X + leftOffset.X, p.Y + leftOffset.Y));
-                        right.Add(new SKPoint(p.X - rightOffset.X, p.Y - rightOffset.Y));
-                    }
-                    else
-                    {
-                        float leftScale = leftHalfWidth / denom;
-                        float rightScale = rightHalfWidth / denom;
+                    var leftOffset = new SKPoint(
+                        bisector.X * leftScale,
+                        bisector.Y * leftScale);
 
-                        leftScale = Math.Clamp(leftScale, -leftHalfWidth * maxMiter, leftHalfWidth * maxMiter);
-                        rightScale = Math.Clamp(rightScale, -rightHalfWidth * maxMiter, rightHalfWidth * maxMiter);
+                    var rightOffset = new SKPoint(
+                        bisector.X * rightScale,
+                        bisector.Y * rightScale);
 
-                        var leftOffset = new SKPoint(
-                            bisector.X * leftScale,
-                            bisector.Y * leftScale);
-
-                        var rightOffset = new SKPoint(
-                            bisector.X * rightScale,
-                            bisector.Y * rightScale);
-
-                        left.Add(new SKPoint(p.X + leftOffset.X, p.Y + leftOffset.Y));
-                        right.Add(new SKPoint(p.X - rightOffset.X, p.Y - rightOffset.Y));
-                    }
+                    left.Add(new SKPoint(p.X + leftOffset.X, p.Y + leftOffset.Y));
+                    right.Add(new SKPoint(p.X - rightOffset.X, p.Y - rightOffset.Y));
                 }
-
             }
 
             var path = new SKPath();
@@ -175,7 +164,8 @@
         public static List<SKPoint> ApplyMeanderNoise(
             IReadOnlyList<SKPoint> centerline,
             float width,
-            float seed)
+            float seed,
+            float meanderStrength)
         {
             int count = centerline.Count;
 
@@ -193,7 +183,9 @@
                 var p = centerline[i];
 
                 if (i > 0)
+                {
                     dist += SKPoint.Distance(centerline[i - 1], centerline[i]);
+                }
 
                 var dirPrev = GetPrevDirection(centerline, i);
                 var dirNext = GetNextDirection(centerline, i);
@@ -204,16 +196,16 @@
 
                 var normal = new SKPoint(-dir.Y, dir.X);
 
-                // wavelength scales with river width
-                float s = dist / width;
+                float frequencyScale = 1f + meanderStrength * 0.5f;
+                float s = dist / width * frequencyScale;
 
                 float n1 = MathF.Sin(s * 0.30f + seed) * 0.9f;
-                float n2 = MathF.Sin(s * 0.90f + seed * 1.7f) * 0.35f;
-                float n3 = MathF.Sin(s * 2.50f + seed * 3.3f) * 0.15f;
+                float n2 = MathF.Sin(s * 0.90f + seed * 1.7f) * 0.35f * meanderStrength;
+                float n3 = MathF.Sin(s * 2.50f + seed * 3.3f) * 0.15f * meanderStrength;
 
                 float noise = n1 + n2 + n3;
 
-                float offset = noise * width * 0.6f;
+                float offset = noise * width * 0.6f * meanderStrength;
 
                 var displaced = new SKPoint(
                     p.X + normal.X * offset,
@@ -225,7 +217,46 @@
             return result;
         }
 
+        public static List<SKPoint> LimitCurvature(
+            IReadOnlyList<SKPoint> points,
+            float maxAngleRadians = 0.6f) // ~34 degrees
+        {
+            if (points.Count < 3)
+                return new List<SKPoint>(points);
 
+            var result = new List<SKPoint>(points);
+
+            for (int i = 1; i < result.Count - 1; i++)
+            {
+                var prev = result[i - 1];
+                var curr = result[i];
+                var next = result[i + 1];
+
+                var v1 = Normalize(new SKPoint(curr.X - prev.X, curr.Y - prev.Y));
+                var v2 = Normalize(new SKPoint(next.X - curr.X, next.Y - curr.Y));
+
+                float dot = Dot(v1, v2);
+                dot = Math.Clamp(dot, -1f, 1f);
+
+                float angle = MathF.Acos(dot);
+
+                if (angle > maxAngleRadians)
+                {
+                    // soften the corner by blending directions
+                    var blendedDir = Normalize(new SKPoint(
+                        v1.X + v2.X,
+                        v1.Y + v2.Y));
+
+                    float segmentLength = SKPoint.Distance(curr, next);
+
+                    result[i] = new SKPoint(
+                        prev.X + blendedDir.X * segmentLength,
+                        prev.Y + blendedDir.Y * segmentLength);
+                }
+            }
+
+            return result;
+        }
         static float LengthSquared(SKPoint v)
         {
             return v.X * v.X + v.Y * v.Y;

@@ -4,6 +4,47 @@ namespace RealmStudioShapeRenderingLib
 {
     public static class Utilities
     {
+        public static SKPath BuildPath(IReadOnlyList<SKPoint> points)
+        {
+            var path = new SKPath();
+
+            if (points == null || points.Count < 2)
+                return path;
+
+            path.MoveTo(points[0]);
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                path.LineTo(points[i]);
+            }
+
+            return path;
+        }
+
+        public static SKPath BuildPath2(IReadOnlyList<SKPoint> points)
+        {
+            SKPath path = new();
+
+            if (points == null || points.Count < 3)
+                return path;
+
+            path.MoveTo(points[0]);
+
+            for (int j = 0; j < points.Count - 2; j += 3)
+            {
+                path.CubicTo(points[j], points[j + 1], points[j + 2]);
+            }
+
+            return path;
+        }
+
+        public static SKPoint Normalize(SKPoint v)
+        {
+            float len = MathF.Sqrt(v.X * v.X + v.Y * v.Y);
+            if (len < 1e-5f) return new SKPoint(0, 0);
+            return new SKPoint(v.X / len, v.Y / len);
+        }
+
         public static float Clamp(float value, float min, float max)
         {
             return Math.Min(Math.Max(value, min), max);

@@ -172,6 +172,13 @@ namespace RealmStudioShapeRenderingLib
         SolidWall,
     }
 
+    public enum LineJoinType
+    {
+        Miter,
+        Bevel,
+        Round
+    }
+
     public enum ParallelDirection
     {
         Above,

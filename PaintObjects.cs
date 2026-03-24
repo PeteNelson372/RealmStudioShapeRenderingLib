@@ -25,8 +25,26 @@ using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
 {
-    internal sealed class PaintObjects
+    public sealed class PaintObjects
     {
+        public static readonly SKPaint CursorCirclePaint = new()
+        {
+            Color = SKColors.Black,
+            StrokeWidth = 2,
+            Style = SKPaintStyle.Stroke,
+            //IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
+        };
+
+        public static readonly SKPaint CursorCircleGreenPaint = new()
+        {
+            Color = SKColors.Green,
+            StrokeWidth = 2,
+            Style = SKPaintStyle.Stroke,
+            //IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
+        };
+
         public static readonly SKPaint CursorSquarePaint = new()
         {
             Style = SKPaintStyle.Stroke,
@@ -34,6 +52,14 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.DarkRed,
             StrokeWidth = 2,
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F)
+        };
+
+        public static readonly SKPaint MapOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            Color = SKColors.Green,
+            StrokeWidth = 10,
         };
 
         public static readonly SKPaint LandformSelectPaint = new()
@@ -142,15 +168,6 @@ namespace RealmStudioShapeRenderingLib
             Style = SKPaintStyle.Fill,
         };
 
-        public static readonly SKPaint CursorCircleGreenPaint = new()
-        {
-            Color = SKColors.Green,
-            StrokeWidth = 2,
-            Style = SKPaintStyle.Stroke,
-            //IsAntialias = true,
-            PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
-        };
-
         public static readonly SKPaint ContourPathPaint = new()
         {
             Style = SKPaintStyle.Fill,
@@ -249,6 +266,21 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = true,
             StrokeWidth = 1,
             Color = SKColors.Black,
+        };
+
+        public readonly static SKPaint MapPathDoubleLinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round,
+        };
+
+        public readonly static SKPaint DashPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            StrokeCap = SKStrokeCap.Round,
         };
 
         public static SKPaint LabelSelectPaint = new()
@@ -374,6 +406,50 @@ namespace RealmStudioShapeRenderingLib
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Multiply,
             IsAntialias = true
+        };
+
+        public static readonly SKPaint Shape2DSelectPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = SKColors.DeepSkyBlue,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([10, 6], 0)
+        };
+
+        public static readonly SKPaint WaterSystemSelectPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = SKColors.Crimson,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([10, 6], 0)
+        };
+
+        public static readonly SKPaint DebugPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = false,
+            Color = SKColors.Crimson,
+            StrokeWidth = 2,
+        };
+
+        public static readonly SKPaint DebugPaint2 = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = false,
+            Color = SKColors.Red,
+            StrokeWidth = 5,
+            PathEffect = SKPathEffect.CreateDash([4F, 2F], 6F),
+        };
+
+        public static readonly SKPaint DebugPaint3 = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = false,
+            Color = SKColors.LimeGreen,
+            StrokeWidth = 6,
+            PathEffect = SKPathEffect.CreateDash([10, 6], 0)
         };
 
 

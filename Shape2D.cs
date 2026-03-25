@@ -107,21 +107,11 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
 
         /// <summary>
-        /// Default rendering behavior. Subclasses may override.
+        /// Default rendering behavior. Subclasses must override.
         /// </summary>
         public virtual void Render(SKCanvas canvas)
         {
-            if (HitPath.IsEmpty)
-                return;
-
-            using var paint = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                Color = SKColors.Gray,
-                IsAntialias = true
-            };
-
-            canvas.DrawPath(HitPath, paint);
+            throw new ApplicationException("Shape2D.Render called. This method must be overridden.");
         }
 
         // -------------------------------------------------

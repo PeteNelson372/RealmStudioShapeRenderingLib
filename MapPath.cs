@@ -65,10 +65,11 @@ namespace RealmStudioShapeRenderingLib
                 {
                     SKBitmap textureBitmap = SKBitmap.FromImage(textureImage);
 
-                    SKBitmap resizedSKBitmap = textureBitmap.Resize(new SKImageInfo(100, 100), SKSamplingOptions.Default);
-                    
+                    SKBitmap resizedBitmap = Utilities.ScaleSKBitmap(textureBitmap, RenderStyle.TextureScale);
 
-                    RenderStyle.Texture = SKImage.FromBitmap(resizedSKBitmap);
+                    SKBitmap opacitySetBitmap = Utilities.SetBitmapOpacity(resizedBitmap, RenderStyle.TextureOpacity);
+                   
+                    RenderStyle.Texture = opacitySetBitmap;
                 }
             }
         }

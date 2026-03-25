@@ -12,7 +12,7 @@ namespace RealmStudioShapeRenderingLib
 
         public float Width { get; set; } = 6f;
 
-        public SKColor Color { get; set; } = SKColors.Black;
+        public SKColor Color { get; set; } = new SKColor(75, 49, 26, 255);
 
         public float Opacity { get; set; } = 1f;
 
@@ -24,7 +24,7 @@ namespace RealmStudioShapeRenderingLib
 
         public float BorderWidth { get; set; } = 2f;
 
-        public SKColor BorderColor { get; set; } = SKColors.Black;
+        public SKColor BorderColor { get; set; } = new SKColor(75, 49, 26, 255);
 
         // -------------------------------------------------
         // Dash / pattern
@@ -52,7 +52,7 @@ namespace RealmStudioShapeRenderingLib
 
         public string TextureId { get; set; } = string.Empty;
 
-        public SKImage? Texture { get; set; }
+        public SKBitmap? Texture { get; set; }
 
         public float TextureScale { get; set; } = 1f;
 
@@ -73,6 +73,13 @@ namespace RealmStudioShapeRenderingLib
         public float MarkerScale { get; set; } = 1f;
 
         public bool AlternateMarkerFlip { get; set; } = false;
+
+        public float ChevronSpacing { get; set; } = 24f;
+
+        public float RailOffset { get; set; } = 4f;
+        public float TieSpacing{ get; set; } = 4f;
+        public float TieOverhang{ get; set; } = 2f;
+
 
         // -------------------------------------------------
         // Wall / structure rendering
@@ -153,32 +160,6 @@ namespace RealmStudioShapeRenderingLib
             };
         }
 
-        public SKPaint CreateTexturePaint()
-        {
-            if (Texture == null)
-                throw new InvalidOperationException("Texture is null");
-
-            var matrix = SKMatrix.CreateScale(TextureScale, TextureScale);
-
-            if (TextureRotation != 0f)
-            {
-                var rot = SKMatrix.CreateRotationDegrees(TextureRotation);
-                SKMatrix.Concat(ref matrix, matrix, rot);
-            }
-
-            return new SKPaint
-            {
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = Width,
-                IsAntialias = true,
-                Shader = SKShader.CreateBitmap(
-                    SKBitmap.FromImage(Texture),
-                    SKShaderTileMode.Repeat,
-                    SKShaderTileMode.Repeat,
-                    matrix)
-            };
-        }
-
         // -------------------------------------------------
         // Clone (important for undo/redo safety)
         // -------------------------------------------------
@@ -216,6 +197,10 @@ namespace RealmStudioShapeRenderingLib
                 MarkerSpacing = MarkerSpacing,
                 MarkerScale = MarkerScale,
                 AlternateMarkerFlip = AlternateMarkerFlip,
+                ChevronSpacing = ChevronSpacing,
+                RailOffset = RailOffset,
+                TieOverhang = TieOverhang,
+                TieSpacing = TieSpacing,
 
                 StructureSize = StructureSize,
                 StructureSpacing = StructureSpacing,

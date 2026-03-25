@@ -68,6 +68,85 @@ namespace RealmStudioShapeRenderingLib
             return new SKColor(r, g, bch, aCh);
         }
 
+        private const float MinLightness = 0.15f;
+        private const float MaxLightness = 0.85f;
+
+        public static SKColor Darken(SKColor c, float amount)
+        {
+            amount = Math.Clamp(amount, 0f, 1f);
+
+            float factor = 1f - amount;
+
+            return new SKColor(
+                (byte)(c.Red * factor),
+                (byte)(c.Green * factor),
+                (byte)(c.Blue * factor),
+                (byte)(c.Alpha));
+        }
+
+        public static SKColor Lighten(SKColor c, float amount)
+        {
+            amount = Math.Clamp(amount, 0f, 1f);
+
+            return new SKColor(
+                (byte)(c.Red + (255 - c.Red) * amount),
+                (byte)(c.Green + (255 - c.Green) * amount),
+                (byte)(c.Blue + (255 - c.Blue) * amount),
+                (byte)(c.Alpha));
+        }
+
+        public static SKBitmap ScaleSKBitmap(SKBitmap bitmap, float scale)
+        {
+            if (bitmap == null || scale <= 0f)
+                throw new ArgumentException("Invalid bitmap or scale.");
+
+            int width = Math.Max(1, (int)Math.Round(bitmap.Width * scale));
+            int height = Math.Max(1, (int)Math.Round(bitmap.Height * scale));
+
+            var result = new SKBitmap(width, height, bitmap.ColorType, bitmap.AlphaType);
+
+            bitmap.ScalePixels(result, SKSamplingOptions.Default);
+
+            return result;
+        }
+
+        public static SKBitmap SetBitmapOpacity(SKBitmap source, float opacity)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+
+            if (opacity == 1)
+            {
+                return source.Copy();
+            }
+
+            opacity = Clamp(opacity, 0f, 1f);
+
+            var result = new SKBitmap(source.Width, source.Height, source.ColorType, source.AlphaType);
+
+            using var canvas = new SKCanvas(result);
+            canvas.Clear(SKColors.Transparent);
+
+            // --- Color matrix (same idea as GDI+) ---
+            float[] matrix =
+            {
+                1, 0, 0, 0, 0,   // R
+                0, 1, 0, 0, 0,   // G
+                0, 0, 1, 0, 0,   // B
+                0, 0, 0, opacity, 0   // A (Matrix33 equivalent)
+            };
+
+            using var paint = new SKPaint
+            {
+                IsAntialias = false,                
+                ColorFilter = SKColorFilter.CreateColorMatrix(matrix)
+            };
+
+            // draw original into new bitmap with opacity applied
+            canvas.DrawBitmap(source, 0, 0, paint);
+
+            return result;
+        }
+
         public static SKPoint ComputeCentroid(SKPath path)
         {
             var bounds = path.Bounds;
@@ -136,6 +215,166 @@ namespace RealmStudioShapeRenderingLib
             return newPath;
         }
 
+        
+        public static SKPath BuildOffsetPath(IReadOnlyList<SKPoint> pts, float offset)
+        {
+            var path = new SKPath();
+
+            if (pts.Count < 3)
+                return path;
+
+            var offsetPts = new List<SKPoint>(pts.Count);
+
+            for (int i = 1; i < pts.Count - 1; i++)
+            {
+                var n0 = GetNormal(pts[i - 1], pts[i]);
+                var n1 = GetNormal(pts[i], pts[i + 1]);
+
+                var normal = new SKPoint(n0.X + n1.X, n0.Y + n1.Y);
+
+                float len = MathF.Sqrt(normal.X * normal.X + normal.Y * normal.Y);
+                
+                if (len > 1e-5f)
+                {
+                    normal = new SKPoint(normal.X / len, normal.Y / len);
+                }
+
+                offsetPts.Add(new SKPoint(
+                    pts[i].X + normal.X * offset,
+                    pts[i].Y + normal.Y * offset));
+            }
+
+            path.MoveTo(offsetPts[0]);
+
+            for (int i = 1; i < offsetPts.Count; i++)
+            {
+                path.LineTo(offsetPts[i]);
+            }
+
+            return path;
+        }        
+
+        public static SKPoint GetNormal(SKPoint a, SKPoint b)
+        {
+            float dx = b.X - a.X;
+            float dy = b.Y - a.Y;
+
+            float len = MathF.Sqrt(dx * dx + dy * dy);
+            if (len < 1e-5f)
+                return new SKPoint(0, 0);
+
+            dx /= len;
+            dy /= len;
+
+            // perpendicular
+            return new SKPoint(-dy, dx);
+        }
+
+        public static void ExtractStrokeEdges(
+            SKPath centerPath,
+            float offset,
+            PathRenderStyle style,
+            out SKPath leftPath,
+            out SKPath rightPath)
+        {
+            using var strokePaint = new SKPaint
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = offset * 2,
+                StrokeJoin = SKStrokeJoin.Round,
+                StrokeCap = SKStrokeCap.Butt,
+                IsAntialias = true
+            };
+
+            using var outline = new SKPath();
+            strokePaint.GetFillPath(centerPath, outline);
+
+            var contour = ExtractContour(outline);
+
+            SplitOutline(contour, out var leftPts, out var rightPts);
+
+            leftPath = BuildPath(leftPts);
+            rightPath = BuildPath(rightPts);
+        }
+
+        public static SKPath CreateChevron(float size, float angleDeg = 45f)
+        {
+            float angle = MathF.PI * angleDeg / 180f;
+
+            float dx = MathF.Cos(angle) * size;
+            float dy = MathF.Sin(angle) * size;
+
+            var path = new SKPath();
+
+            path.MoveTo(-dx, -dy);
+            path.LineTo(0, 0);
+            path.LineTo(-dx, dy);
+
+            return path;
+        }
+
+        // returns a list of SKPoints
+        public static List<SKPoint> ExtractContour(SKPath outline)
+        {
+            var pts = new List<SKPoint>();
+
+            using var iter = outline.CreateRawIterator();
+            var p = new SKPoint[4];
+
+            while (true)
+            {
+                var verb = iter.Next(p);
+                if (verb == SKPathVerb.Done)
+                    break;
+
+                switch (verb)
+                {
+                    case SKPathVerb.Move:
+                        pts.Add(p[0]);
+                        break;
+
+                    case SKPathVerb.Line:
+                        pts.Add(p[1]);
+                        break;
+
+                    case SKPathVerb.Quad:
+                        pts.Add(p[2]);
+                        break;
+
+                    case SKPathVerb.Cubic:
+                        pts.Add(p[3]);
+                        break;
+                }
+            }
+
+            return pts;
+        }
+
+        public static void SplitOutline(
+            List<SKPoint> contour,
+            out List<SKPoint> left,
+            out List<SKPoint> right)
+        {
+            left = new List<SKPoint>();
+            right = new List<SKPoint>();
+
+            if (contour.Count < 4)
+                return;
+
+            // The outline is a loop:
+            // first half = one side
+            // second half = other side (reversed)
+
+            int half = contour.Count / 2;
+
+            for (int i = 0; i < half; i++)
+                left.Add(contour[i]);
+
+            for (int i = contour.Count - 1; i >= half; i--)
+                right.Add(contour[i]);
+        }
+
+        // returns a list of SKPaths
         public static List<SKPath> ExtractContours(SKPath path)
         {
             var result = new List<SKPath>();

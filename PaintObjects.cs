@@ -27,7 +27,7 @@ namespace RealmStudioShapeRenderingLib
 {
     public sealed class PaintObjects
     {
-        public static readonly SKPaint CursorCirclePaint = new()
+        public readonly static SKPaint CursorCirclePaint = new()
         {
             Color = SKColors.Black,
             StrokeWidth = 2,
@@ -36,7 +36,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint CursorCircleGreenPaint = new()
+        public readonly static SKPaint CursorCircleGreenPaint = new()
         {
             Color = SKColors.Green,
             StrokeWidth = 2,
@@ -45,7 +45,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint CursorSquarePaint = new()
+        public readonly static SKPaint CursorSquarePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -54,7 +54,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F)
         };
 
-        public static readonly SKPaint MapOutlinePaint = new()
+        public readonly static SKPaint MapOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -62,7 +62,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 10,
         };
 
-        public static readonly SKPaint LandformSelectPaint = new()
+        public readonly static SKPaint LandformSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -71,25 +71,25 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint LandBaseFillPaint = new()
+        public readonly static SKPaint LandBaseFillPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
         };
 
-        public static readonly SKPaint MaskFillPaint = new()
+        public readonly static SKPaint MaskFillPaint = new()
         {
             Style = SKPaintStyle.Fill,
             Color = SKColors.White,
         };
 
-        public static readonly SKPaint LandColorPaint = new()
+        public readonly static SKPaint LandColorPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
         };
 
-        public static readonly SKPaint LandColorEraserPaint = new()
+        public readonly static SKPaint LandColorEraserPaint = new()
         {
             Color = SKColors.Transparent,
             Style = SKPaintStyle.Fill,
@@ -97,13 +97,13 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = false,
         };
 
-        public static readonly SKPaint InteriorFloorColorPaint = new()
+        public readonly static SKPaint InteriorFloorColorPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
         };
 
-        public static readonly SKPaint InteriorFloorColorEraserPaint = new()
+        public readonly static SKPaint InteriorFloorColorEraserPaint = new()
         {
             Color = SKColors.Transparent,
             Style = SKPaintStyle.Fill,
@@ -111,7 +111,7 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = false,
         };
 
-        public static readonly SKPaint InteriorFloorSelectPaint = new()
+        public readonly static SKPaint InteriorFloorSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -120,7 +120,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint LandformAreaSelectPaint = new()
+        public readonly static SKPaint LandformAreaSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -153,7 +153,7 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = true
         };
 
-        public static readonly SKPaint CursorCircleStrokePaint = new()
+        public readonly static SKPaint CursorCircleStrokePaint = new()
         {
             Color = SKColors.Black,
             StrokeWidth = 2,
@@ -162,13 +162,13 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint CursorCircleFillPaint = new()
+        public readonly static SKPaint CursorCircleFillPaint = new()
         {
             Color = SKColors.Empty,
             Style = SKPaintStyle.Fill,
         };
 
-        public static readonly SKPaint ContourPathPaint = new()
+        public readonly static SKPaint ContourPathPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = false,
@@ -176,7 +176,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 1,
         };
 
-        public static readonly SKPaint ContourMarginPaint = new()
+        public readonly static SKPaint ContourMarginPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = false,
@@ -185,7 +185,7 @@ namespace RealmStudioShapeRenderingLib
         };
 
         // the SKPaint object used to draw the box around the selected symbol
-        public static readonly SKPaint MapSymbolSelectPaint = new()
+        public readonly static SKPaint MapSymbolSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -194,7 +194,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([3F, 3F], 6F),
         };
 
-        public static readonly SKPaint RiverSelectPaint = new()
+        public readonly static SKPaint RiverSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -203,7 +203,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F)
         };
 
-        public static SKPaint RiverControlPointPaint = new()
+        public readonly static SKPaint RiverControlPointPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
@@ -211,7 +211,7 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.WhiteSmoke
         };
 
-        public static SKPaint RiverControlPointOutlinePaint = new()
+        public readonly static SKPaint RiverControlPointOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -219,7 +219,7 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.Black
         };
 
-        public static SKPaint RiverSelectedControlPointPaint = new()
+        public readonly static SKPaint RiverSelectedControlPointPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
@@ -227,7 +227,7 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.BlueViolet,
         };
 
-        public static SKPaint MapPathSelectPaint = new()
+        public readonly static SKPaint MapPathSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -236,7 +236,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F)
         };
 
-        public static SKPaint MapPathSelectErasePaint = new()
+        public readonly static SKPaint MapPathSelectErasePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -244,7 +244,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 2,
         };
 
-        public static SKPaint MapPathControlPointPaint = new()
+        public readonly static SKPaint MapPathControlPointPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
@@ -252,7 +252,7 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.WhiteSmoke,
         };
 
-        public static SKPaint MapPathSelectedControlPointPaint = new()
+        public readonly static SKPaint MapPathSelectedControlPointPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
@@ -260,7 +260,7 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.BlueViolet,
         };
 
-        public static SKPaint MapPathControlPointOutlinePaint = new()
+        public readonly static SKPaint MapPathControlPointOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -283,7 +283,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeCap = SKStrokeCap.Round,
         };
 
-        public static SKPaint LabelSelectPaint = new()
+        public readonly static SKPaint LabelSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -292,7 +292,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([4F, 2F], 6F),
         };
 
-        public static SKPaint LabelPathPaint = new()
+        public readonly static SKPaint LabelPathPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -301,7 +301,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([2F, 2F], 4F)
         };
 
-        public static readonly SKPaint RegionSelectPaint = new()
+        public readonly static SKPaint RegionSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -310,7 +310,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint RegionPointFillPaint = new()
+        public readonly static SKPaint RegionPointFillPaint = new()
         {
             Style = SKPaintStyle.StrokeAndFill,
             IsAntialias = true,
@@ -318,7 +318,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 1,
         };
 
-        public static readonly SKPaint RegionPointSelectedFillPaint = new()
+        public readonly static SKPaint RegionPointSelectedFillPaint = new()
         {
             Style = SKPaintStyle.StrokeAndFill,
             IsAntialias = true,
@@ -326,7 +326,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 1,
         };
 
-        public static readonly SKPaint RegionNewPointFillPaint = new()
+        public readonly static SKPaint RegionNewPointFillPaint = new()
         {
             Style = SKPaintStyle.StrokeAndFill,
             IsAntialias = true,
@@ -334,7 +334,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 1,
         };
 
-        public static readonly SKPaint RegionPointOutlinePaint = new()
+        public readonly static SKPaint RegionPointOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -342,23 +342,23 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 1,
         };
 
-        public static SKPaint OceanPaint = new()
+        public readonly static SKPaint OceanPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
             BlendMode = SKBlendMode.SrcOver,
         };
 
-        public static readonly SKPaint OceanEraserPaint = new()
+        public readonly static SKPaint OceanEraserPaint = new()
         {
             Color = SKColors.Empty,
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
         };
 
-        public static SKPaint BoxPaint = new();
+        public readonly static SKPaint BoxPaint = new();
 
-        public static SKPaint BoxSelectPaint = new()
+        public readonly static SKPaint BoxSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -367,7 +367,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([4F, 2F], 6F),
         };
 
-        public static readonly SKPaint SelectedDrawnObjectPaint = new()
+        public readonly static SKPaint SelectedDrawnObjectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -376,39 +376,39 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([5F, 5F], 10F),
         };
 
-        public static readonly SKPaint LandformRenderFastPaint = new()
+        public readonly static SKPaint LandformRenderFastPaint = new()
         {
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Multiply,
             IsAntialias = true
         };
 
-        public static readonly SKPaint LandformRippleRingPaint = new()
+        public readonly static SKPaint LandformRippleRingPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true
         };
 
-        public static readonly SKPaint CoastlineBasePaint = new()
+        public readonly static SKPaint CoastlineBasePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true
         };
 
-        public static readonly SKPaint LandformInteriorShadingPaint = new()
+        public readonly static SKPaint LandformInteriorShadingPaint = new()
         {
             BlendMode = SKBlendMode.Multiply,
             IsAntialias = true
         };
 
-        public static readonly SKPaint LandformInteriorGradientPaint = new()
+        public readonly static SKPaint LandformInteriorGradientPaint = new()
         {
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Multiply,
             IsAntialias = true
         };
 
-        public static readonly SKPaint Shape2DSelectPaint = new()
+        public readonly static SKPaint Shape2DSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             Color = SKColors.DeepSkyBlue,
@@ -417,7 +417,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([10, 6], 0)
         };
 
-        public static readonly SKPaint WaterSystemSelectPaint = new()
+        public readonly static SKPaint WaterSystemSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             Color = SKColors.Crimson,
@@ -426,7 +426,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([10, 6], 0)
         };
 
-        public static readonly SKPaint DebugPaint = new()
+        public readonly static SKPaint DebugPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = false,
@@ -434,7 +434,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 2,
         };
 
-        public static readonly SKPaint DebugPaint2 = new()
+        public readonly static SKPaint DebugPaint2 = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = false,
@@ -443,7 +443,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([4F, 2F], 6F),
         };
 
-        public static readonly SKPaint DebugPaint3 = new()
+        public readonly static SKPaint DebugPaint3 = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = false,

@@ -80,6 +80,12 @@ namespace RealmStudioShapeRenderingLib
         public float TieSpacing{ get; set; } = 4f;
         public float TieOverhang{ get; set; } = 2f;
 
+        public float TowerDistance { get; set; } = 10f;
+        public float TowerSize { get; set; } = 1.2f;
+
+        public bool DrawCrenelations { get; set; } = true;
+        public float CrenelWidthFactor { get; set; } = 0.4f;
+        public float CrenelHeightFactor { get; set; } = 0.3f;
 
         // -------------------------------------------------
         // Wall / structure rendering
@@ -201,6 +207,11 @@ namespace RealmStudioShapeRenderingLib
                 RailOffset = RailOffset,
                 TieOverhang = TieOverhang,
                 TieSpacing = TieSpacing,
+                TowerDistance = TowerDistance,
+                TowerSize = TowerSize,
+                DrawCrenelations = DrawCrenelations,
+                CrenelHeightFactor = CrenelHeightFactor,
+                CrenelWidthFactor = CrenelWidthFactor,
 
                 StructureSize = StructureSize,
                 StructureSpacing = StructureSpacing,

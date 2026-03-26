@@ -895,48 +895,5 @@
 
             InvalidateRenderCache();
         }
-
-        // Noise functions
-
-        private static float Noise2D(int x, int y, int seed)
-        {
-            unchecked
-            {
-                int n = x;
-                n = (n << 13) ^ n;
-                int hash = (n * (n * n * 15731 + 789221) + 1376312589);
-
-                n = y ^ hash ^ seed;
-                n = (n << 13) ^ n;
-                hash = (n * (n * n * 15731 + 789221) + 1376312589);
-
-                // Map to 0–1
-                return 0.5f * (1f + (hash & 0x7fffffff) / (float)int.MaxValue);
-            }
-        }
-
-        private static float SmoothNoise(float x, float y, int seed)
-        {
-            int x0 = (int)MathF.Floor(x);
-            int y0 = (int)MathF.Floor(y);
-            int x1 = x0 + 1;
-            int y1 = y0 + 1;
-
-            float sx = x - x0;
-            float sy = y - y0;
-
-            float n00 = Noise2D(x0, y0, seed);
-            float n10 = Noise2D(x1, y0, seed);
-            float n01 = Noise2D(x0, y1, seed);
-            float n11 = Noise2D(x1, y1, seed);
-
-            float ix0 = Utilities.Lerp(n00, n10, sx);
-            float ix1 = Utilities.Lerp(n01, n11, sx);
-
-            return Utilities.Lerp(ix0, ix1, sy);
-        }
-
-
-
     }
 }

@@ -22,7 +22,6 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
-using System.Diagnostics;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -44,7 +43,7 @@ namespace RealmStudioShapeRenderingLib
             {
                 OnChanged = () =>
                 {
-
+                    SetGeometry(Utilities.BuildPath(ControlPoints));
                 }
             };
         }

@@ -1,0 +1,21 @@
+﻿using SkiaSharp;
+
+namespace RealmStudioShapeRenderingLib
+{
+    public abstract class MapComponent2D: IShape2D, ISelectable
+    {
+        public string Id { get; } = Guid.NewGuid().ToString();
+
+        public bool IsSelected { get; set; }
+
+        public abstract SKRect Bounds { get; }
+
+        public abstract void Render(SKCanvas canvas);
+
+        public abstract bool HitTest(SKPoint worldPos);
+
+        public abstract IShapeState CaptureState();
+
+        public abstract void RestoreState(IShapeState state);
+    }
+}

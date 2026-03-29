@@ -38,6 +38,27 @@ namespace RealmStudioShapeRenderingLib
             return path;
         }
 
+        public static SymbolFileFormat InferFileFormat(string path)
+        {
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+
+            return ext switch
+            {
+                ".png" => SymbolFileFormat.PNG,
+                ".jpg" or ".jpeg" => SymbolFileFormat.JPG,
+                ".bmp" => SymbolFileFormat.BMP,
+                ".svg" => SymbolFileFormat.Vector,
+                _ => SymbolFileFormat.NotSet
+            };
+        }
+
+        public static string NormalizePath(string path)
+        {
+            return Path.GetFullPath(path)
+                .Replace('\\', '/')
+                .ToLowerInvariant();
+        }
+
         public static SKPoint Normalize(SKPoint v)
         {
             float len = MathF.Sqrt(v.X * v.X + v.Y * v.Y);

@@ -4,10 +4,8 @@ namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
 
-    public abstract class Shape2D : IShape2D, ISelectable
+    public abstract class Shape2D : MapComponent2D
     {
-        public string Id { get; } = Guid.NewGuid().ToString();
-
         public event Action? GeometryChanged;
 
         protected virtual void OnGeometryChanged()
@@ -34,9 +32,8 @@ namespace RealmStudioShapeRenderingLib
         /// <summary>
         /// Axis-aligned bounds in world space.
         /// </summary>
-        public virtual SKRect Bounds => HitPath.Bounds;
+        public override SKRect Bounds => HitPath.Bounds;
 
-        public bool IsSelected { get; set; } = false;
 
         // -------------------------------------------------
         // Geometry
@@ -90,12 +87,12 @@ namespace RealmStudioShapeRenderingLib
         // Undo / Redo Support
         // -------------------------------------------------
 
-        public virtual IShapeState CaptureState()
+        public override IShapeState CaptureState()
         {
             return new Shape2DState(new SKPath(HitPath));
         }
 
-        public virtual void RestoreState(IShapeState state)
+        public override void RestoreState(IShapeState state)
         {
             RestoreGeometry(((Shape2DState)state).Geometry);
             OnGeometryChanged();
@@ -109,7 +106,7 @@ namespace RealmStudioShapeRenderingLib
         /// <summary>
         /// Default rendering behavior. Subclasses must override.
         /// </summary>
-        public virtual void Render(SKCanvas canvas)
+        public override void Render(SKCanvas canvas)
         {
             throw new ApplicationException("Shape2D.Render called. This method must be overridden.");
         }
@@ -117,7 +114,7 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
         // HitTest
         // -------------------------------------------------
-        public virtual bool HitTest(SKPoint worldPos)
+        public override bool HitTest(SKPoint worldPos)
         {
             return Bounds.Contains(worldPos) &&
                    HitPath.Contains(worldPos.X, worldPos.Y);

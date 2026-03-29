@@ -204,6 +204,14 @@ namespace RealmStudioShapeRenderingLib
         Other
     }
 
+    public enum MapSymbolBaseColorType
+    {
+        NotSet,
+        GrayScale,
+        RGBMask,
+        FullColor,
+    }
+
     public enum ComponentMoveDirection
     {
         Up, Down, Left, Right

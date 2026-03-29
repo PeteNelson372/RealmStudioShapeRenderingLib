@@ -12,6 +12,8 @@ namespace RealmStudioShapeRenderingLib
         public string Name { get; }
         public AssetType Type { get; }
 
+        public MapSymbolType SymbolType { get; } 
+
         // -------------------------------------------------
         // File references
         // -------------------------------------------------
@@ -52,6 +54,7 @@ namespace RealmStudioShapeRenderingLib
             string id,
             string name,
             AssetType type,
+            MapSymbolType symbolType,
             string filePath,
             string? metadataPath = null,
             object? metadata = null,
@@ -61,6 +64,7 @@ namespace RealmStudioShapeRenderingLib
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Type = type;
+            SymbolType = symbolType;
             FilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             MetadataPath = metadataPath;
             Metadata = metadata;

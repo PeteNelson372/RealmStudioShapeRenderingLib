@@ -441,6 +441,21 @@ namespace RealmStudioShapeRenderingLib
         Right
     }
 
+    public enum TransformHandle
+    {
+        None,
+        Move,
+        TopLeft,
+        TopRight,
+        BottomRight,
+        BottomLeft,
+        Top,
+        Right,
+        Bottom,
+        Left,
+        Rotate
+    }
+
     public static class EnumerationExtensions
     {
         public static string? GetDescription(this Enum value)

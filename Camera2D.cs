@@ -17,6 +17,8 @@ namespace RealmStudioShapeRenderingLib
         private bool _isPanning;
         private DateTime _lastMouseMoveTime;
 
+        private SKRect _viewport = SKRect.Empty;
+
         public bool IsPanning
         {
             get { return _isPanning; } 
@@ -65,6 +67,12 @@ namespace RealmStudioShapeRenderingLib
             set { _previousCursorPoint = value; }
         }
 
+        public SKRect Viewport
+        {
+            get { return _viewport; }
+            set { _viewport = value; }
+        }
+
         private SKPoint _velocity = new(0, 0);
 
         public float Zoom { get; private set; } = 1.0f;
@@ -86,22 +94,25 @@ namespace RealmStudioShapeRenderingLib
             canvas.Scale(Zoom);
         }
 
-        public void PanBy(SKPoint deltaPixels)
+        public void PanBy(SKPoint deltaPixels, float viewWidth, float viewHeight)
         {
             Pan = new SKPoint(Pan.X + deltaPixels.X, Pan.Y + deltaPixels.Y);
+            UpdateViewport(viewWidth, viewHeight);
         }
 
-        public void SetPan(SKPoint pan)
+        public void SetPan(SKPoint pan, float viewWidth, float viewHeight)
         {
             Pan = pan;
+            UpdateViewport(viewWidth, viewHeight);
         }
 
-        public void SetZoom(float zoom)
+        public void SetZoom(float zoom, float viewWidth, float viewHeight)
         {
             Zoom = Utilities.Clamp(zoom, MinZoom, MaxZoom);
+            UpdateViewport(viewWidth, viewHeight);
         }
 
-        public void ZoomAtScreenPoint(float newZoom, SKPoint screenPoint)
+        public void ZoomAtScreenPoint(float newZoom, SKPoint screenPoint, float viewWidth, float viewHeight)
         {
             float oldZoom = Zoom;
             newZoom = Utilities.Clamp(newZoom, MinZoom, MaxZoom);
@@ -117,13 +128,26 @@ namespace RealmStudioShapeRenderingLib
             );
 
             Zoom = newZoom;
+            UpdateViewport(viewWidth, viewHeight);
         }
 
-        public void Reset()
+        public void Reset(float viewWidth, float viewHeight)
         {
             Zoom = 1.0f;
             Pan = new SKPoint(0, 0);
             _velocity = new SKPoint(0, 0);
+            UpdateViewport(viewWidth, viewHeight);
+        }
+
+        private void UpdateViewport(float viewWidth, float viewHeight)
+        {
+            float left = (-Pan.X) / Zoom;
+            float top = (-Pan.Y) / Zoom;
+
+            float right = (viewWidth - Pan.X) / Zoom;
+            float bottom = (viewHeight - Pan.Y) / Zoom;
+
+            Viewport = new SKRect(left, top, right, bottom);
         }
 
         public void ClampToWorld(SKRect worldBounds, SKSize viewport)

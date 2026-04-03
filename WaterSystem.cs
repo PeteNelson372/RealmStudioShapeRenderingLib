@@ -14,7 +14,20 @@ namespace RealmStudioShapeRenderingLib
 
         public SKPath MergedGeometry { get; set; } = new();
 
-        public SKRect Bounds { get; private set; }
+        public SKRect Bounds
+        {
+            get
+            {
+                if (MergedGeometry.IsEmpty)
+                    return SKRect.Empty;
+                return MergedGeometry.Bounds;
+            }
+            set
+            {
+                // Cannot set bounds directly.
+                throw new ApplicationException("WaterSystem.Bounds setter called. This method must be overridden to support resizing.");
+            }
+        }
 
         public WaterRenderSettings RenderSettings { get; set; } = new();
 
@@ -33,7 +46,7 @@ namespace RealmStudioShapeRenderingLib
             WaterBodies.Add(body);
             body.WaterSystem = this;
 
-            Bounds = Bounds.IsEmpty ? body.Bounds : SKRect.Union(Bounds, body.Bounds);
+            //Bounds = Bounds.IsEmpty ? body.Bounds : SKRect.Union(Bounds, body.Bounds);
 
             if (MergedGeometry == null || MergedGeometry.IsEmpty)
             {

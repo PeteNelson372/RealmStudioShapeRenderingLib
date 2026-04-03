@@ -8,7 +8,7 @@ namespace RealmStudioShapeRenderingLib
 
         public bool IsSelected { get; set; }
 
-        public abstract SKRect Bounds { get; }
+        public virtual SKRect Bounds { get; set; }
 
         public abstract void Render(SKCanvas canvas);
 

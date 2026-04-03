@@ -5,6 +5,8 @@
 
     public class MapSymbolDefinition
     {
+        SymbolBoundsMetadata? _boundsMetadata = null;
+
         // -------------------------------------------------
         // Identity
         // -------------------------------------------------
@@ -49,14 +51,26 @@
         // -------------------------------------------------
 
         [XmlElement("Bounds")]
-        public SymbolBoundsMetadata? BoundsMetadata { get; set; }
+        public SymbolBoundsMetadata? BoundsMetadata
+        {
+            get { return _boundsMetadata;  }
+            set
+            {
+                if (_boundsMetadata != null)
+                {
+                    return;
+                }
+
+                _boundsMetadata = value;
+            }
+        }
 
         // -------------------------------------------------
         // Runtime-only fields
         // -------------------------------------------------
 
         [XmlIgnore]
-        public SKRect Bounds { get; set; } = SKRect.Empty;
+        public SKRect Bounds => BoundsMetadata == null ? SKRect.Empty : BoundsMetadata.ToSKRect();
 
         [XmlIgnore]
         public string CollectionId { get; set; } = string.Empty;
@@ -76,11 +90,6 @@
             CollectionId = collectionId;
             CollectionName = collectionName;
             CollectionPath = baseDir;
-
-            if (BoundsMetadata != null)
-            {
-                Bounds = BoundsMetadata.ToSKRect();
-            }
         }
     }
 

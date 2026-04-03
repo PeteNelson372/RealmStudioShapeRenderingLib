@@ -62,6 +62,14 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 10,
         };
 
+        public readonly static SKPaint MapBoundaryPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 3,
+            Color = SKColors.DarkGray,
+            IsAntialias = true,
+        };
+
         public readonly static SKPaint LandformSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,
@@ -256,7 +264,6 @@ namespace RealmStudioShapeRenderingLib
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
-            StrokeWidth = 2,
             Color = SKColors.BlueViolet,
         };
 
@@ -424,6 +431,50 @@ namespace RealmStudioShapeRenderingLib
             StrokeWidth = 2,
             IsAntialias = true,
             PathEffect = SKPathEffect.CreateDash([10, 6], 0)
+        };
+
+        public readonly static SKPaint TransformHandlePaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Color = SKColors.Cyan,
+        };
+
+        public readonly static SKPaint TransformHandleOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            StrokeWidth = 1,
+            Color = SKColors.Black,
+        };
+
+        public readonly static SKPaint TransformRotatePaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.Gold,
+            IsAntialias = true
+        };
+
+        public readonly static SKPaint TransformHandleHoverFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.BlueViolet,
+            IsAntialias = true
+        };
+
+        public readonly static SKPaint TransformHandleHoverStrokePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            Color = SKColors.Black,
+            IsAntialias = true
+        };
+
+        public readonly static SKPaint TransformRotateHoverPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.Orange,
+            IsAntialias = true
         };
 
         public readonly static SKPaint DebugPaint = new()

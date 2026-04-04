@@ -1,6 +1,4 @@
-﻿using SkiaSharp;
-
-namespace RealmStudioShapeRenderingLib
+﻿namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
 
@@ -44,7 +42,9 @@ namespace RealmStudioShapeRenderingLib
         private void UpdateGeometry()
         {
             if (Target == null)
+            {
                 return;
+            }
 
             _corners = Target.GetTransformedCorners();
 
@@ -59,9 +59,13 @@ namespace RealmStudioShapeRenderingLib
             float len = MathF.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
 
             if (len > 1e-5f)
+            {
                 dir = new SKPoint(dir.X / len, dir.Y / len);
+            }
             else
+            {
                 dir = new SKPoint(0, -1); // fallback
+            }
 
             _rotateHandle = new SKPoint(
                 _top.X + dir.X * RotateHandleOffset,
@@ -79,10 +83,14 @@ namespace RealmStudioShapeRenderingLib
                 return;
             }
 
-            HandleSize = Utilities.Clamp(4.5f / zoom, 2f, 12f);
+            canvas.Save();
+            canvas.ResetMatrix();
+
+            HandleSize = Utilities.Clamp(4.5f / zoom, 2f, 28f);
 
             HitRadius = 8f / zoom;
             HandleStrokeWidth = 1f / zoom;
+            RotateHandleOffset = 30f / zoom;
 
             UpdateGeometry();
 
@@ -143,6 +151,8 @@ namespace RealmStudioShapeRenderingLib
 
             canvas.DrawCircle(_rotateHandle, HandleSize + 1, fill);
             canvas.DrawCircle(_rotateHandle, HandleSize + 1, handleOutlinePaint);
+
+            canvas.Restore();
         }
 
         // =========================
@@ -227,7 +237,7 @@ namespace RealmStudioShapeRenderingLib
 
         private static bool PointInQuad(SKPoint p, SKPoint[] c)
         {
-            float Sign(SKPoint p1, SKPoint p2, SKPoint p3)
+            static float Sign(SKPoint p1, SKPoint p2, SKPoint p3)
             {
                 return (p1.X - p3.X) * (p2.Y - p3.Y) -
                        (p2.X - p3.X) * (p1.Y - p3.Y);

@@ -1,12 +1,11 @@
-﻿using RealmStudioX;
-using SkiaSharp;
+﻿using SkiaSharp;
 using Svg.Skia;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class SymbolImageCache
     {
-        private readonly Dictionary<string, SymbolImageResource> _cache = new();
+        private readonly Dictionary<string, SymbolImageResource> _cache = [];
 
         public SymbolImageResource? Get(string path)
         {
@@ -38,6 +37,7 @@ namespace RealmStudioShapeRenderingLib
         private static BitmapResource? LoadBitmap(string path)
         {
             var img = SKImage.FromBitmap(SKBitmap.Decode(path));
+
             return img != null ? new BitmapResource(img) : null;
         }
 

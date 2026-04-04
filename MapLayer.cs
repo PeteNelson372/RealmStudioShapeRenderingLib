@@ -140,7 +140,9 @@ namespace RealmStudioShapeRenderingLib
 
         private static (int x, int y) GetCell(SKPoint p)
         {
-            return ((int)(p.X / CellSize), (int)(p.Y / CellSize));
+            int x = (int)MathF.Floor(p.X / CellSize);
+            int y = (int)MathF.Floor(p.Y / CellSize);
+            return (x, y);
         }
 
         private void AddToSpatialGrid(MapComponent2D shape)
@@ -207,6 +209,48 @@ namespace RealmStudioShapeRenderingLib
                 }
         }
 
+        public IEnumerable<MapComponent2D> QuerySymbolsInRadius(SKPoint center, float radius)
+        {
+            float r2 = radius * radius;
+
+            var min = new SKPoint(center.X - radius, center.Y - radius);
+            var max = new SKPoint(center.X + radius, center.Y + radius);
+
+            var minCell = GetCell(min);
+            var maxCell = GetCell(max);
+
+            HashSet<MapSymbol> results = new();
+
+            for (int x = minCell.x; x <= maxCell.x; x++)
+            {
+                for (int y = minCell.y; y <= maxCell.y; y++)
+                {
+                    if (!_grid.TryGetValue((x, y), out var list))
+                    {
+                        continue;
+                    }
+
+                    foreach (var shape in list)
+                    {
+                        if (shape is not MapSymbol ms)
+                            continue;
+
+                        var pos = ms.Location;
+
+                        float dx = pos.X - center.X;
+                        float dy = pos.Y - center.Y;
+
+                        if ((dx * dx + dy * dy) <= r2)
+                        {
+                            results.Add(ms);
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
         // -------------------------------------------------
         // Shape Management
         // -------------------------------------------------
@@ -221,7 +265,14 @@ namespace RealmStudioShapeRenderingLib
 
         public void Add(MapComponent2D shape)
         {
-            Enqueue(shape);
+            if (shape is MapSymbol ms)
+            {
+                Enqueue(ms);
+            }
+            else
+            {
+                _shapes.Add(shape);
+            }
         }
 
         public void ProcessPlacementQueue()
@@ -247,29 +298,24 @@ namespace RealmStudioShapeRenderingLib
 
             _shapes.Add(shape);
 
-            bool isVectorSymbol = shape is MapSymbol ms && ms.SymbolDefinition.SymbolFormat == SymbolFileFormat.Vector;
-            // vector symbols are rendered directly from the MapLayer.Shapes list, not from the tiles
+            // Add symbols to tiles (multi-tile aware)
+            var bounds = shape.Bounds;
 
-            //if (!isVectorSymbol)
-            {
-                // Add bitmap symbols to tiles (multi-tile aware)
-                var bounds = shape.Bounds;
+            var topLeft = new SKPoint(bounds.Left, bounds.Top);
+            var bottomRight = new SKPoint(bounds.Right, bounds.Bottom);
 
-                var topLeft = new SKPoint(bounds.Left, bounds.Top);
-                var bottomRight = new SKPoint(bounds.Right, bounds.Bottom);
+            var minTile = GetTileCoord(topLeft);
+            var maxTile = GetTileCoord(bottomRight);
 
-                var minTile = GetTileCoord(topLeft);
-                var maxTile = GetTileCoord(bottomRight);
+            for (int x = minTile.x; x <= maxTile.x; x++)
+                for (int y = minTile.y; y <= maxTile.y; y++)
+                {
+                    var tile = GetOrCreateTile(x, y);
 
-                for (int x = minTile.x; x <= maxTile.x; x++)
-                    for (int y = minTile.y; y <= maxTile.y; y++)
-                    {
-                        var tile = GetOrCreateTile(x, y);
+                    tile.Add(shape);
+                    tile.IsModified = true;
+                }
 
-                        tile.Add(shape);
-                        tile.IsModified = true;
-                    }
-            }
 
             AddToSpatialGrid(shape);
         }
@@ -278,28 +324,23 @@ namespace RealmStudioShapeRenderingLib
         {
             _shapes.Remove(shape);
 
-            bool isVectorSymbol = shape is MapSymbol ms && ms.SymbolDefinition.SymbolFormat == SymbolFileFormat.Vector;
+            var bounds = shape.Bounds;
 
-            if (!isVectorSymbol)
-            {
-                var bounds = shape.Bounds;
+            var topLeft = new SKPoint(bounds.Left, bounds.Top);
+            var bottomRight = new SKPoint(bounds.Right, bounds.Bottom);
 
-                var topLeft = new SKPoint(bounds.Left, bounds.Top);
-                var bottomRight = new SKPoint(bounds.Right, bounds.Bottom);
+            var minTile = GetTileCoord(topLeft);
+            var maxTile = GetTileCoord(bottomRight);
 
-                var minTile = GetTileCoord(topLeft);
-                var maxTile = GetTileCoord(bottomRight);
-
-                for (int x = minTile.x; x <= maxTile.x; x++)
-                    for (int y = minTile.y; y <= maxTile.y; y++)
+            for (int x = minTile.x; x <= maxTile.x; x++)
+                for (int y = minTile.y; y <= maxTile.y; y++)
+                {
+                    if (_tiles.TryGetValue((x, y), out var tile))
                     {
-                        if (_tiles.TryGetValue((x, y), out var tile))
-                        {
-                            tile.Remove(shape);
-                            tile.IsModified = true;
-                        }
+                        tile.Remove(shape);
+                        tile.IsModified = true;
                     }
-            }
+                }
 
             RemoveFromSpatialGrid(shape);
         }
@@ -327,12 +368,6 @@ namespace RealmStudioShapeRenderingLib
 
         public void UpdateSymbolTiles(MapSymbol symbol, SKRect oldBounds, SKRect newBounds)
         {
-            //if (symbol.SymbolDefinition.SymbolFormat == SymbolFileFormat.Vector)
-            //{
-            //    // vector symbols are rendered directly from the MapLayer.Shapes list, not from the tiles
-            //    return;
-            //}
-
             var affected = SKRect.Union(oldBounds, newBounds);
 
             int minX = (int)MathF.Floor(affected.Left / TileSize);

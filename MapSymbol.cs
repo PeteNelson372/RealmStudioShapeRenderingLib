@@ -21,12 +21,10 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
-using RealmStudioX;
 using SkiaSharp;
-using Svg.Skia;
 
 namespace RealmStudioShapeRenderingLib
-{    public class MapSymbol(SKRect bounds) : MapComponent2D, ITransformable2D
+{    public class MapSymbol(SKRect localBounds) : MapComponent2D, ITransformable2D
     {
         public MapSymbolDefinition SymbolDefinition { get; set; } = new();
 
@@ -46,7 +44,7 @@ namespace RealmStudioShapeRenderingLib
 
         public SKColor[] CustomSymbolColors { get; set; } = new SKColor[3];
 
-        public override SKRect Bounds { get; set; } = bounds;
+        public override SKRect LocalBounds { get; set; } = localBounds;
 
         private SymbolImageResource? symbolImage = null;
 
@@ -58,7 +56,8 @@ namespace RealmStudioShapeRenderingLib
                 Rotation = Rotation,
                 Scale = Scale,
                 Mirror = Mirror,
-                
+                LocalBounds = LocalBounds,
+                TintColor = TintColor,
                 CustomColors = (SKColor[])CustomSymbolColors.Clone(),
 
                 Name = Name,
@@ -77,6 +76,8 @@ namespace RealmStudioShapeRenderingLib
             Rotation = s.Rotation;
             Scale = s.Scale;
             Mirror = s.Mirror;
+            LocalBounds = s.LocalBounds;
+            TintColor = s.TintColor;
 
             // Copy colors (important: do not reassign array reference if it's reused elsewhere)
             if (s.CustomColors != null && s.CustomColors.Length == 3)
@@ -92,20 +93,35 @@ namespace RealmStudioShapeRenderingLib
 
         public void UpdateBounds()
         {
-            ArgumentNullException.ThrowIfNull(SymbolDefinition.BoundsMetadata, nameof(SymbolDefinition.BoundsMetadata));
+            var local = LocalBounds;
 
-            var local = SymbolDefinition.BoundsMetadata.ToSKRect();
+            // -------------------------------------------------
+            // 1. Apply scale + mirror (match Render!)
+            // -------------------------------------------------
+            float sx = Mirror ? -Scale : Scale;
+            float sy = Scale;
 
-            float left = local.Left * Scale;
-            float top = local.Top * Scale;
-            float right = local.Right * Scale;
-            float bottom = local.Bottom * Scale;
+            float left = local.Left * sx;
+            float top = local.Top * sy;
+            float right = local.Right * sx;
+            float bottom = local.Bottom * sy;
 
-            var p1 = new SKPoint(left, top);
-            var p2 = new SKPoint(right, top);
-            var p3 = new SKPoint(right, bottom);
-            var p4 = new SKPoint(left, bottom);
+            // -------------------------------------------------
+            // 2. Normalize in case mirror flipped axes
+            // -------------------------------------------------
+            float minLocalX = MathF.Min(left, right);
+            float maxLocalX = MathF.Max(left, right);
+            float minLocalY = MathF.Min(top, bottom);
+            float maxLocalY = MathF.Max(top, bottom);
 
+            var p1 = new SKPoint(minLocalX, minLocalY);
+            var p2 = new SKPoint(maxLocalX, minLocalY);
+            var p3 = new SKPoint(maxLocalX, maxLocalY);
+            var p4 = new SKPoint(minLocalX, maxLocalY);
+
+            // -------------------------------------------------
+            // 3. Apply rotation
+            // -------------------------------------------------
             float radians = Rotation * MathF.PI / 180f;
             float cos = MathF.Cos(radians);
             float sin = MathF.Sin(radians);
@@ -120,11 +136,17 @@ namespace RealmStudioShapeRenderingLib
             p3 = Rotate(p3);
             p4 = Rotate(p4);
 
+            // -------------------------------------------------
+            // 4. Translate to world position
+            // -------------------------------------------------
             p1.Offset(Location);
             p2.Offset(Location);
             p3.Offset(Location);
             p4.Offset(Location);
 
+            // -------------------------------------------------
+            // 5. Compute AABB (axis-aligned bounding box)
+            // -------------------------------------------------
             float minX = MathF.Min(MathF.Min(p1.X, p2.X), MathF.Min(p3.X, p4.X));
             float minY = MathF.Min(MathF.Min(p1.Y, p2.Y), MathF.Min(p3.Y, p4.Y));
             float maxX = MathF.Max(MathF.Max(p1.X, p2.X), MathF.Max(p3.X, p4.X));
@@ -135,14 +157,15 @@ namespace RealmStudioShapeRenderingLib
 
         public SKRect GetLocalBounds()
         {
-            return SymbolDefinition.BoundsMetadata!.ToSKRect();
+            return LocalBounds;
         }
 
         public SKPoint[] GetTransformedCorners()
         {
-            ArgumentNullException.ThrowIfNull(SymbolDefinition.BoundsMetadata, nameof(SymbolDefinition.BoundsMetadata));
+            var r = LocalBounds;
 
-            var r = SymbolDefinition.BoundsMetadata.ToSKRect();
+            float sx = Mirror ? -Scale : Scale;
+            float sy = Scale;
 
             float rad = Rotation * MathF.PI / 180f;
             float cos = MathF.Cos(rad);
@@ -150,28 +173,30 @@ namespace RealmStudioShapeRenderingLib
 
             SKPoint Transform(float x, float y)
             {
-                // scale
-                x *= Scale;
-                y *= Scale;
+                // 1. Start in local space
 
-                // rotate
+                // 2. Apply scale (first in canvas, last in math → reverse order)
+                x *= sx;
+                y *= sy;
+
+                // 3. Apply rotation
                 float rx = x * cos - y * sin;
                 float ry = x * sin + y * cos;
 
-                // translate
+                // 4. Apply translation
                 return new SKPoint(
                     rx + Location.X,
                     ry + Location.Y
                 );
             }
 
-            return new[]
-            {
+            return
+            [
                 Transform(r.Left,  r.Top),
                 Transform(r.Right, r.Top),
                 Transform(r.Right, r.Bottom),
                 Transform(r.Left,  r.Bottom)
-            };
+            ];
         }
 
         public override bool HitTest(SKPoint worldPos)
@@ -189,9 +214,9 @@ namespace RealmStudioShapeRenderingLib
             return true;
         }
 
-        private bool PointInQuad(SKPoint p, SKPoint[] c)
+        private static bool PointInQuad(SKPoint p, SKPoint[] c)
         {
-            float Sign(SKPoint p1, SKPoint p2, SKPoint p3)
+            static float Sign(SKPoint p1, SKPoint p2, SKPoint p3)
             {
                 return (p1.X - p3.X) * (p2.Y - p3.Y) -
                        (p2.X - p3.X) * (p1.Y - p3.Y);
@@ -203,6 +228,66 @@ namespace RealmStudioShapeRenderingLib
             bool b4 = Sign(p, c[3], c[0]) < 0.0f;
 
             return (b1 == b2) && (b2 == b3) && (b3 == b4);
+        }
+
+        private SKPaint? CreatePaint(SymbolImageResource resource)
+        {
+            switch (SymbolDefinition.BaseColorType)
+            {
+                case MapSymbolBaseColorType.FullColor:
+                    return null;
+
+                case MapSymbolBaseColorType.GrayScale:
+                    return CreateGrayscaleTintPaint(TintColor);
+
+                case MapSymbolBaseColorType.RGBMask:
+                    return CreateRGBMaskPaint(CustomSymbolColors);
+
+                default:
+                    return null;
+            }
+        }
+
+        private static SKPaint CreateGrayscaleTintPaint(SKColor tint)
+        {
+            float r = tint.Red / 255f;
+            float g = tint.Green / 255f;
+            float b = tint.Blue / 255f;
+
+            var matrix = new float[]
+            {
+                r, 0, 0, 0, 0,
+                0, g, 0, 0, 0,
+                0, 0, b, 0, 0,
+                0, 0, 0, 1, 0
+            };
+
+            return new SKPaint
+            {
+                ColorFilter = SKColorFilter.CreateColorMatrix(matrix),
+                IsAntialias = true
+            };
+        }
+
+        private static SKPaint CreateRGBMaskPaint(SKColor[] colors)
+        {
+            var r = colors[0];
+            var g = colors[1];
+            var b = colors[2];
+
+            var matrix = new float[]
+            {
+                r.Red / 255f,   g.Red / 255f,   b.Red / 255f,   0, 0,
+                r.Green / 255f, g.Green / 255f, b.Green / 255f, 0, 0,
+                r.Blue / 255f,  g.Blue / 255f,  b.Blue / 255f,  0, 0,
+                0,              0,              0,              1, 0
+            };
+
+            return new SKPaint
+            {
+                ColorFilter = SKColorFilter.CreateColorMatrix(matrix),
+                IsAntialias = true
+            };
         }
 
         public override void Render(SKCanvas canvas)
@@ -218,72 +303,65 @@ namespace RealmStudioShapeRenderingLib
 
             canvas.Save();
 
-            // -------------------------------------------------
-            // 1. Move to cursor (world position)
-            // -------------------------------------------------
+            // 1. Move to world position
             canvas.Translate(Location);
 
-            // -------------------------------------------------
             // 2. Apply rotation
-            // -------------------------------------------------
             canvas.RotateDegrees(Rotation);
 
-            // -------------------------------------------------
             // 3. Apply scale + mirror
-            // -------------------------------------------------
-
             float sx = Mirror ? -Scale : Scale;
             float sy = Scale;
+            canvas.Scale(sx, sy);
 
-            if (SymbolDefinition.SymbolFormat != SymbolFileFormat.Vector)
-            {
-                canvas.Scale(sx, sy);
-            }
+            // 5. Draw
+            var paint = CreatePaint(symbolImage);
+            DrawSymbolCentered(canvas, LocalBounds, Scale, symbolImage, paint);
 
-            // -------------------------------------------------
-            // 4. Draw centered
-            // -------------------------------------------------
-            DrawSymbolCentered(canvas, Location, Scale, Mirror, symbolImage);
+            
+            // Debug bounds
+            //canvas.DrawRect(LocalBounds, new SKPaint
+            //{
+            //    Style = SKPaintStyle.Stroke,
+            //    Color = SKColors.Red,
+            //    StrokeWidth = 2,
+            //    IsAntialias = true
+            //});
+            
 
             canvas.Restore();
         }
 
-        public static void DrawSymbolCentered(SKCanvas canvas, SKPoint location, float scale, bool mirror, SymbolImageResource resource)
-        {
-            var context = RenderContextScope.Current;
-            float zoom = context.Zoom;
 
+        public static void DrawSymbolCentered(
+            SKCanvas canvas,
+            SKRect localBounds,
+            float scale,
+            SymbolImageResource resource,
+            SKPaint? paint)
+        {
             switch (resource)
             {
                 case BitmapResource bmp:
-                    canvas.Translate(-bmp.Image.Width / 2f, -bmp.Image.Height / 2f);
-                    canvas.DrawImage(bmp.Image, 0, 0);
-                    break;
+                    {
+                        var src = new SKRect(0, 0, bmp.Image.Width, bmp.Image.Height);
+                        canvas.DrawImage(bmp.Image, src, localBounds, paint);
+                        break;
+                    }
 
                 case SvgResource svg:
                     {
-                        //float sx = mirror ? -scale : scale;
-                        //float sy = scale;
-
-                        //float worldScale = MathF.Max(MathF.Abs(sx), MathF.Abs(sy));
-                        //float finalScale = worldScale * zoom;
-
                         var image = svg.GetImage(scale);
 
-                        using SKPaint p = new()
-                        {
-                            IsAntialias = true
-                        };
-
-                        canvas.DrawImage(image,
-                            -image.Width / 2f,
-                            -image.Height / 2f, p);
-
+                        var src = new SKRect(0, 0, image.Width, image.Height);
+                        canvas.DrawImage(image, src, localBounds, paint);
                         break;
                     }
+
+                default:
+                    throw new InvalidOperationException("Unsupported symbol image resource type");
             }
         }
-
     }
 
 }

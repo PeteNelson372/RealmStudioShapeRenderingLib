@@ -1,6 +1,6 @@
 ﻿using SkiaSharp;
 
-namespace RealmStudioX
+namespace RealmStudioShapeRenderingLib
 {
     public abstract class SymbolImageResource
     {

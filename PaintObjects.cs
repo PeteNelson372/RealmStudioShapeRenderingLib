@@ -455,6 +455,13 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = true
         };
 
+        public readonly static SKPaint TransformZOrderPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.LawnGreen,
+            IsAntialias = true
+        };
+
         public readonly static SKPaint TransformHandleHoverFillPaint = new()
         {
             Style = SKPaintStyle.Fill,
@@ -473,7 +480,14 @@ namespace RealmStudioShapeRenderingLib
         public readonly static SKPaint TransformRotateHoverPaint = new()
         {
             Style = SKPaintStyle.Fill,
-            Color = SKColors.Orange,
+            Color = SKColors.Crimson,
+            IsAntialias = true
+        };
+
+        public readonly static SKPaint TransformZOrderHoverPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.DarkGreen,
             IsAntialias = true
         };
 

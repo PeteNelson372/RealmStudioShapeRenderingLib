@@ -405,6 +405,237 @@ namespace RealmStudioShapeRenderingLib
         }
 
         // -------------------------------------------------
+        // MapSymbol Z Ordering
+        // -------------------------------------------------
+
+        public void MoveSymbolZOrder(MapSymbol selected, ZOrderMoveType moveType)
+        {
+            if (selected == null)
+                return;
+
+            int adaptiveStep = GetAdaptiveStepSize();
+
+            switch (moveType)
+            {
+                case ZOrderMoveType.ForwardOne:
+                    MoveShape(selected, +1);
+                    break;
+
+                case ZOrderMoveType.BackwardOne:
+                    MoveShape(selected, -1);
+                    break;
+
+                case ZOrderMoveType.ForwardStep:
+                    MoveShape(selected, +adaptiveStep);
+                    break;
+
+                case ZOrderMoveType.BackwardStep:
+                    MoveShape(selected, -adaptiveStep);
+                    break;
+
+                case ZOrderMoveType.ToTop:
+                    MoveToTop(selected);
+                    break;
+
+                case ZOrderMoveType.ToBottom:
+                    MoveToBottom(selected);
+                    break;
+
+                case ZOrderMoveType.AboveAllOverlaps:
+                    MoveAboveAllOverlaps(selected);
+                    break;
+
+                case ZOrderMoveType.BelowAllOverlaps:
+                    MoveBelowAllOverlaps(selected);
+                    break;
+            }
+        }
+
+        public void MoveShape(MapComponent2D shape, int delta)
+        {
+            if (shape == null || delta == 0)
+            {
+                return;
+            }
+
+            int index = _shapes.IndexOf(shape);
+            
+            if (index < 0)
+            {
+                return;
+            }
+
+            int newIndex = Math.Clamp(index + delta, 0, _shapes.Count - 1);
+
+            if (newIndex == index)
+            {
+                return;
+            }
+
+            // IMPORTANT: adjust index if removing before inserting forward
+            if (newIndex > index)
+            {
+                newIndex--;
+            }
+
+            MoveShapeToIndex(shape, newIndex);
+        }
+
+        public void MoveToTop(MapComponent2D shape)
+        {
+            if (shape == null)
+            {
+                return;
+            }
+
+            int index = _shapes.IndexOf(shape);
+            if (index < 0 || index == _shapes.Count - 1)
+            {
+                return; // already at top or not found
+            }
+
+            _shapes.RemoveAt(index);
+            _shapes.Add(shape);
+
+            InvalidateAllTiles();
+        }
+
+        public void MoveToBottom(MapComponent2D shape)
+        {
+            if (shape == null)
+            {
+                return;
+            }
+
+            int index = _shapes.IndexOf(shape);
+            if (index <= 0)
+            {
+                return; // already at bottom or not found
+            }
+
+            _shapes.RemoveAt(index);
+            _shapes.Insert(0, shape);
+
+            InvalidateAllTiles();
+        }
+
+        private void MoveAboveAllOverlaps(MapSymbol selected)
+        {
+            var shapes = _shapes;
+            int currentIndex = shapes.IndexOf(selected);
+            if (currentIndex < 0) return;
+
+            var overlaps = shapes
+                .Where(s => s != selected &&
+                            s.Bounds.IntersectsWith(selected.Bounds))
+                .ToList();
+
+            // Find the highest (max index) overlapping symbol ABOVE current
+            int? maxIndex = overlaps
+                .Select(s => shapes.IndexOf(s))
+                .Where(i => i > currentIndex)
+                .DefaultIfEmpty(-1)
+                .Max();
+
+            if (maxIndex.HasValue && maxIndex.Value > currentIndex)
+            {
+                MoveShapeToIndex(selected, maxIndex.Value);
+            }
+        }
+
+        private void MoveBelowAllOverlaps(MapSymbol selected)
+        {
+            var shapes = _shapes;
+            int currentIndex = shapes.IndexOf(selected);
+            if (currentIndex < 0) return;
+
+            var overlaps = shapes
+                .Where(s => s != selected &&
+                            s.Bounds.IntersectsWith(selected.Bounds))
+                .ToList();
+
+            // Find the lowest (min index) overlapping symbol BELOW current
+            int? minIndex = overlaps
+                .Select(s => shapes.IndexOf(s))
+                .Where(i => i < currentIndex)
+                .DefaultIfEmpty(-1)
+                .Min();
+
+            if (minIndex.HasValue && minIndex.Value >= 0 && minIndex.Value < currentIndex)
+            {
+                MoveShapeToIndex(selected, minIndex.Value);
+            }
+        }
+
+        private int GetAdaptiveStepSize()
+        {
+            int count = _shapes.Count;
+
+            return Math.Clamp(count / 50, 5, 500);
+        }
+
+        private void MoveAboveNextOverlap(MapSymbol selected)
+        {
+            var shapes = _shapes;
+            int currentIndex = shapes.IndexOf(selected);
+            if (currentIndex < 0) return;
+
+            var overlaps = _shapes
+                .Where(s => s != selected &&
+                s.Bounds.IntersectsWith(selected.Bounds))
+                .ToList();
+
+            var (shape, index) = overlaps
+                .Select(s => (shape: s, index: shapes.IndexOf(s)))
+                .Where(x => x.index > currentIndex)
+                .OrderBy(x => x.index)
+                .FirstOrDefault();
+
+            if (shape != null)
+            {
+                MoveShapeToIndex(selected, index);
+            }
+        }
+
+        private void MoveBelowNextOverlap(MapSymbol selected)
+        {
+            var shapes = _shapes;
+            int currentIndex = shapes.IndexOf(selected);
+            if (currentIndex < 0) return;
+
+            var overlaps = _shapes
+                .Where(s => s != selected &&
+                s.Bounds.IntersectsWith(selected.Bounds))
+                .ToList();
+
+            var (shape, index) = overlaps
+                .Select(s => (shape: s, index: shapes.IndexOf(s)))
+                .Where(x => x.index < currentIndex)
+                .OrderByDescending(x => x.index)
+                .FirstOrDefault();
+
+            if (shape != null)
+            {
+                MoveShapeToIndex(selected, index);
+            }
+        }
+
+        public void MoveShapeToIndex(MapComponent2D shape, int newIndex)
+        {
+            int index = _shapes.IndexOf(shape);
+            if (index < 0) return;
+
+            newIndex = Math.Clamp(newIndex, 0, _shapes.Count - 1);
+
+            if (index == newIndex) return;
+
+            _shapes.RemoveAt(index);
+            _shapes.Insert(newIndex, shape);
+
+            InvalidateAllTiles();
+        }
+
+        // -------------------------------------------------
         // Rendering
         // -------------------------------------------------
 
@@ -434,7 +665,7 @@ namespace RealmStudioShapeRenderingLib
                 }
         }
 
-        private static void EnsureTileCache(LayerTile tile)
+        private void EnsureTileCache(LayerTile tile)
         {
             if (!tile.IsModified && tile.Image != null)
             {
@@ -453,12 +684,13 @@ namespace RealmStudioShapeRenderingLib
             canvas.Save();
             canvas.Translate(-tile.Bounds.Left, -tile.Bounds.Top);
 
-            foreach (var shape in tile.TileShapes)
+            foreach (var shape in _shapes)
             {
-                if (!shape.Bounds.IntersectsWith(tile.Bounds))
-                {
+                if (!tile.TileShapes.Contains(shape))
                     continue;
-                }
+
+                if (!shape.Bounds.IntersectsWith(tile.Bounds))
+                    continue;
 
                 shape.Render(canvas);
             }

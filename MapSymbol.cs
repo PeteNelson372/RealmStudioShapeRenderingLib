@@ -26,11 +26,13 @@ using SkiaSharp;
 namespace RealmStudioShapeRenderingLib
 {    public class MapSymbol(SKRect localBounds) : MapComponent2D, ITransformable2D
     {
-        public MapSymbolDefinition SymbolDefinition { get; set; } = new();
+        public required MapSymbolDefinition SymbolDefinition { get; init; }
 
         public string Name { get; set; } = string.Empty;
 
         public string Description { get; set; } = string.Empty;
+
+        public string WorldAnvilArticleId { get; set; } = string.Empty;
 
         public SKPoint Location { get; set; }
         

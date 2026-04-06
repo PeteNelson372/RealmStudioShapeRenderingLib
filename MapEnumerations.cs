@@ -217,6 +217,20 @@ namespace RealmStudioShapeRenderingLib
         Up, Down, Left, Right
     }
 
+    public enum ZOrderMoveType
+    {
+        ForwardOne,
+        BackwardOne,
+        ForwardStep,
+        BackwardStep,
+        ToTop,
+        ToBottom,
+        AboveNextOverlap,
+        BelowNextOverlap,
+        AboveAllOverlaps,
+        BelowAllOverlaps
+    }
+
     public enum LabelTextAlignment
     {
         AlignLeft,
@@ -453,7 +467,11 @@ namespace RealmStudioShapeRenderingLib
         Right,
         Bottom,
         Left,
-        Rotate
+        Rotate,
+        ZForward,
+        ZBackward,
+        ZTop,
+        ZBottom
     }
 
     public static class EnumerationExtensions

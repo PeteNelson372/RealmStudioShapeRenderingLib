@@ -29,10 +29,18 @@ namespace RealmStudioShapeRenderingLib
     {
         public string Text { get; set; } = string.Empty;
 
+        public SKPoint Location { get; set; }
+        public float Rotation { get; set; }
+        public float Scale { get; set; } = 1f;
+        public bool Mirror { get; set; }
+
         public string FontFamily { get; set; } = "Arial";
         public float FontSize { get; set; } = 24f;
-
-        public SKColor FillColor { get; set; } = SKColors.White;
+        public float FontWeight { get; set; }
+        public bool IsBold { get; set; }
+        public bool IsItalic { get; set; }
+        public bool IsUnderline { get; set; }
+        public SKColor FontColor { get; set; } = SKColors.White;
 
         public bool HasOutline { get; set; }
         public float OutlineWidth { get; set; }
@@ -41,8 +49,6 @@ namespace RealmStudioShapeRenderingLib
         public bool HasGlow { get; set; }
         public float GlowStrength { get; set; }
         public SKColor GlowColor { get; set; }
-
-        public float Rotation { get; set; }
 
         // path/curve data
         public SKPath? CurvePath { get; set; }

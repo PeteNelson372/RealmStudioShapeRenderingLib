@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX;
+using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -12,7 +13,7 @@ namespace RealmStudioShapeRenderingLib
 
         public virtual SKRect Bounds { get; set; } // world bounds
 
-        public abstract void Render(SKCanvas canvas);
+        public abstract void Render(SKCanvas canvas, FontManager? fontManager = null);
 
         public abstract bool HitTest(SKPoint worldPos);
 

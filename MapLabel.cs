@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX;
 using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
@@ -34,12 +35,8 @@ namespace RealmStudioShapeRenderingLib
         public float Scale { get; set; } = 1f;
         public bool Mirror { get; set; }
 
-        public string FontFamily { get; set; } = "Arial";
-        public float FontSize { get; set; } = 24f;
-        public float FontWeight { get; set; }
-        public bool IsBold { get; set; }
-        public bool IsItalic { get; set; }
-        public bool IsUnderline { get; set; }
+        public FontStyleModel FontStyle { get; set; } = new();
+
         public SKColor FontColor { get; set; } = SKColors.White;
 
         public bool HasOutline { get; set; }
@@ -59,15 +56,90 @@ namespace RealmStudioShapeRenderingLib
 
         public MapLabel() { }
 
-
-        public override void Render(SKCanvas canvas)
+        public override void Render(SKCanvas canvas, FontManager? fontManager)
         {
+            ArgumentNullException.ThrowIfNull(nameof(fontManager));
 
+            if (string.IsNullOrEmpty(Text))
+            {
+                return;
+            }
+
+            var typeface = fontManager!.GetTypeface(FontStyle);
+
+            using var font = new SKFont(typeface, FontStyle.Size);
+
+            using var fillPaint = new SKPaint
+            {
+                Color = FontColor,
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill
+            };
+
+            float x = Location.X;
+            float y = Location.Y;
+
+            canvas.Save();
+
+            // -------------------------------------------------
+            // Apply rotation
+            // -------------------------------------------------
+            if (Math.Abs(Rotation) > 0.001f)
+            {
+                canvas.Translate(x, y);
+                canvas.RotateDegrees(Rotation);
+                x = 0;
+                y = 0;
+            }
+
+            // -------------------------------------------------
+            // GLOW (draw first, behind everything)
+            // -------------------------------------------------
+            if (GlowStrength > 0)
+            {
+                using var glowPaint = new SKPaint
+                {
+                    Color = GlowColor,
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Fill,
+                    MaskFilter = SKMaskFilter.CreateBlur(
+                        SKBlurStyle.Normal,
+                        GlowStrength)
+                };
+
+                canvas.DrawText(Text, x, y, font, glowPaint);
+            }
+
+            // -------------------------------------------------
+            // OUTLINE (stroke)
+            // -------------------------------------------------
+            if (OutlineWidth > 0)
+            {
+                using var strokePaint = new SKPaint
+                {
+                    Color = OutlineColor,
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = OutlineWidth,
+                    StrokeJoin = SKStrokeJoin.Round
+                };
+
+                canvas.DrawText(Text, x, y, font, strokePaint);
+            }
+
+            // -------------------------------------------------
+            // FILL (main text)
+            // -------------------------------------------------
+            canvas.DrawText(Text, x, y, font, fillPaint);
+
+            canvas.Restore();
         }
+        
 
         public override bool HitTest(SKPoint worldPos)
         {
-            throw new NotImplementedException();
+
+            return false;
         }
 
         public override IShapeState CaptureState()

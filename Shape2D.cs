@@ -2,6 +2,7 @@
 
 namespace RealmStudioShapeRenderingLib
 {
+    using RealmStudioX;
     using SkiaSharp;
 
     public abstract class Shape2D : MapComponent2D
@@ -106,7 +107,7 @@ namespace RealmStudioShapeRenderingLib
         /// <summary>
         /// Default rendering behavior. Subclasses must override.
         /// </summary>
-        public override void Render(SKCanvas canvas)
+        public override void Render(SKCanvas canvas, FontManager? _)
         {
             throw new ApplicationException("Shape2D.Render called. This method must be overridden.");
         }

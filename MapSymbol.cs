@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX;
 using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
@@ -292,7 +293,7 @@ namespace RealmStudioShapeRenderingLib
             };
         }
 
-        public override void Render(SKCanvas canvas)
+        public override void Render(SKCanvas canvas, FontManager? _)
         {
             var context = RenderContextScope.Current;
 

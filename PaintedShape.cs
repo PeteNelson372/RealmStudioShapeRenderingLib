@@ -2,6 +2,7 @@
 
 namespace RealmStudioShapeRenderingLib
 {
+    using RealmStudioX;
     using SkiaSharp;
 
     /// <summary>
@@ -121,7 +122,7 @@ namespace RealmStudioShapeRenderingLib
         // Rendering
         // -------------------------------------------------
 
-        public override void Render(SKCanvas canvas)
+        public override void Render(SKCanvas canvas, FontManager? _)
         {
             if (HitPath.IsEmpty)
                 return;

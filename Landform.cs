@@ -1,5 +1,6 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
+    using RealmStudioX;
     using SkiaSharp;
     using System;
 
@@ -149,7 +150,7 @@
         // -------------------------------------------------
         // Rendering
         // -------------------------------------------------
-        public override void Render(SKCanvas canvas)
+        public override void Render(SKCanvas canvas, FontManager? _)
         {
             // the Render method only handles interactive mode
             if (HitPath.IsEmpty)

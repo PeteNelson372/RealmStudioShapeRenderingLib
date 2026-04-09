@@ -21,7 +21,6 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
-using RealmStudioX;
 using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib

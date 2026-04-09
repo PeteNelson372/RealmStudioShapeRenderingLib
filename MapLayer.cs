@@ -408,7 +408,7 @@ namespace RealmStudioShapeRenderingLib
         // MapSymbol Z Ordering
         // -------------------------------------------------
 
-        public void MoveSymbolZOrder(MapSymbol selected, ZOrderMoveType moveType)
+        public void MoveMapComponentZOrder(MapComponent2D selected, ZOrderMoveType moveType)
         {
             if (selected == null)
                 return;
@@ -519,7 +519,7 @@ namespace RealmStudioShapeRenderingLib
             InvalidateAllTiles();
         }
 
-        private void MoveAboveAllOverlaps(MapSymbol selected)
+        private void MoveAboveAllOverlaps(MapComponent2D selected)
         {
             var shapes = _shapes;
             int currentIndex = shapes.IndexOf(selected);
@@ -543,7 +543,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
-        private void MoveBelowAllOverlaps(MapSymbol selected)
+        private void MoveBelowAllOverlaps(MapComponent2D selected)
         {
             var shapes = _shapes;
             int currentIndex = shapes.IndexOf(selected);

@@ -21,7 +21,6 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
-using RealmStudioX;
 using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
@@ -50,6 +49,8 @@ namespace RealmStudioShapeRenderingLib
         public override SKRect LocalBounds { get; set; } = localBounds;
 
         private SymbolImageResource? symbolImage = null;
+
+        private float _startScale;
 
         public override IShapeState CaptureState()
         {
@@ -200,6 +201,16 @@ namespace RealmStudioShapeRenderingLib
                 Transform(r.Right, r.Bottom),
                 Transform(r.Left,  r.Bottom)
             ];
+        }
+
+        public void BeginScale()
+        {
+            _startScale = Scale;
+        }
+
+        public void ApplyScale(float factor)
+        {
+            Scale = _startScale * factor;
         }
 
         public override bool HitTest(SKPoint worldPos)

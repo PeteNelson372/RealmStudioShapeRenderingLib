@@ -1,8 +1,7 @@
-﻿using RealmStudioShapeRenderingLib;
-using SkiaSharp;
+﻿using SkiaSharp;
 using System.Reflection;
 
-namespace RealmStudioX
+namespace RealmStudioShapeRenderingLib
 {
     public class FontManager
     {

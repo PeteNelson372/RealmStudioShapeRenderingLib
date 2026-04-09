@@ -1,32 +1,8 @@
-﻿/**************************************************************************************************************************
-* Copyright 2024, Peter R. Nelson
-*
-* This file is part of the RealmStudio application. The RealmStudio application is intended
-* for creating fantasy maps for gaming and world building.
-*
-* RealmStudio is free software: you can redistribute it and/or modify it under the terms
-* of the GNU General Public License as published by the Free Software Foundation,
-* either version 3 of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with this program.
-* The text of the GNU General Public License (GPL) is found in the LICENSE.txt file.
-* If the LICENSE.txt file is not present or the text of the GNU GPL is not present in the LICENSE.txt file,
-* see https://www.gnu.org/licenses/.
-*
-* For questions about the RealmStudio application or about licensing, please email
-* support@brookmonte.com
-*
-***************************************************************************************************************************/
-using RealmStudioX;
-using SkiaSharp;
+﻿using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class MapLabel : MapComponent2D
+    public class MapLabel : MapComponent2D, ITransformable2D
     {
         public string Text { get; set; } = string.Empty;
 
@@ -47,27 +23,38 @@ namespace RealmStudioShapeRenderingLib
         public float GlowStrength { get; set; }
         public SKColor GlowColor { get; set; }
 
-        // path/curve data
         public SKPath? CurvePath { get; set; }
 
-        // Optional: arc parameters
-        public float ArcRadius { get; set; }
-        public float ArcAngle { get; set; }
+        public bool BoundsModified { get; set; } = true;
 
-        public MapLabel() { }
+        public bool IsEditing { get; set; } = false;
+
+        private FontManager? _fontManager = null;
+        private float _startFontSize;
+
+        // =========================
+        // Rendering
+        // =========================
 
         public override void Render(SKCanvas canvas, FontManager? fontManager)
         {
             ArgumentNullException.ThrowIfNull(nameof(fontManager));
+
+            _fontManager ??= fontManager;
+
+            if (IsEditing)
+            {
+                return;
+            }
 
             if (string.IsNullOrEmpty(Text))
             {
                 return;
             }
 
-            var typeface = fontManager!.GetTypeface(FontStyle);
+            using var font = GetFont();
 
-            using var font = new SKFont(typeface, FontStyle.Size);
+            UpdateBounds(font);
 
             using var fillPaint = new SKPaint
             {
@@ -79,22 +66,19 @@ namespace RealmStudioShapeRenderingLib
             float x = Location.X;
             float y = Location.Y;
 
+            var center = GetCenter();
+
             canvas.Save();
 
-            // -------------------------------------------------
-            // Apply rotation
-            // -------------------------------------------------
+            // Rotate around CENTER (FIXED)
             if (Math.Abs(Rotation) > 0.001f)
             {
-                canvas.Translate(x, y);
+                canvas.Translate(center.X, center.Y);
                 canvas.RotateDegrees(Rotation);
-                x = 0;
-                y = 0;
+                canvas.Translate(-center.X, -center.Y);
             }
 
-            // -------------------------------------------------
-            // GLOW (draw first, behind everything)
-            // -------------------------------------------------
+            // Glow
             if (GlowStrength > 0)
             {
                 using var glowPaint = new SKPaint
@@ -102,17 +86,13 @@ namespace RealmStudioShapeRenderingLib
                     Color = GlowColor,
                     IsAntialias = true,
                     Style = SKPaintStyle.Fill,
-                    MaskFilter = SKMaskFilter.CreateBlur(
-                        SKBlurStyle.Normal,
-                        GlowStrength)
+                    MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, GlowStrength)
                 };
 
                 canvas.DrawText(Text, x, y, font, glowPaint);
             }
 
-            // -------------------------------------------------
-            // OUTLINE (stroke)
-            // -------------------------------------------------
+            // Outline
             if (OutlineWidth > 0)
             {
                 using var strokePaint = new SKPaint
@@ -127,29 +107,276 @@ namespace RealmStudioShapeRenderingLib
                 canvas.DrawText(Text, x, y, font, strokePaint);
             }
 
-            // -------------------------------------------------
-            // FILL (main text)
-            // -------------------------------------------------
+            // Fill
             canvas.DrawText(Text, x, y, font, fillPaint);
+
+            // Debug bounds
+            //canvas.DrawRect(Bounds, PaintObjects.DebugPaint2);
+
+            //var cx = Bounds.MidX;
+            //var cy = Bounds.MidY;
+            //canvas.DrawCircle(cx, cy, 3, PaintObjects.DebugPaint3);
 
             canvas.Restore();
         }
-        
+
+        // =========================
+        // Label Editing
+        // =========================
+        public int GetCaretIndex(SKPoint worldPoint, SKFont font)
+        {
+            var local = WorldToLocal(worldPoint);
+
+            if (local.Y < LocalBounds.Top || local.Y > LocalBounds.Bottom)
+            {
+                return -1;
+            }
+
+            // Convert to text-relative X (0 = left edge of text)
+            float x = local.X - LocalBounds.Left;
+
+            // Clamp far left
+            if (x <= 0)
+            {
+                return 0;
+            }
+
+            int length = Text.Length;
+
+            // Walk through character positions
+            float prevWidth = 0f;
+
+            for (int i = 1; i <= length; i++)
+            {
+                float currWidth = font.MeasureText(Text[..i]);
+
+                // Midpoint between previous and current character edge
+                float mid = (prevWidth + currWidth) * 0.5f;
+
+                if (x < mid)
+                {
+                    return i - 1;
+                }
+
+                if (x < currWidth)
+                {
+                    return i;
+                }
+
+                prevWidth = currWidth;
+            }
+
+            // Clamp far right
+            return length;
+        }
+
+
+        // =========================
+        // Bounds + Center
+        // =========================
+
+        private SKPoint GetCenter()
+        {
+            return new SKPoint(
+                Location.X + (LocalBounds.Left + LocalBounds.Right) * 0.5f,
+                Location.Y + (LocalBounds.Top + LocalBounds.Bottom) * 0.5f
+            );
+        }
+
+        private void UpdateBounds(SKFont font)
+        {
+            if (!BoundsModified) return;
+
+            font.MeasureText(Text, out SKRect bounds);
+
+            float horzInflate = MathF.Max(5, bounds.Width * 0.01f);
+            float vertInflate = MathF.Max(5, bounds.Height * 0.01f);
+
+            bounds.Inflate(new SKSize(horzInflate, vertInflate));
+
+            LocalBounds = bounds;
+
+            // Compute transformed corners
+            var corners = GetTransformedCorners();
+
+            float minX = corners.Min(p => p.X);
+            float minY = corners.Min(p => p.Y);
+            float maxX = corners.Max(p => p.X);
+            float maxY = corners.Max(p => p.Y);
+
+            SKRect boundsRect = new(minX, minY, maxX, maxY);
+
+            Bounds = boundsRect;
+
+            BoundsModified = false;
+        }
+
+        public SKRect GetLocalBounds()
+        {
+            return LocalBounds;
+        }
+
+        public SKPoint WorldToLocal(SKPoint world)
+        {
+            float rad = -Rotation * MathF.PI / 180f;
+            float cos = MathF.Cos(rad);
+            float sin = MathF.Sin(rad);
+
+            var center = new SKPoint(
+                Location.X + (LocalBounds.Left + LocalBounds.Right) * 0.5f,
+                Location.Y + (LocalBounds.Top + LocalBounds.Bottom) * 0.5f
+            );
+
+            // translate to origin (center)
+            float dx = world.X - center.X;
+            float dy = world.Y - center.Y;
+
+            // inverse rotate
+            float rx = dx * cos - dy * sin;
+            float ry = dx * sin + dy * cos;
+
+            // translate back
+            float wx = center.X + rx;
+            float wy = center.Y + ry;
+
+            // convert to local (baseline-relative)
+            return new SKPoint(
+                wx - Location.X,
+                wy - Location.Y
+            );
+        }
+
+        // =========================
+        // Geometry
+        // =========================
+
+        public SKPoint[] GetTransformedCorners()
+        {
+            var r = LocalBounds;
+
+            float sx = Mirror ? -Scale : Scale;
+            float sy = Scale;
+
+            float rad = Rotation * MathF.PI / 180f;
+            float cos = MathF.Cos(rad);
+            float sin = MathF.Sin(rad);
+
+            var center = GetCenter();
+
+            SKPoint Transform(float x, float y)
+            {
+                // scale in local space
+                x *= sx;
+                y *= sy;
+
+                // move to world
+                float wx = Location.X + x;
+                float wy = Location.Y + y;
+
+                // rotate around center
+                float dx = wx - center.X;
+                float dy = wy - center.Y;
+
+                float rx = dx * cos - dy * sin;
+                float ry = dx * sin + dy * cos;
+
+                return new SKPoint(center.X + rx, center.Y + ry);
+            }
+
+            return
+            [
+                Transform(r.Left,  r.Top),
+                Transform(r.Right, r.Top),
+                Transform(r.Right, r.Bottom),
+                Transform(r.Left,  r.Bottom)
+            ];
+        }
+
+        public void BeginScale()
+        {
+            _startFontSize = FontStyle.Size;
+        }
+
+        public void ApplyScale(float factor)
+        {
+            FontStyle.Size = _startFontSize * factor;
+            BoundsModified = true;
+        }
+
+        // =========================
+        // Hit Testing
+        // =========================
 
         public override bool HitTest(SKPoint worldPos)
         {
+            if (BoundsModified)
+            {
+                var font = GetFont();
+                UpdateBounds(font);
+            }
 
-            return false;
+            return Bounds.Contains(worldPos);
         }
+
+        // =========================
+        // Font
+        // =========================
+
+        private SKFont GetFont()
+        {
+            ArgumentNullException.ThrowIfNull(nameof(_fontManager));
+
+            var typeface = _fontManager!.GetTypeface(FontStyle);
+            return new SKFont(typeface, FontStyle.Size);
+        }
+
+        // =========================
+        // State
+        // =========================
 
         public override IShapeState CaptureState()
         {
-            throw new NotImplementedException();
+            return new MapLabelState()
+            {
+                Text = Text,
+                Location = Location,
+                Rotation = Rotation,
+                Scale = Scale,
+                Mirror = Mirror,
+                FontStyle = FontStyle.Clone(),
+                FontColor = FontColor,
+                HasOutline = HasOutline,
+                OutlineWidth = OutlineWidth,
+                OutlineColor = OutlineColor,
+                HasGlow = HasGlow,
+                GlowStrength = GlowStrength,
+                GlowColor = GlowColor,
+                CurvePath = CurvePath,
+            };
         }
 
         public override void RestoreState(IShapeState state)
         {
-            throw new NotImplementedException();
+            if (state is not MapLabelState s)
+                return;
+
+            Text = s.Text;
+            Location = s.Location;
+            Rotation = s.Rotation;
+            Scale = s.Scale;
+            Mirror = s.Mirror;
+            FontStyle = s.FontStyle.Clone();
+            FontColor = s.FontColor;
+            HasOutline = s.HasOutline;
+            OutlineWidth = s.OutlineWidth;
+            OutlineColor = s.OutlineColor;
+            HasGlow = s.HasGlow;
+            GlowStrength = s.GlowStrength;
+            GlowColor = s.GlowColor;
+            CurvePath = s.CurvePath;
+
+            BoundsModified = true;
         }
+
     }
 }

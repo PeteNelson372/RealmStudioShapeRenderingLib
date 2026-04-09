@@ -10,5 +10,8 @@ namespace RealmStudioShapeRenderingLib
 
         SKRect GetLocalBounds();
         SKPoint[] GetTransformedCorners();
+
+        void BeginScale();
+        void ApplyScale(float factor);
     }
 }

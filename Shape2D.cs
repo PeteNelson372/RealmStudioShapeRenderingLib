@@ -2,7 +2,6 @@
 
 namespace RealmStudioShapeRenderingLib
 {
-    using RealmStudioX;
     using SkiaSharp;
 
     public abstract class Shape2D : MapComponent2D

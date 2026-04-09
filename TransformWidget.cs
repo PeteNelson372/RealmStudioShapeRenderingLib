@@ -27,8 +27,8 @@
         private SKPoint _zBottom;
 
         // --- Visual constants ---
-        private float HandleSize = 4.5f;
-        private float HitRadius = 8f;
+        private float HandleSize = 5f;
+        private float HitRadius = 10f;
         private float HandleStrokeWidth = 1f;
         private float RotateHandleOffset = 30f;
         private float ZHandleOffset = 20f;
@@ -64,7 +64,8 @@
             // -------------------------------------------------
             // Direction from center → top (orientation-aware)
             // -------------------------------------------------
-            var center = Target.Location;
+            var bounds = ((MapComponent2D)Target).Bounds;
+            var center = new SKPoint(bounds.MidX, bounds.MidY);
 
             var dir = new SKPoint(_top.X - center.X, _top.Y - center.Y);
             float len = MathF.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
@@ -82,8 +83,8 @@
             // Adaptive scaling based on symbol size
             // -------------------------------------------------
 
-            float width = ((MapSymbol)Target).Bounds.Width;
-            float height = ((MapSymbol)Target).Bounds.Height;
+            float width = ((MapComponent2D)Target).Bounds.Width;
+            float height = ((MapComponent2D)Target).Bounds.Height;
 
             // diagonal length
             float diag = MathF.Sqrt(width * width + height * height);
@@ -360,9 +361,7 @@
 
             bool Near(SKPoint p)
             {
-                float dx = p.X - mouse.X;
-                float dy = p.Y - mouse.Y;
-                return (dx * dx + dy * dy) <= (HitRadius * HitRadius);
+                return SKPoint.DistanceSquared(p, mouse) <= HitRadius * HitRadius;
             }
 
             // Corners
@@ -421,6 +420,8 @@
             {
                 return TransformHandle.None;
             }
+
+            Target.BeginScale();
 
             _activeHandle = HitTest(mouse);
 
@@ -505,7 +506,7 @@
             if (startDist > 1e-5f)
             {
                 float factor = currentDist / startDist;
-                Target!.Scale = _startScale * factor;
+                Target!.ApplyScale(factor);
             }
         }
     }

@@ -1,6 +1,5 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
-    using RealmStudioX;
     using SkiaSharp;
     using System;
 

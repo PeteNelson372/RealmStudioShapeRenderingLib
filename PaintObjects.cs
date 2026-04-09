@@ -491,6 +491,22 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = true
         };
 
+        public readonly static SKPaint LabelEditCaretPaint= new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            StrokeWidth = 2,
+            Color = SKColors.Black,
+        };
+
+        public readonly static SKPaint LabelEmptyCaretPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            StrokeWidth = 2,
+            Color = SKColors.Empty,
+        };
+
         public readonly static SKPaint DebugPaint = new()
         {
             Style = SKPaintStyle.Stroke,

@@ -303,7 +303,7 @@ namespace RealmStudioShapeRenderingLib
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
-            Color = SKColors.Gray,
+            Color = SKColors.DarkSlateGray,
             StrokeWidth = 1,
             PathEffect = SKPathEffect.CreateDash([2F, 2F], 4F)
         };

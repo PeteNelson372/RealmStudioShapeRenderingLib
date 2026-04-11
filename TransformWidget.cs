@@ -1,6 +1,8 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
+    using System.Reflection.Emit;
+    using static System.Net.Mime.MediaTypeNames;
 
     public class TransformWidget
     {
@@ -10,6 +12,7 @@
         private TransformHandle _activeHandle = TransformHandle.None;
 
         private SKPoint _startMouse;
+        private SKPoint _previousMouse;
         private SKPoint _startLocation;
         private float _startRotation;
         private float _startScale;
@@ -43,6 +46,11 @@
         // =========================
         // Geometry
         // =========================
+
+        public void UpdateWidgetGeometry()
+        {
+            UpdateGeometry();
+        }
 
         private static SKPoint Mid(SKPoint a, SKPoint b)
             => new((a.X + b.X) * 0.5f, (a.Y + b.Y) * 0.5f);
@@ -302,6 +310,59 @@
             DrawHandle(_zTop, TransformHandle.ZTop);
             DrawHandle(_zBottom, TransformHandle.ZBottom);
 
+            if (Target is MapLabel label)
+            {
+                using SKPaint paint = new()
+                {
+                    Style = SKPaintStyle.Fill,
+                    Color = SKColors.LightGray,
+                };
+
+                // -------------------------------------------------
+                // Match MapLabel bounds model
+                // -------------------------------------------------
+                SKRect bounds = SKRect.Empty;
+
+                if (label.RenderFont != null && label.CurvePath != null)
+                {
+                    using SKFont f = label.GetFont();
+
+                    if (!string.IsNullOrEmpty(label.Text))
+                    {
+                        f.MeasureText(label.Text, out bounds);
+                    }
+                    else
+                    {
+                        f.MeasureText("Mg", out bounds);
+                    }
+
+                    // APPLY SAME INFLATION AS MapLabel
+                    float inflateX = MathF.Max(5, bounds.Width * 0.01f);
+                    float inflateY = MathF.Max(5, bounds.Height * 0.01f);
+
+                    bounds.Inflate(inflateX, inflateY);
+
+                    // -------------------------------------------------
+                    // CENTER-CENTER anchoring (matches MapLabel)
+                    // -------------------------------------------------
+                    float centerOffsetX = (bounds.Left + bounds.Right) * 0.5f;
+                    float centerOffsetY = (bounds.Top + bounds.Bottom) * 0.5f;
+
+                    float x = label.Location.X - centerOffsetX;
+                    float y = label.Location.Y - centerOffsetY;
+
+                    // -------------------------------------------------
+                    // Draw text
+                    // -------------------------------------------------
+                    canvas.DrawText(label.Text, x, y, f, paint);
+
+                    // -------------------------------------------------
+                    // Draw the curve path
+                    // -------------------------------------------------
+                    canvas.DrawPath(label.CurvePath, PaintObjects.LabelPathPaint);
+                }
+            }
+
             canvas.Restore();
         }
 
@@ -435,6 +496,7 @@
             }
 
             _startMouse = mouse;
+            _previousMouse = mouse;
             _startLocation = Target.Location;
             _startRotation = Target.Rotation;
             _startScale = Target.Scale;
@@ -463,6 +525,8 @@
                     ApplyScale(mouse); // uniform for now
                     break;
             }
+
+            _previousMouse = mouse;
         }
 
         public void OnMouseUp()
@@ -479,6 +543,11 @@
             Target!.Location = new SKPoint(
                 _startLocation.X + (mouse.X - _startMouse.X),
                 _startLocation.Y + (mouse.Y - _startMouse.Y));
+
+            if (Target is MapLabel label && label.CurvePath != null)
+            {
+                label.CurvePath.Offset(mouse.X - _previousMouse.X, mouse.Y - _previousMouse.Y);
+            }
         }
 
         private void ApplyRotation(SKPoint mouse)

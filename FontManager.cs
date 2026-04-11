@@ -14,16 +14,20 @@ namespace RealmStudioShapeRenderingLib
         private readonly object _lock = new();
         private bool _initialized;
 
+        private Assembly? _resourceAssmbly;
+
         // ---------------------------------------------------------
         // INITIALIZATION
         // ---------------------------------------------------------
 
-        public Task InitializeAsync()
+        public Task InitializeAsync(Assembly resourceAssembly)
         {
             lock (_lock)
             {
                 if (_initialized)
                     return Task.CompletedTask;
+
+                _resourceAssmbly = resourceAssembly;
 
                 _ = GetAvailableFonts();
 
@@ -147,10 +151,12 @@ namespace RealmStudioShapeRenderingLib
 
         private void LoadBundledFontsIfNeeded()
         {
+            ArgumentNullException.ThrowIfNull(_resourceAssmbly, nameof(_resourceAssmbly));
+
             if (_bundledFonts.Count > 0)
                 return;
 
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = _resourceAssmbly;
 
             var resourceNames = assembly.GetManifestResourceNames()
                 .Where(n => n.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase) ||

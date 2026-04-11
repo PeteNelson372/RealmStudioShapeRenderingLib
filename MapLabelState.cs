@@ -6,6 +6,8 @@ namespace RealmStudioShapeRenderingLib
     {
         public string Text { get; set; } = string.Empty;
 
+        public SKPoint Anchor { get; set; }
+
         public SKPoint Location { get; set; }
         public float Rotation { get; set; }
         public float Scale { get; set; } = 1f;

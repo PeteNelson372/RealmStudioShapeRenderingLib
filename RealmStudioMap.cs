@@ -1,6 +1,5 @@
 ﻿#nullable enable
 
-using RealmStudioShapeRenderingLib;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib

@@ -474,6 +474,15 @@ namespace RealmStudioShapeRenderingLib
         ZBottom
     }
 
+    [Flags]
+    public enum InputModifiers
+    {
+        None = 0,
+        Control = 1 << 0,
+        Shift = 1 << 1,
+        Alt = 1 << 2
+    }
+
     public static class EnumerationExtensions
     {
         public static string? GetDescription(this Enum value)

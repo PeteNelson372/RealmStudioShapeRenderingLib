@@ -4,6 +4,8 @@ namespace RealmStudioShapeRenderingLib
 {
     public class Camera2D
     {
+        public event Action? ViewChanged;
+
         // mouse cursor points
         private SKPoint _scrollPoint = new(0, 0);
         private SKPoint _drawingPoint = new(0, 0);
@@ -21,8 +23,12 @@ namespace RealmStudioShapeRenderingLib
 
         public bool IsPanning
         {
-            get { return _isPanning; } 
-            set { _isPanning = value; }
+            get { return _isPanning; }
+            set
+            {
+                _isPanning = value;
+                ViewChanged?.Invoke();
+            }
         }
 
         public DateTime LastMouseMoveTime
@@ -98,18 +104,24 @@ namespace RealmStudioShapeRenderingLib
         {
             Pan = new SKPoint(Pan.X + deltaPixels.X, Pan.Y + deltaPixels.Y);
             UpdateViewport(viewWidth, viewHeight);
+
+            ViewChanged?.Invoke();
         }
 
         public void SetPan(SKPoint pan, float viewWidth, float viewHeight)
         {
             Pan = pan;
             UpdateViewport(viewWidth, viewHeight);
+
+            ViewChanged?.Invoke();
         }
 
         public void SetZoom(float zoom, float viewWidth, float viewHeight)
         {
             Zoom = Utilities.Clamp(zoom, MinZoom, MaxZoom);
             UpdateViewport(viewWidth, viewHeight);
+
+            ViewChanged?.Invoke();
         }
 
         public void ZoomAtScreenPoint(float newZoom, SKPoint screenPoint, float viewWidth, float viewHeight)
@@ -129,6 +141,8 @@ namespace RealmStudioShapeRenderingLib
 
             Zoom = newZoom;
             UpdateViewport(viewWidth, viewHeight);
+
+            ViewChanged?.Invoke();
         }
 
         public void Reset(float viewWidth, float viewHeight)
@@ -137,6 +151,22 @@ namespace RealmStudioShapeRenderingLib
             Pan = new SKPoint(0, 0);
             _velocity = new SKPoint(0, 0);
             UpdateViewport(viewWidth, viewHeight);
+
+            ViewChanged?.Invoke();
+        }
+
+        public void ZoomToFit(float mapWidth, float mapHeight)
+        {
+            float zoomX = Viewport.Width / mapWidth;
+            float zoomY = Viewport.Height / mapHeight;
+
+            float zoom = MathF.Min(zoomX, zoomY);
+
+            SetZoom(zoom, Viewport.Width, Viewport.Height);
+
+            SetPan(new SKPoint(0, 0), Viewport.Width, Viewport.Height);
+
+            ViewChanged?.Invoke();
         }
 
         private void UpdateViewport(float viewWidth, float viewHeight)

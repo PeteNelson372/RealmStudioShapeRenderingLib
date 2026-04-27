@@ -26,7 +26,10 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
 
         private SKPoint? _lastPoint;
-        private readonly SKPath _strokePath = new();
+        private readonly SKPath _strokePath = new()
+        {
+            FillType = SKPathFillType.EvenOdd
+        };
 
         // -------------------------------------------------
         // Painting API (called by tools / commands)
@@ -95,9 +98,14 @@ namespace RealmStudioShapeRenderingLib
 
             SKPath result = _cachedPath.IsEmpty
                 ? new SKPath(_strokePath)
+                {
+                    FillType = SKPathFillType.EvenOdd
+                }
                 : _cachedPath.Op(_strokePath, SKPathOp.Union);
 
             _strokePath.Reset();
+            _strokePath.FillType = SKPathFillType.EvenOdd;
+
             SetGeometry(result);
         }
 

@@ -88,19 +88,28 @@
         public void RenderCoastlineFinal(SKCanvas canvas)
         {
             if (_coastlineCache == null || _renderModified)
+            {
                 RebuildRenderCache();
+            }
 
             if (_coastlineCache != null)
+            {
                 canvas.DrawPicture(_coastlineCache);
+            }
         }
 
         public void RenderInteriorFinal(SKCanvas canvas)
         {
             if (_interiorCache == null || _renderModified)
+            {
                 RebuildRenderCache();
+            }
 
             if (_interiorCache != null)
+            {
                 canvas.DrawPicture(_interiorCache);
+            }
+
         }
 
         public void RenderCoastlineInteractive(SKCanvas canvas)
@@ -112,7 +121,6 @@
         {
             RenderFast(canvas);        // radial gradient version
         }
-
 
         // -------------------------------------------------
         // Geometry management
@@ -239,7 +247,7 @@
             {
                 _interiorShadingMask?.Dispose();
                 _interiorShadingMask = BuildInteriorShadingMask();
-
+            
                 RenderInteriorShading(canvas);
             }
 
@@ -350,12 +358,13 @@
             var paint = PaintObjects.LandformRenderFastPaint;
             paint.Shader = shader;
 
-            canvas.Save();
-            canvas.ClipPath(HitPath, SKClipOperation.Intersect, true);
-            canvas.DrawRect(Bounds, paint);
-            canvas.Restore();
+            using (new SKAutoCanvasRestore(canvas))
+            {
+                canvas.ClipPath(HitPath, SKClipOperation.Intersect, true);
+                canvas.DrawRect(Bounds, paint);
 
-            RenderOutline(canvas);
+                RenderOutline(canvas);
+            }
         }
 
 
@@ -508,8 +517,11 @@
                 IsAntialias = true
             };
 
-            canvas.DrawPath(thickBand, lightPaint);
-            canvas.DrawPath(darkBand, darkPaint);
+            if (thickBand != null && thickBand.PointCount > 3 && darkBand != null && darkBand.PointCount > 3)
+            {
+                canvas.DrawPath(thickBand, lightPaint);
+                canvas.DrawPath(darkBand, darkPaint);
+            }
 
             canvas.Restore();
         }

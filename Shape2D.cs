@@ -17,17 +17,26 @@ namespace RealmStudioShapeRenderingLib
         // Geometry ownership
         // -------------------------------------------------
 
-        protected SKPath _cachedPath = new();
+        protected SKPath _cachedPath = new()
+        {
+            FillType = SKPathFillType.EvenOdd
+        };
 
         /// <summary>
         /// Path used for hit testing, clipping, and fills.
         /// </summary>
-        public SKPath HitPath { get; protected set; } = new();
+        public SKPath HitPath { get; protected set; } = new()
+        {
+            FillType = SKPathFillType.EvenOdd,
+        };
 
         /// <summary>
         /// Path representing the outline/perimeter of the shape.
         /// </summary>
-        public SKPath PerimeterPath { get; protected set; } = new();
+        public SKPath PerimeterPath { get; protected set; } = new()
+        {
+            FillType = SKPathFillType.EvenOdd,
+        };
 
         /// <summary>
         /// Axis-aligned bounds in world space.
@@ -42,9 +51,15 @@ namespace RealmStudioShapeRenderingLib
         protected virtual void SetGeometry(SKPath newGeometry)
         {
             _cachedPath.Dispose();
-            _cachedPath = newGeometry;
+            _cachedPath = new(newGeometry)
+            {
+                FillType= SKPathFillType.EvenOdd,
+            };
 
-            HitPath = new SKPath(_cachedPath);
+            HitPath = new SKPath(_cachedPath)
+            {
+                FillType = SKPathFillType.EvenOdd,
+            };
 
             RebuildPerimeter();
 
@@ -80,7 +95,10 @@ namespace RealmStudioShapeRenderingLib
         protected virtual void RebuildPerimeter()
         {
             // Default perimeter = same as filled geometry
-            PerimeterPath = new SKPath(HitPath);
+            PerimeterPath = new SKPath(HitPath)
+            {
+                FillType = SKPathFillType.EvenOdd
+            };
         }
 
         // -------------------------------------------------

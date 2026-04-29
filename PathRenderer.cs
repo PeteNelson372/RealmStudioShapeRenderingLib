@@ -133,67 +133,6 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
-        /*
-        private static void RenderWall(
-            SKCanvas canvas,
-            IReadOnlyList<SKPoint> points,
-            PathRenderStyle style,
-            bool roundTowers)
-        {
-            if (points == null || points.Count < 2 || style.Texture == null)
-                return;
-
-            using var path = Utilities.BuildPath(points);
-
-            // --- shared shader ---
-            using var shader = SKShader.CreateBitmap(
-                style.Texture,
-                SKShaderTileMode.Repeat,
-                SKShaderTileMode.Repeat);
-
-            // --- 1. Wall border ---
-            float outerWidth = style.Width;
-            float innerWidth = style.Width - (style.BorderWidth * 2);
-
-            using var borderPaint = new SKPaint
-            {
-                Style = SKPaintStyle.Stroke,
-                Color = style.BorderColor,
-                StrokeWidth = outerWidth,
-                StrokeJoin = SKStrokeJoin.Round,
-                StrokeCap = SKStrokeCap.Butt,
-                IsAntialias = true
-            };
-
-            canvas.DrawPath(path, borderPaint);
-
-            // --- 2. Wall fill ---
-            using var strokePaint = new SKPaint
-            {
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = innerWidth,
-                StrokeJoin = SKStrokeJoin.Round,
-                StrokeCap = SKStrokeCap.Butt,
-                IsAntialias = true
-            };
-
-            using var fillPath = new SKPath();
-            strokePaint.GetFillPath(path, fillPath);
-
-            using var texturePaint = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                Shader = shader,
-                IsAntialias = true
-            };
-
-            canvas.DrawPath(fillPath, texturePaint);
-
-            // --- 3. Towers ---
-            RenderTowers(canvas, path, style, shader, roundTowers);
-        }
-        */
-
         private static void RenderBorderTexture(
             SKCanvas canvas,
             SKPath path,
@@ -247,8 +186,6 @@ namespace RealmStudioShapeRenderingLib
             };
 
             canvas.DrawPath(fillPath, texturePaint);
-
-
         }
 
         private static void RenderTexture(

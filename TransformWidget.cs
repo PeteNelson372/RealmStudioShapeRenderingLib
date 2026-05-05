@@ -1,8 +1,6 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
-    using System.Reflection.Emit;
-    using static System.Net.Mime.MediaTypeNames;
 
     public class TransformWidget
     {
@@ -486,7 +484,7 @@
 
             _activeHandle = HitTest(mouse);
 
-            // don't start dragging if the handle is one of the z-oder handles
+            // don't start dragging if the handle is one of the z-order handles
             if (_activeHandle == TransformHandle.ZTop
                 || _activeHandle == TransformHandle.ZBottom
                 || _activeHandle == TransformHandle.ZBackward

@@ -14,7 +14,7 @@ namespace RealmStudioShapeRenderingLib
         private readonly object _lock = new();
         private bool _initialized;
 
-        private Assembly? _resourceAssmbly;
+        private Assembly? _resourceAssembly;
 
         // ---------------------------------------------------------
         // INITIALIZATION
@@ -27,7 +27,7 @@ namespace RealmStudioShapeRenderingLib
                 if (_initialized)
                     return Task.CompletedTask;
 
-                _resourceAssmbly = resourceAssembly;
+                _resourceAssembly = resourceAssembly;
 
                 _ = GetAvailableFonts();
 
@@ -151,12 +151,12 @@ namespace RealmStudioShapeRenderingLib
 
         private void LoadBundledFontsIfNeeded()
         {
-            ArgumentNullException.ThrowIfNull(_resourceAssmbly, nameof(_resourceAssmbly));
+            ArgumentNullException.ThrowIfNull(_resourceAssembly, nameof(_resourceAssembly));
 
             if (_bundledFonts.Count > 0)
                 return;
 
-            var assembly = _resourceAssmbly;
+            var assembly = _resourceAssembly;
 
             var resourceNames = assembly.GetManifestResourceNames()
                 .Where(n => n.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase) ||
@@ -188,7 +188,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         // ---------------------------------------------------------
-        // FILTERING (UPDATED FOR SKIA 3.x)
+        // FILTERING
         // ---------------------------------------------------------
 
         private bool IsTextFontCached(string family, SKTypeface tf)

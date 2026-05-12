@@ -363,8 +363,6 @@ namespace RealmStudioShapeRenderingLib
             BlendMode = SKBlendMode.Src
         };
 
-        public readonly static SKPaint BoxPaint = new();
-
         public readonly static SKPaint BoxSelectPaint = new()
         {
             Style = SKPaintStyle.Stroke,

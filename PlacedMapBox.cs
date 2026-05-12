@@ -1,27 +1,4 @@
-﻿/**************************************************************************************************************************
-* Copyright 2024, Peter R. Nelson
-*
-* This file is part of the RealmStudio application. The RealmStudio application is intended
-* for creating fantasy maps for gaming and world building.
-*
-* RealmStudio is free software: you can redistribute it and/or modify it under the terms
-* of the GNU General Public License as published by the Free Software Foundation,
-* either version 3 of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with this program.
-* The text of the GNU General Public License (GPL) is found in the LICENSE.txt file.
-* If the LICENSE.txt file is not present or the text of the GNU GPL is not present in the LICENSE.txt file,
-* see https://www.gnu.org/licenses/.
-*
-* For questions about the RealmStudio application or about licensing, please email
-* support@brookmonte.com
-*
-***************************************************************************************************************************/
-using SkiaSharp;
+﻿using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -35,97 +12,340 @@ namespace RealmStudioShapeRenderingLib
 
         public SKColor BoxTint { get; set; } = SKColors.White;
 
-        public SKPaint? BoxPaint { get; set; }
-
+        // 9-patch center region in SOURCE bitmap coordinates
         public float BoxCenterLeft { get; set; }
         public float BoxCenterTop { get; set; }
         public float BoxCenterRight { get; set; }
         public float BoxCenterBottom { get; set; }
 
-        public SKPoint Location { get; set; }
+        private SKPoint _topLeft;
+        private SKPoint _bottomRight;
+
+        public SKPoint TopLeft
+        {
+            get => _topLeft;
+            set => _topLeft = value;
+        }
+
+        public SKPoint BottomRight
+        {
+            get => _bottomRight;
+            set => _bottomRight = value;
+        }
+
         public float Rotation { get; set; }
+
         public float Scale { get; set; } = 1f;
+
         public bool Mirror { get; set; }
 
-        public PlacedMapBox() { }
+        private SKPoint _startTopLeft;
+        private SKPoint _startBottomRight;
+
+        public PlacedMapBox()
+        {
+        }
 
         public PlacedMapBox(PlacedMapBox box)
         {
             BaseBox = box.BaseBox;
+
             BoxBitmap = box.BoxBitmap?.Copy();
+
+            TopLeft = box.TopLeft;
+            BottomRight = box.BottomRight;
+
+            Rotation = box.Rotation;
+
+            Scale = box.Scale;
+
+            Mirror = box.Mirror;
+
             BoxTint = box.BoxTint;
-            BoxPaint = box.BoxPaint?.Clone();
+
             BoxCenterLeft = box.BoxCenterLeft;
             BoxCenterTop = box.BoxCenterTop;
             BoxCenterRight = box.BoxCenterRight;
             BoxCenterBottom = box.BoxCenterBottom;
         }
 
-        public void SetBoxBitmap(SKBitmap b)
+        /// <summary>
+        /// World-space center/pivot point.
+        /// </summary>
+        public SKPoint Location
         {
-            BoxBitmap = b;
-        }
-
-        private void GetBoxCenterFromMapBox()
-        {
-            if (BoxBitmap == null) { return; }
-        }
-
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
-        {
-            try
+            get
             {
-                // the box center can be outside the bounds of the bitmap if
-                // the box is drawn to be very narrow in height or width
-                if (BoxBitmap != null)
-                {
-                    canvas.DrawBitmapNinePatch(BoxBitmap,
-                        new SKRectI((int)BoxCenterLeft, (int)BoxCenterTop, (int)BoxCenterRight, (int)BoxCenterBottom),
-                        Bounds,
-                        BoxPaint);
-
-                    if (IsSelected)
-                    {
-                        canvas.DrawRect(Bounds, PaintObjects.BoxSelectPaint);
-                    }
-                }
+                return new SKPoint(
+                    (_topLeft.X + _bottomRight.X) * 0.5f,
+                    (_topLeft.Y + _bottomRight.Y) * 0.5f);
             }
-            catch { }
+
+            set
+            {
+                SKPoint currentCenter = Location;
+
+                float dx = value.X - currentCenter.X;
+                float dy = value.Y - currentCenter.Y;
+
+                _topLeft = new SKPoint(
+                    _topLeft.X + dx,
+                    _topLeft.Y + dy);
+
+                _bottomRight = new SKPoint(
+                    _bottomRight.X + dx,
+                    _bottomRight.Y + dy);
+            }
+        }
+
+        /// <summary>
+        /// Unscaled local size.
+        /// </summary>
+        public SKSize Size
+        {
+            get
+            {
+                return new SKSize(
+                    Math.Abs(_bottomRight.X - _topLeft.X),
+                    Math.Abs(_bottomRight.Y - _topLeft.Y));
+            }
+
+            set
+            {
+                SKPoint center = Location;
+
+                float halfWidth = value.Width * 0.5f;
+                float halfHeight = value.Height * 0.5f;
+
+                _topLeft = new SKPoint(
+                    center.X - halfWidth,
+                    center.Y - halfHeight);
+
+                _bottomRight = new SKPoint(
+                    center.X + halfWidth,
+                    center.Y + halfHeight);
+            }
+        }
+
+        /// <summary>
+        /// Local-space bounds centered at (0,0).
+        /// </summary>
+        public override SKRect LocalBounds =>
+            new(
+                -Size.Width / 2f,
+                -Size.Height / 2f,
+                 Size.Width / 2f,
+                 Size.Height / 2f);
+
+        public SKRect GetLocalBounds()
+        {
+            return LocalBounds;
+        }
+
+        /// <summary>
+        /// Axis-aligned world-space bounds.
+        /// </summary>
+        public override SKRect Bounds =>
+            new(
+                Math.Min(_topLeft.X, _bottomRight.X),
+                Math.Min(_topLeft.Y, _bottomRight.Y),
+                Math.Max(_topLeft.X, _bottomRight.X),
+                Math.Max(_topLeft.Y, _bottomRight.Y));
+
+        public void SetBoxBitmap(SKBitmap bitmap)
+        {
+            BoxBitmap = bitmap;
+        }
+
+        public override void Render(
+            SKCanvas canvas,
+            FontManager? fontManager = null)
+        {
+            if (BoxBitmap == null)
+                return;
+
+            canvas.Save();
+
+            // -------------------------------------------------
+            // Transform into object space
+            // -------------------------------------------------
+
+            canvas.Translate(Location);
+
+            if (Mirror)
+            {
+                canvas.Scale(-1f, 1f);
+            }
+
+            canvas.Scale(Scale);
+
+            canvas.RotateDegrees(Rotation);
+
+            // -------------------------------------------------
+            // Draw 9-patch into centered local rect
+            // -------------------------------------------------
+
+            SKRect destRect = LocalBounds;
+
+            using SKPaint boxPaint = new()
+            {
+                Style = SKPaintStyle.Fill,
+
+                ColorFilter =
+                    SKColorFilter.CreateBlendMode(
+                        BoxTint,
+                        SKBlendMode.Modulate)
+            };
+
+            canvas.DrawBitmapNinePatch(
+                BoxBitmap,
+                new SKRectI(
+                    (int)BoxCenterLeft,
+                    (int)BoxCenterTop,
+                    (int)BoxCenterRight,
+                    (int)BoxCenterBottom),
+                destRect,
+                boxPaint);
+
+            canvas.Restore();
         }
 
         public override bool HitTest(SKPoint worldPos)
         {
-            throw new NotImplementedException();
+            return Bounds.Contains(worldPos);
         }
 
-        public override IShapeState CaptureState()
+        public SKMatrix GetTransform()
         {
-            throw new NotImplementedException();
-        }
+            SKMatrix matrix = SKMatrix.Identity;
 
-        public override void RestoreState(IShapeState state)
-        {
-            throw new NotImplementedException();
-        }
+            if (Mirror)
+            {
+                matrix = matrix.PostConcat(
+                    SKMatrix.CreateScale(-1f, 1f));
+            }
 
-        public SKRect GetLocalBounds()
-        {
-            throw new NotImplementedException();
+            matrix = matrix.PostConcat(
+                SKMatrix.CreateScale(Scale, Scale));
+
+            matrix = matrix.PostConcat(
+                SKMatrix.CreateRotationDegrees(Rotation));
+
+            matrix = matrix.PostConcat(
+                SKMatrix.CreateTranslation(
+                    Location.X,
+                    Location.Y));
+
+            return matrix;
         }
 
         public SKPoint[] GetTransformedCorners()
         {
-            throw new NotImplementedException();
+            SKMatrix transform = GetTransform();
+
+            SKRect r = LocalBounds;
+
+            return
+            [
+                transform.MapPoint(
+                    new SKPoint(r.Left, r.Top)),
+
+                transform.MapPoint(
+                    new SKPoint(r.Right, r.Top)),
+
+                transform.MapPoint(
+                    new SKPoint(r.Right, r.Bottom)),
+
+                transform.MapPoint(
+                    new SKPoint(r.Left, r.Bottom))
+            ];
         }
 
         public void BeginScale()
         {
-            throw new NotImplementedException();
+            _startTopLeft = TopLeft;
+            _startBottomRight = BottomRight;
         }
 
         public void ApplyScale(float factor)
         {
-            throw new NotImplementedException();
+            SKPoint center = Location;
+
+            float startWidth =
+                _startBottomRight.X - _startTopLeft.X;
+
+            float startHeight =
+                _startBottomRight.Y - _startTopLeft.Y;
+
+            float scaledHalfWidth =
+                (startWidth * factor) * 0.5f;
+
+            float scaledHalfHeight =
+                (startHeight * factor) * 0.5f;
+
+            TopLeft = new SKPoint(
+                center.X - scaledHalfWidth,
+                center.Y - scaledHalfHeight);
+
+            BottomRight = new SKPoint(
+                center.X + scaledHalfWidth,
+                center.Y + scaledHalfHeight);
         }
+
+        public override IShapeState CaptureState()
+        {
+            return new PlacedBoxState()
+            {
+                BaseBox = BaseBox,
+
+                BoxBitmap = BoxBitmap?.Copy(),
+
+                TopLeft = TopLeft,
+
+                BottomRight = BottomRight,
+
+                Rotation = Rotation,
+
+                Scale = Scale,
+
+                Mirror = Mirror,
+
+                BoxTint = BoxTint,
+
+                BoxCenterLeft = BoxCenterLeft,
+                BoxCenterTop = BoxCenterTop,
+                BoxCenterRight = BoxCenterRight,
+                BoxCenterBottom = BoxCenterBottom,
+            };
+        }
+
+        public override void RestoreState(IShapeState state)
+        {
+            if (state is not PlacedBoxState s)
+                return;
+
+            BaseBox = s.BaseBox;
+
+            BoxBitmap = s.BoxBitmap?.Copy();
+
+            TopLeft = s.TopLeft;
+
+            BottomRight = s.BottomRight;
+
+            Rotation = s.Rotation;
+
+            Scale = s.Scale;
+
+            Mirror = s.Mirror;
+
+            BoxTint = s.BoxTint;
+
+            BoxCenterLeft = s.BoxCenterLeft;
+            BoxCenterTop = s.BoxCenterTop;
+            BoxCenterRight = s.BoxCenterRight;
+            BoxCenterBottom = s.BoxCenterBottom;
+        }
+
+
     }
 }

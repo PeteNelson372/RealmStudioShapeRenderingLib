@@ -71,7 +71,7 @@
             // Direction from center → top (orientation-aware)
             // -------------------------------------------------
             var bounds = ((MapComponent2D)Target).Bounds;
-            var center = new SKPoint(bounds.MidX, bounds.MidY);
+            var center = Target.Location;
 
             var dir = new SKPoint(_top.X - center.X, _top.Y - center.Y);
             float len = MathF.Sqrt(dir.X * dir.X + dir.Y * dir.Y);

@@ -21,25 +21,37 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using ExCSS;
 using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
+    [XmlRoot("mapframe", IsNullable = false)]
     public class MapFrame
     {
+        [XmlElement("FrameName")]
         public string? FrameName { get; set; }
 
         [XmlIgnore]
         public SKBitmap? FrameBitmap { get; set; }
 
+        [XmlElement("FrameBitmapPath")]
         public string? FrameBitmapPath { get; set; }
 
+        [XmlElement("FrameXmlFilePath")]
         public string? FrameXmlFilePath { get; set; }
 
+        [XmlElement("FrameCenterLeft")]
         public float FrameCenterLeft { get; set; }
+        
+        [XmlElement("FrameCenterTop")]
         public float FrameCenterTop { get; set; }
+        
+        [XmlElement("FrameCenterRight")]
         public float FrameCenterRight { get; set; }
+
+        [XmlElement("FrameCenterBottom")]
         public float FrameCenterBottom { get; set; }
     }
 }

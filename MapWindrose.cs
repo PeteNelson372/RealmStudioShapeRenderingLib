@@ -49,25 +49,30 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true,
             };
 
-            // draw circles, if any
-            if (InnerRadius > 0)
+            using (new SKAutoCanvasRestore(canvas))
             {
-                DrawWindroseLines(canvas, true);
+                canvas.ClipRect(Bounds);
 
-                switch (InnerCircles)
+                // draw circles, if any
+                if (InnerRadius > 0)
                 {
-                    case 1:
-                        canvas.DrawCircle(Location.X, Location.Y, InnerRadius, _windrosePaint);
-                        break;
-                    case 2:
-                        canvas.DrawCircle(Location.X, Location.Y, InnerRadius / 2, _windrosePaint);
-                        canvas.DrawCircle(Location.X, Location.Y, InnerRadius, _windrosePaint);
-                        break;
+                    DrawWindroseLines(canvas, true);
+
+                    switch (InnerCircles)
+                    {
+                        case 1:
+                            canvas.DrawCircle(Location.X, Location.Y, InnerRadius, _windrosePaint);
+                            break;
+                        case 2:
+                            canvas.DrawCircle(Location.X, Location.Y, InnerRadius / 2, _windrosePaint);
+                            canvas.DrawCircle(Location.X, Location.Y, InnerRadius, _windrosePaint);
+                            break;
+                    }
                 }
-            }
-            else
-            {
-                DrawWindroseLines(canvas, false);
+                else
+                {
+                    DrawWindroseLines(canvas, false);
+                }
             }
         }
 

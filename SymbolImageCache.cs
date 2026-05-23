@@ -44,6 +44,12 @@ namespace RealmStudioShapeRenderingLib
         private static SvgResource? LoadSvg(string path)
         {
             var svg = new SKSvg();
+
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
             svg.Load(path);
 
             if (svg.Picture == null)

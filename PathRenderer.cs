@@ -432,6 +432,10 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             })
             {
+                if (style.Smoothing > 0)
+                {
+                    fillPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+                }
                 canvas.DrawPath(fillPath, fillPaint);
             }
 
@@ -447,6 +451,10 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             })
             {
+                if (style.Smoothing > 0)
+                {
+                    borderPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+                }
                 canvas.DrawPath(borderPath, borderPaint);
             }
         }
@@ -469,7 +477,7 @@ namespace RealmStudioShapeRenderingLib
             float stepSize = totalWidth / steps;
 
 
-            // --- 1. Draw gradient bands (left → right inward) ---
+            // --- 1. Draw gradient bands (left to right inward) ---
             for (int i = 0; i < steps; i++)
             {
                 float t = i / (float)(steps - 1);   // 0 → 1
@@ -495,6 +503,11 @@ namespace RealmStudioShapeRenderingLib
                     IsAntialias = true
                 };
 
+                if (style.Smoothing > 0)
+                {
+                    paint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+                }
+
                 canvas.DrawPath(path, paint);
             }
 
@@ -510,8 +523,14 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             })
             {
+                if (style.Smoothing > 0)
+                {
+                    borderPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+                }
+
                 canvas.DrawPath(borderPath, borderPaint);
             }
+
         }
 
         private static void RenderBordered(SKCanvas canvas, SKPath path, PathRenderStyle style)
@@ -530,6 +549,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
+            if (style.Smoothing > 0)
+            {
+                borderPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
+
             // --- Inner fill (path color) ---
             using var fillPaint = new SKPaint
             {
@@ -540,6 +564,11 @@ namespace RealmStudioShapeRenderingLib
                 StrokeCap = SKStrokeCap.Butt,
                 IsAntialias = true
             };
+
+            if (style.Smoothing > 0)
+            {
+                fillPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
 
             // draw order matters
             canvas.DrawPath(path, borderPaint);
@@ -625,6 +654,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
+            if (style.Smoothing > 0)
+            {
+                solidPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
+
             using var dashPaint = new SKPaint
             {
                 Style = SKPaintStyle.Stroke,
@@ -636,6 +670,11 @@ namespace RealmStudioShapeRenderingLib
                 PathEffect = SKPathEffect.CreateDash(
                     [style.Width, style.Width], 0)
             };
+
+            if (style.Smoothing > 0)
+            {
+                dashPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
 
             canvas.DrawPath(solidPath, solidPaint);
             canvas.DrawPath(dashPath, dashPaint);
@@ -704,6 +743,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
+            if (style.Smoothing > 0)
+            {
+                outerPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
+
             using var clearPaint = new SKPaint
             {
                 Style = SKPaintStyle.Stroke,
@@ -713,6 +757,11 @@ namespace RealmStudioShapeRenderingLib
                 StrokeCap = SKStrokeCap.Butt,
                 IsAntialias = true
             };
+
+            if (style.Smoothing > 0)
+            {
+                clearPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
 
             // isolate into a layer
             using (new SKAutoCanvasRestore(canvas, true))
@@ -734,12 +783,17 @@ namespace RealmStudioShapeRenderingLib
             float[] intervals = [style.Width * 2, style.Width * 2, 0, style.Width * 2, 0, style.Width * 2]; ;
             SKPathEffect pathLineEffect = SKPathEffect.CreateDash(intervals, 0);
 
-            using SKPaint dashDotPaint = PaintObjects.DashPaint.Clone();
-            dashDotPaint.StrokeWidth = style.Width;
-            dashDotPaint.Color = style.Color;
-            dashDotPaint.PathEffect = pathLineEffect;
+            using SKPaint dashDotDotPaint = PaintObjects.DashPaint.Clone();
+            dashDotDotPaint.StrokeWidth = style.Width;
+            dashDotDotPaint.Color = style.Color;
+            dashDotDotPaint.PathEffect = pathLineEffect;
 
-            canvas.DrawPath(path, dashDotPaint);
+            if (style.Smoothing > 0)
+            {
+                dashDotDotPaint.PathEffect = SKPathEffect.CreateCompose(SKPathEffect.CreateCorner(style.Smoothing), pathLineEffect);
+            }
+
+            canvas.DrawPath(path, dashDotDotPaint);
         }
 
         private static void RenderDashDot(SKCanvas canvas, SKPath path, PathRenderStyle style)
@@ -751,6 +805,11 @@ namespace RealmStudioShapeRenderingLib
             dashDotPaint.StrokeWidth = style.Width;
             dashDotPaint.Color = style.Color;
             dashDotPaint.PathEffect = pathLineEffect;
+
+            if (style.Smoothing > 0)
+            {
+                dashDotPaint.PathEffect = SKPathEffect.CreateCompose(SKPathEffect.CreateCorner(style.Smoothing), pathLineEffect);
+            }
 
             canvas.DrawPath(path, dashDotPaint);
         }
@@ -765,6 +824,11 @@ namespace RealmStudioShapeRenderingLib
             dashPaint.Color = style.Color;
             dashPaint.PathEffect = pathLineEffect;
 
+            if (style.Smoothing > 0)
+            {
+                dashPaint.PathEffect = SKPathEffect.CreateCompose(SKPathEffect.CreateCorner(style.Smoothing), pathLineEffect);
+            }
+
             canvas.DrawPath(path, dashPaint);
         }
 
@@ -778,6 +842,11 @@ namespace RealmStudioShapeRenderingLib
             dottedPaint.Color = style.Color;
             dottedPaint.PathEffect = pathLineEffect;
 
+            if (style.Smoothing > 0)
+            {
+                dottedPaint.PathEffect = SKPathEffect.CreateCompose(SKPathEffect.CreateCorner(style.Smoothing), pathLineEffect);
+            }
+
             canvas.DrawPath(path, dottedPaint);
         }
 
@@ -786,6 +855,11 @@ namespace RealmStudioShapeRenderingLib
             using SKPaint solidPaint = PaintObjects.DashPaint.Clone();
             solidPaint.StrokeWidth = style.Width;
             solidPaint.Color = style.Color;
+
+            if (style.Smoothing > 0)
+            {
+                solidPaint.PathEffect = SKPathEffect.CreateCorner(style.Smoothing);
+            }
 
             canvas.DrawPath(path, solidPaint);
         }

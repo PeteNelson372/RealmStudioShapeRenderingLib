@@ -111,6 +111,8 @@ namespace RealmStudioShapeRenderingLib
 
         public SKStrokeJoin StrokeJoin { get; set; } = SKStrokeJoin.Round;
 
+        public int Smoothing { get; set; } = 0;
+
         // -------------------------------------------------
         // Cached helpers (optional)
         // -------------------------------------------------
@@ -220,7 +222,8 @@ namespace RealmStudioShapeRenderingLib
                 FlipSide = FlipSide,
 
                 StrokeCap = StrokeCap,
-                StrokeJoin = StrokeJoin
+                StrokeJoin = StrokeJoin,
+                Smoothing = Smoothing
             };
         }
     }

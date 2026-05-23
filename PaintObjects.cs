@@ -321,7 +321,15 @@ namespace RealmStudioShapeRenderingLib
         {
             Style = SKPaintStyle.StrokeAndFill,
             IsAntialias = true,
-            Color = SKColors.White,
+            Color = SKColors.MediumPurple,
+            StrokeWidth = 1,
+        };
+
+        public readonly static SKPaint RegionPointSnapStartPaint = new()
+        {
+            Style = SKPaintStyle.StrokeAndFill,
+            IsAntialias = true,
+            Color = SKColors.Goldenrod,
             StrokeWidth = 1,
         };
 
@@ -329,7 +337,7 @@ namespace RealmStudioShapeRenderingLib
         {
             Style = SKPaintStyle.StrokeAndFill,
             IsAntialias = true,
-            Color = SKColors.Blue,
+            Color = SKColors.GreenYellow,
             StrokeWidth = 1,
         };
 

@@ -1,10 +1,12 @@
-﻿using SkiaSharp;
+﻿using Clipper2Lib;
+using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
 {
     public static class Utilities
     {
         private const float PI_OVER_180 = (float)Math.PI / 180F;
+        private const double SELECTION_FUZZINESS = 4;
 
         public static float CalculatePolygonArea(List<SKPoint> polygonPoints)
         {
@@ -37,6 +39,53 @@ namespace RealmStudioShapeRenderingLib
             float y = (float)(radius * Math.Sin(angleInRadians)) + origin.Y;
 
             return new SKPoint(x, y);
+        }
+
+        public static bool LineContainsPoint(SKPoint pointToCheck, SKPoint lineStartPoint, SKPoint lineEndPoint)
+        {
+            SKPoint leftPoint;
+            SKPoint rightPoint;
+
+            // Normalize start/end to left right to make the offset calc simpler.
+            if (lineStartPoint.X <= lineEndPoint.X)
+            {
+                leftPoint = lineStartPoint;
+                rightPoint = lineEndPoint;
+            }
+            else
+            {
+                leftPoint = lineEndPoint;
+                rightPoint = lineStartPoint;
+            }
+
+            // If point is out of bounds, no need to do further checks.                  
+            if (pointToCheck.X + SELECTION_FUZZINESS < Math.Min(leftPoint.X, rightPoint.X) || Math.Max(leftPoint.X, rightPoint.X) < pointToCheck.X - SELECTION_FUZZINESS)
+            {
+                return false;
+            }
+            else if (pointToCheck.Y + SELECTION_FUZZINESS < Math.Min(leftPoint.Y, rightPoint.Y) || Math.Max(leftPoint.Y, rightPoint.Y) < pointToCheck.Y - SELECTION_FUZZINESS)
+            {
+                return false;
+            }
+
+            double deltaX = rightPoint.X - leftPoint.X;
+            double deltaY = rightPoint.Y - leftPoint.Y;
+
+            // If the line is straight, the earlier boundary check is enough to determine that the point is on the line.
+            // Also prevents division by zero exceptions.
+            if (deltaX == 0 || deltaY == 0)
+            {
+                return true;
+            }
+
+            double slope = deltaY / deltaX;
+            double offset = leftPoint.Y - leftPoint.X * slope;
+            double calculatedY = pointToCheck.X * slope + offset;
+
+            // Check calculated Y matches the points Y coord with some easing.
+            bool lineContains = pointToCheck.Y - SELECTION_FUZZINESS <= calculatedY && calculatedY <= pointToCheck.Y + SELECTION_FUZZINESS;
+
+            return lineContains;
         }
 
         public static SKPoint[] GetPoints(uint quantity, SKPoint p1, SKPoint p2)
@@ -73,6 +122,27 @@ namespace RealmStudioShapeRenderingLib
             {
                 path.LineTo(points[i]);
             }
+
+            return path;
+        }
+
+        public static SKPath BuildClosedPath(IReadOnlyList<SKPoint> points)
+        {
+            var path = new SKPath();
+
+            if (points == null || points.Count < 2)
+                return path;
+
+            path.MoveTo(points[0]);
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                path.LineTo(points[i]);
+            }
+
+            //path.LineTo(points[0]);
+
+            path.Close();
 
             return path;
         }
@@ -329,7 +399,44 @@ namespace RealmStudioShapeRenderingLib
             }
 
             return path;
-        }        
+        }
+
+        internal static List<SKPoint> GetParallelRegionPoints(List<SKPoint> points, float distance, ParallelDirection location)
+        {
+            PathD clipperPath = [];
+
+            foreach (SKPoint point in points)
+            {
+                clipperPath.Add(new PointD(point.X, point.Y));
+            }
+
+            PathsD clipperPaths = [];
+
+            clipperPaths.Add(clipperPath);
+
+            float d = (location == ParallelDirection.Below) ? -distance : distance;
+
+            // offset polyline
+            PathsD inflatedPaths = Clipper.InflatePaths(clipperPaths, d, JoinType.Round, EndType.Polygon, miterLimit: 1.0, arcTolerance: 0.05);
+
+            if (inflatedPaths.Count > 0)
+            {
+                PathD inflatedPathD = inflatedPaths.First();
+
+                List<SKPoint> inflatedPath = [];
+
+                foreach (PointD p in inflatedPathD)
+                {
+                    inflatedPath.Add(new SKPoint((float)p.x, (float)p.y));
+                }
+
+                return inflatedPath;
+            }
+            else
+            {
+                return points;
+            }
+        }
 
         public static SKPoint GetNormal(SKPoint a, SKPoint b)
         {

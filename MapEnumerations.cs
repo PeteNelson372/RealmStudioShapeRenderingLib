@@ -125,6 +125,8 @@ namespace RealmStudioShapeRenderingLib
         UserDefined
     }
 
+
+    // TODO: merge ColorPaintBrush and BrushPatternType
     public enum ColorPaintBrush
     {
         None,
@@ -134,6 +136,22 @@ namespace RealmStudioShapeRenderingLib
         PatternBrush2,
         PatternBrush3,
         PatternBrush4,
+    }
+
+    public enum BrushPatternType
+    {
+        SolidRound,
+        SoftRound,
+        Square,
+        Chalk,
+        Sponge,
+        Grass,
+        Ink,
+        DryBrush,
+        Stipple,
+        Crosshatch,
+        Pebble,
+        Cloud
     }
 
     public enum WaterFeatureType

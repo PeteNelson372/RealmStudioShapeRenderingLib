@@ -22,6 +22,7 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -29,11 +30,35 @@ namespace RealmStudioShapeRenderingLib
     {
         public string BrushName { get; set; } = string.Empty;
 
-        public SKBitmap? BrushBitmap { get; set; }
+        [XmlIgnore]
+        public List<SKBitmap?> BrushBitmaps { get; set; } = [];
 
-        public string BrushPath { get; set; } = string.Empty;
+        [XmlArray("BrushImages")]
+        [XmlArrayItem("Image")]
+        public List<string> BrushImages { get; set; } = [];
 
+        [XmlIgnore]
         public SKColor BrushColor { get; set; } = SKColors.Black;
+
+        [XmlIgnore]
         public SKSize BrushSize { get; set; } = SKSize.Empty;
+
+        [XmlElement]
+        public int BrushSpacing { get; set; } = 8;
+
+        [XmlElement]
+        public BrushBehavior Behavior { get; set; } = BrushBehavior.Continuous;
+
+        [XmlElement]
+        public BrushPixelMode PixelMode { get; set; } = BrushPixelMode.Density;
+        
+        [XmlElement]
+        public BrushSelectionMode BrushSelectionMode { get; set; } = BrushSelectionMode.Single;
+        
+        [XmlElement]
+        public bool RandomRotation { get; set; }
+        
+        [XmlElement]
+        public bool WorldAligned { get; set; }
     }
 }

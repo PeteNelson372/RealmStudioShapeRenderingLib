@@ -202,6 +202,13 @@ namespace RealmStudioShapeRenderingLib
             return a + (b - a) * t;
         }
 
+        public static SKPoint InterpolatePoint(SKPoint a, SKPoint b, float t)
+        {
+            return new SKPoint(
+                a.X + ((b.X - a.X) * t),
+                a.Y + ((b.Y - a.Y) * t));
+        }
+
         public static SKColor LerpColor(SKColor a, SKColor b, float t)
         {
             if (t < 0f) t = 0f;

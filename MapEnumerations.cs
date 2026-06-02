@@ -126,32 +126,24 @@ namespace RealmStudioShapeRenderingLib
     }
 
 
-    // TODO: merge ColorPaintBrush and BrushPatternType
-    public enum ColorPaintBrush
+    public enum BrushBehavior
     {
-        None,
-        SoftBrush,
-        HardBrush,
-        PatternBrush1,
-        PatternBrush2,
-        PatternBrush3,
-        PatternBrush4,
+        Continuous,
+        Stamp
     }
 
-    public enum BrushPatternType
+    public enum BrushPixelMode
     {
-        SolidRound,
-        SoftRound,
-        Square,
-        Chalk,
-        Sponge,
-        Grass,
-        Ink,
-        DryBrush,
-        Stipple,
-        Crosshatch,
-        Pebble,
-        Cloud
+        Density,    // grayscale brush tinted with selected color
+        Color       // RGBA brush uses its own colors
+    }
+
+    public enum BrushSelectionMode
+    {
+        Single,
+        Random,
+        Sequential,
+        Directional
     }
 
     public enum WaterFeatureType

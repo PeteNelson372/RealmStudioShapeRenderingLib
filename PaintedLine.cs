@@ -1,234 +1,413 @@
-﻿/**************************************************************************************************************************
-* Copyright 2025, Peter R. Nelson
-*
-* This file is part of the RealmStudio application. The RealmStudio application is intended
-* for creating fantasy maps for gaming and world building.
-*
-* RealmStudio is free software: you can redistribute it and/or modify it under the terms
-* of the GNU General Public License as published by the Free Software Foundation,
-* either version 3 of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with this program.
-* The text of the GNU General Public License (GPL) is found in the LICENSE.txt file.
-* If the LICENSE.txt file is not present or the text of the GNU GPL is not present in the LICENSE.txt file,
-* see https://www.gnu.org/licenses/.
-*
-* For questions about the RealmStudio application or about licensing, please email
-* support@brookmonte.com
-*
-***************************************************************************************************************************/
-using SkiaSharp;
+﻿using SkiaSharp;
 
 namespace RealmStudioShapeRenderingLib
 {
     public sealed class PaintedLine : MapComponent2D, IDrawnMapComponent, IDisposable
     {
-        private bool disposedValue;
+        private bool _disposed;
 
-        private List<SKPoint> _points = [];
-        private MapBrush? _brush;
-        private SKColor _color = SKColors.Black;
-        private int _brushSize = 2;
-        private SKBitmap? _resizedBitmap;
-        private SKBitmap? _strokeBitmap;
-        private DrawingFillType _fillType = DrawingFillType.None;
+        // =================================================
+        // Stroke data
+        // =================================================
 
-        private readonly SKPaint ShaderPaint = new()
+        private readonly List<SKPoint> _points = [];
+
+        private SKPoint? _lastPaintPoint;
+
+        private SKPoint? _lastRawPoint;
+
+        // =================================================
+        // Brush
+        // =================================================
+
+        private PreparedBrush? _brush;
+
+        // =================================================
+        // Rendering surface
+        // =================================================
+
+        private SKSurface? _surface;
+
+        private SKCanvas? _surfaceCanvas;
+
+        private SKImage? _cachedImage;
+
+        // =================================================
+        // Paint resources
+        // =================================================
+
+        private readonly SKPaint _brushPaint = new()
         {
+            Style = SKPaintStyle.Stroke,
             IsAntialias = true,
-            Style = SKPaintStyle.Fill
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round,
         };
 
-        public List<SKPoint> Points
-        {
-            get => _points;
-            set
-            {
-                _points = value ?? throw new ArgumentNullException(nameof(value), "Points cannot be null.");
-            }
-        }
+        // =================================================
+        // Dirty rect tracking
+        // =================================================
 
-        public MapBrush? Brush
+        private SKRect _dirtyRect = SKRect.Empty;
+
+        // =================================================
+        // Stroke state
+        // =================================================
+
+        public bool IsFinalized { get; private set; }
+
+        // =================================================
+        // Brush behavior
+        // =================================================
+
+        public int DefaultSpacing { get; set; } = 8;
+        public int BrushSpacing { get; set; } = 8;
+        public bool RandomRotation { get; set; } = false;
+
+        private SKBitmap? _colorizedBrushBitmap;
+
+        private bool _brushValuesChanged = true;
+
+        // =================================================
+        // Properties
+        // =================================================
+
+        public List<SKPoint> Points => _points;
+
+        public PreparedBrush? Brush
         {
             get => _brush;
+
             set
             {
                 _brush = value;
+
             }
         }
 
-        public SKColor Color
+        public SKRect DirtyRect => _dirtyRect;
+
+        // =================================================
+        // Initialization
+        // =================================================
+
+        public void Initialize(int width, int height)
         {
-            get => _color;
-            set
-            {
-                if (value == SKColors.Empty)
-                {
-                    throw new ArgumentException("Color cannot be empty.", nameof(value));
-                }
-                _color = value;
-                ShaderPaint.Color = _color;
-            }
+            _surface?.Dispose();
+
+            _surface =
+                SKSurface.Create(
+                    new SKImageInfo(
+                        width,
+                        height,
+                        SKColorType.Rgba8888,
+                        SKAlphaType.Premul));
+
+            _surfaceCanvas = _surface.Canvas;
+
+            _surfaceCanvas.Clear(SKColors.Transparent);
+
+            IsFinalized = false;
         }
 
-        public int BrushSize
+
+        // =================================================
+        // Add paint point
+        // =================================================
+
+        public void AddPoint(SKPoint point)
         {
-            get => _brushSize;
-            set
+            if (_surfaceCanvas == null)
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Brush size must be greater than zero.");
-                }
-
-                _brushSize = value;
-
-                // Resize the bitmap when brush size changes
-                if (Brush != null && _resizedBitmap != null && Brush.BrushBitmap != null)
-                {
-                    float width = Brush.BrushBitmap.Width;
-                    float scale = _brushSize / width;
-                    _resizedBitmap = Utilities.ScaleSKBitmap(Brush.BrushBitmap, scale);
-                }
-
-                ShaderPaint.StrokeWidth = _brushSize;
+                throw new Exception("PaintedLine canvas is null. Was Initialize() called?");
             }
+
+            if (_points.Count == 0)
+            {
+                _points.Add(point);
+                StampBrush(point);
+                return;
+            }
+
+            float minDistance = Brush!.BrushSize * (Brush!.BrushSpacing / 100.0f);
+
+            if (SKPoint.Distance(_points[^1], point) >= minDistance)
+            {
+                _points.Add(point);
+                StampBrush(point);
+            }
+
+            UpdateBounds();
         }
 
-        public DrawingFillType FillType
+        // =================================================
+        // Stamp brush
+        // =================================================
+
+        private void StampBrush(SKPoint point)
         {
-            get => _fillType;
-            set
+            if (_surfaceCanvas == null)
             {
-                _fillType = value;
-                if (_fillType == DrawingFillType.Texture && Brush != null && _strokeBitmap != null)
+                return;
+            }
+
+            SKRect destRect = new(
+                point.X - Brush!.BrushSize / 2f,
+                point.Y - Brush!.BrushSize / 2f,
+                point.X + Brush!.BrushSize / 2f,
+                point.Y + Brush!.BrushSize / 2f);
+
+            SKBitmap? renderBitmap = null;
+
+            switch (Brush?.SourceBrush?.BrushSelectionMode)
+            {
+                case BrushSelectionMode.Single:
+                    renderBitmap = Brush!.Bitmaps[0];
+                    break;
+
+                case BrushSelectionMode.Random:
+                    renderBitmap =
+                        Brush!.Bitmaps[
+                            Random.Shared.Next(Brush.Bitmaps.Count)];
+                    break;
+
+                case BrushSelectionMode.Sequential:
+                    renderBitmap =
+                        Brush!.Bitmaps[
+                            _points.Count % Brush.Bitmaps.Count];
+                    break;
+            }
+
+            if (renderBitmap == null)
+            {
+                return;
+            }
+
+            //
+            // World-aligned pattern brush
+            //
+
+            if (Brush != null && Brush.SourceBrush != null && Brush.SourceBrush.WorldAligned)
+            {
+                using SKPaint patternPaint = new();
+
+                patternPaint.Shader =
+                    SKShader.CreateBitmap(
+                        renderBitmap,
+                        SKShaderTileMode.Repeat,
+                        SKShaderTileMode.Repeat);
+
+                _surfaceCanvas.DrawCircle(
+                    point.X,
+                    point.Y,
+                    Brush.BrushSize / 2f,
+                    patternPaint);
+            }
+
+            //
+            // Normal stamp brush
+            //
+
+            else
+            {
+                float angle = 0;
+
+                if (RandomRotation)
                 {
-                    ShaderPaint.Shader = SKShader.CreateBitmap(_strokeBitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);
+                    angle =
+                        Random.Shared.NextSingle() * 360f;
                 }
-                else
+
+                using (new SKAutoCanvasRestore(_surfaceCanvas))
                 {
-                    ShaderPaint.Shader = SKShader.CreateColor(Color);
+                    if (RandomRotation)
+                    {
+                        _surfaceCanvas.Translate(point.X, point.Y);
+                        _surfaceCanvas.RotateDegrees(angle);
+                        _surfaceCanvas.Translate(-point.X, -point.Y);
+                    }
+
+                    _surfaceCanvas.DrawBitmap(
+                        renderBitmap,
+                        destRect);
                 }
+            }
+
+            if (_dirtyRect.IsEmpty)
+            {
+                _dirtyRect = destRect;
+            }
+            else
+            {
+                _dirtyRect.Union(destRect);
             }
         }
 
-        public SKBitmap? StrokeBitmap
+        // =================================================
+        // Finalize
+        // =================================================
+
+        public void FinalizeStroke()
         {
-            get => _strokeBitmap;
-            set
+            if (_surface == null)
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException(nameof(value), "StrokeBitmap cannot be null.");
-                }
-                _strokeBitmap = value;
-                _resizedBitmap = value;
+                return;
+            }
+
+            _cachedImage?.Dispose();
+
+            _cachedImage = _surface.Snapshot();
+
+            IsFinalized = true;
+        }
+
+        // =================================================
+        // Bounds
+        // =================================================
+
+        private void UpdateBounds()
+        {
+            if (_points.Count == 0)
+            {
+                return;
+            }
+
+            float minX =
+                _points.Min(p => p.X);
+
+            float minY =
+                _points.Min(p => p.Y);
+
+            float maxX =
+                _points.Max(p => p.X);
+
+            float maxY =
+                _points.Max(p => p.Y);
+
+            Bounds =
+                new SKRect(
+                    minX - Brush!.BrushSize,
+                    minY - Brush!.BrushSize,
+                    maxX + Brush!.BrushSize,
+                    maxY + Brush!.BrushSize);
+        }
+
+        // =================================================
+        // Render
+        // =================================================
+
+        public override void Render(
+            SKCanvas canvas,
+            FontManager? fontManager = null)
+        {
+            // ---------------------------------------------
+            // Active stroke
+            // ---------------------------------------------
+
+            if (!IsFinalized && _surface != null)
+            {
+                using SKImage image =
+                    _surface.Snapshot();
+
+                canvas.DrawImage(
+                    image,
+                    0,
+                    0);
+
+                return;
+            }
+
+            // ---------------------------------------------
+            // Cached finalized stroke
+            // ---------------------------------------------
+
+            if (_cachedImage != null)
+            {
+                canvas.DrawImage(
+                    _cachedImage,
+                    0,
+                    0);
             }
         }
 
-        public override bool HitTest(SKPoint worldPos)
+        private SKPoint GetSmoothedDirection()
+        {
+            if (_points.Count < 2)
+            {
+                return new SKPoint(1, 0);
+            }
+
+            int lookback = Math.Min(5, _points.Count - 1);
+
+            SKPoint start = _points[^lookback];
+            SKPoint end = _points[^1];
+
+            float dx = end.X - start.X;
+            float dy = end.Y - start.Y;
+
+            float len = MathF.Sqrt(dx * dx + dy * dy);
+
+            if (len < 0.001f)
+            {
+                return new SKPoint(1, 0);
+            }
+
+            return new SKPoint(dx / len, dy / len);
+        }
+
+
+        // =================================================
+        // Hit testing
+        // =================================================
+
+        public override bool HitTest(
+            SKPoint worldPos)
         {
             return Bounds.Contains(worldPos);
         }
+
+        // =================================================
+        // Undo/redo
+        // =================================================
 
         public override IShapeState CaptureState()
         {
             throw new NotImplementedException();
         }
 
-        public override void RestoreState(IShapeState state)
+        public override void RestoreState(
+            IShapeState state)
         {
             throw new NotImplementedException();
         }
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        // =================================================
+        // Dispose
+        // =================================================
+
+        private void Dispose(bool disposing)
         {
-            ShaderPaint.Color = Color;
-            ShaderPaint.StrokeWidth = BrushSize;
-
-            SKShader StrokeShader = SKShader.CreateColor(Color);
-
-            if (FillType == DrawingFillType.Texture)
+            if (_disposed)
             {
-                if (Brush != null && Brush.BrushBitmap != null)
-                {
-                    // combine the stroke color with the bitmap color
-                    ShaderPaint.ColorFilter = SKColorFilter.CreateBlendMode(Color, SKBlendMode.Modulate);
-                }
-
-                // if the fill type is texture, create a shader from the bitmap
-                StrokeShader = SKShader.CreateBitmap(_resizedBitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);
-            }
-            else if (FillType == DrawingFillType.Color)
-            {
-                ShaderPaint.ColorFilter = SKColorFilter.CreateBlendMode(Color, SKBlendMode.Modulate);
+                return;
             }
 
-            SKPath boundsPath = new();
-            foreach (SKPoint point in Points)
+            if (disposing)
             {
-                boundsPath.AddCircle(point.X, point.Y, BrushSize / 2);
+                _brushPaint.Dispose();
+                _cachedImage?.Dispose();
+                _surfaceCanvas?.Dispose();
+                _surface?.Dispose();
             }
 
-            Bounds = boundsPath.Bounds;
-
-            foreach (SKPoint point in Points)
-            {
-                canvas.Save();
-
-                SKPath clipPath = new();
-                clipPath.AddCircle(point.X, point.Y, _brushSize / 2f);
-
-                canvas.ClipPath(clipPath);
-
-                ShaderPaint.Shader = StrokeShader;
-
-                if (FillType == DrawingFillType.Texture)
-                {
-                    if (_resizedBitmap == null)
-                    {
-                        return;
-                    }
-
-                    canvas.DrawBitmap(_resizedBitmap, new SKRect(0, 0,
-                        _resizedBitmap.Width, _resizedBitmap.Height),
-                        new SKRect(point.X - _resizedBitmap.Width / 2,
-                            point.Y - _resizedBitmap.Height / 2,
-                            point.X + _resizedBitmap.Width / 2,
-                            point.Y + _resizedBitmap.Height / 2), ShaderPaint);
-                }
-                else
-                {
-                    canvas.DrawCircle(point.X, point.Y, BrushSize / 2, ShaderPaint);
-                }
-
-                clipPath.Dispose();
-                canvas.Restore();
-            }
-        }
-
-        public void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    ShaderPaint.Dispose();
-                }
-                disposedValue = true;
-            }
+            _disposed = true;
         }
 
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
+            Dispose(true);
+
             GC.SuppressFinalize(this);
         }
-
     }
 }

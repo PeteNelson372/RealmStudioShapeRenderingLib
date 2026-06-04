@@ -12,10 +12,6 @@ namespace RealmStudioShapeRenderingLib
 
         private readonly List<SKPoint> _points = [];
 
-        private SKPoint? _lastPaintPoint;
-
-        private SKPoint? _lastRawPoint;
-
         // =================================================
         // Brush
         // =================================================
@@ -63,10 +59,6 @@ namespace RealmStudioShapeRenderingLib
         public int DefaultSpacing { get; set; } = 8;
         public int BrushSpacing { get; set; } = 8;
         public bool RandomRotation { get; set; } = false;
-
-        private SKBitmap? _colorizedBrushBitmap;
-
-        private bool _brushValuesChanged = true;
 
         // =================================================
         // Properties

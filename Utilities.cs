@@ -8,6 +8,28 @@ namespace RealmStudioShapeRenderingLib
         private const float PI_OVER_180 = (float)Math.PI / 180F;
         private const double SELECTION_FUZZINESS = 4;
 
+        public static List<SKPoint> PolyPoints(SKPoint location, float sides, float radius, float start)
+        {
+            List<SKPoint> points = [];
+
+            float x_center = location.X;
+            float y_center = location.Y;
+            float angle = start;
+            float angle_increment = (float)(2.0F * Math.PI / sides);
+
+            for (int i = 0; i < sides; i++)
+            {
+                float x = (float)(x_center + radius * Math.Cos(angle));
+                float y = (float)(y_center + radius * Math.Sin(angle));
+
+                points.Add(new SKPoint(x, y));
+
+                angle += angle_increment;
+            }
+
+            return points;
+        }
+
         public static float CalculatePolygonArea(List<SKPoint> polygonPoints)
         {
             if (polygonPoints.Count < 3)

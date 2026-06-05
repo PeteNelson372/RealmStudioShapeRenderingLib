@@ -58,6 +58,7 @@ namespace RealmStudioShapeRenderingLib
             set
             {
                 _drawTexture = value;
+                _shaderValuesModified = true;
             }
         }
 

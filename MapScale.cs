@@ -22,44 +22,62 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapScale : MapComponent2D, IDisposable
     {
+        [XmlElement]
         public int ScaleWidth { get; set; } = 256;
+
+        [XmlElement]
         public int ScaleHeight { get; set; } = 16;
 
+        [XmlElement]
         public SKPoint Location { get; set; } = SKPoint.Empty;
 
+        [XmlElement]
         public int ScaleSegmentCount { get; set; } = 5;  // how many segments in the scale
+
+        [XmlElement]
         public int ScaleLineWidth { get; set; } = 3;  // width of the outline around the scale
 
+        [XmlElement]
         public SKColor ScaleColor1 { get; set; } = SKColors.Black;  // odd numbered segment color
+
+        [XmlElement]
         public SKColor ScaleColor2 { get; set; } = SKColors.White;  // even numbered segment color
+
+        [XmlElement]
         public SKColor ScaleColor3 { get; set; } = SKColors.Black;  // line color of scale outline
         
+        [XmlElement]
         public float ScaleDistance { get; set; } = 100.0F;  // distance of each segment
+
+        [XmlElement]
         public string ScaleDistanceUnit { get; set; } = string.Empty;  // feet, meters, miles, kilometers, etc.
         
+        [XmlElement]
         public ScaleNumbersDisplayLocation ScaleNumbersDisplayType { get; set; } = ScaleNumbersDisplayLocation.All;  // where to display the segment labels
 
+        [XmlElement]
         public FontStyleModel ScaleFont { get; set; } = new FontStyleModel(); // scale segment label font, color, outline
+
+        [XmlElement]
         public SKColor ScaleFontColor { get; set; } = SKColors.White;
         
+        [XmlElement]
         public int ScaleOutlineWidth { get; set; } = 1;
-        public SKColor ScaleOutlineColor { get; set; } = SKColors.Black;
 
+        [XmlElement]
+        public SKColor ScaleOutlineColor { get; set; } = SKColors.Black;
 
         private SKPaint SegmentOutlinePaint = new();
         private SKPaint EvenSegmentPaint = new();
         private SKPaint OddSegmentPaint = new();
         private SKPaint ScaleLabelPaint = new();
         private SKPaint OutlinePaint = new();
-
-        private SKPoint _startLocation = SKPoint.Empty;
-        private int _startScaleWidth = 0;
-        private int _startScaleHeight = 0;
 
         private bool disposedValue;
 

@@ -273,8 +273,10 @@ namespace RealmStudioShapeRenderingLib
 
         public static SKBitmap ScaleSKBitmap(SKBitmap bitmap, float scale)
         {
-            if (bitmap == null || scale <= 0f)
-                throw new ArgumentException("Invalid bitmap or scale.");
+            if (scale <= 0f)
+            {
+                return bitmap;
+            }
 
             int width = Math.Max(1, (int)Math.Round(bitmap.Width * scale));
             int height = Math.Max(1, (int)Math.Round(bitmap.Height * scale));
@@ -319,6 +321,53 @@ namespace RealmStudioShapeRenderingLib
 
             // draw original into new bitmap with opacity applied
             canvas.DrawBitmap(source, 0, 0, paint);
+
+            return result;
+        }
+
+        public static SKBitmap ResizeBitmap(SKBitmap source, int width, int height)
+        {
+            SKBitmap resized = new(width, height);
+
+            using SKCanvas canvas = new(resized);
+
+            SKSamplingOptions sampling = new(SKFilterMode.Linear, SKMipmapMode.Linear);
+
+            canvas.DrawImage(
+                SKImage.FromBitmap(source),
+                new SKRect(0, 0, width, height),
+                sampling);
+
+            return resized;
+        }
+
+        public static SKBitmap ExtractRegion(
+            SKBitmap source,
+            int x,
+            int y,
+            int width,
+            int height)
+        {
+            SKBitmap result = new(width, height);
+
+            using SKCanvas canvas = new(result);
+
+            SKRect sourceRect = new(
+                x,
+                y,
+                x + width,
+                y + height);
+
+            SKRect destRect = new(
+                0,
+                0,
+                width,
+                height);
+
+            canvas.DrawBitmap(
+                source,
+                sourceRect,
+                destRect);
 
             return result;
         }

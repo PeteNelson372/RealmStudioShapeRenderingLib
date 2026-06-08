@@ -25,8 +25,10 @@ namespace RealmStudioShapeRenderingLib
             TextureBitmap = bitmap;
         }
 
+        [XmlElement]
         public string TextureName { get; set; }
 
+        [XmlElement]
         public string TexturePath { get; set; }
 
         [XmlIgnore]

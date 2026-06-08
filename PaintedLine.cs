@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -56,16 +57,24 @@ namespace RealmStudioShapeRenderingLib
         // Brush behavior
         // =================================================
 
+        [XmlElement]
         public int DefaultSpacing { get; set; } = 8;
+
+        [XmlElement]
         public int BrushSpacing { get; set; } = 8;
+
+        [XmlElement]
         public bool RandomRotation { get; set; } = false;
 
         // =================================================
         // Properties
         // =================================================
 
+        [XmlArray]
+        [XmlArrayItem("Point", Type = typeof(SKPoint))]
         public List<SKPoint> Points => _points;
 
+        [XmlElement]
         public PreparedBrush? Brush
         {
             get => _brush;
@@ -321,32 +330,6 @@ namespace RealmStudioShapeRenderingLib
                     0);
             }
         }
-
-        private SKPoint GetSmoothedDirection()
-        {
-            if (_points.Count < 2)
-            {
-                return new SKPoint(1, 0);
-            }
-
-            int lookback = Math.Min(5, _points.Count - 1);
-
-            SKPoint start = _points[^lookback];
-            SKPoint end = _points[^1];
-
-            float dx = end.X - start.X;
-            float dy = end.Y - start.Y;
-
-            float len = MathF.Sqrt(dx * dx + dy * dy);
-
-            if (len < 0.001f)
-            {
-                return new SKPoint(1, 0);
-            }
-
-            return new SKPoint(dx / len, dy / len);
-        }
-
 
         // =================================================
         // Hit testing

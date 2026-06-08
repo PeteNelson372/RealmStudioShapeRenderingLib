@@ -44,7 +44,7 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
 
         [XmlAttribute]
-        public Guid MapLayerGuid { get; set; } = Guid.NewGuid();
+        public string MapLayerId { get; set; } = Guid.NewGuid().ToString();
 
         [XmlAttribute]
         public string MapLayerName { get; set; } = "";
@@ -83,19 +83,19 @@ namespace RealmStudioShapeRenderingLib
 
             public readonly HashSet<MapComponent2D> TileShapes = [];
 
-            public bool Contains(MapComponent2D symbol)
+            public bool Contains(MapComponent2D shape)
             {
-                return TileShapes.Contains(symbol);
+                return TileShapes.Contains(shape);
             }
 
-            public void Add(MapComponent2D symbol)
+            public void Add(MapComponent2D shape)
             {
-                TileShapes.Add(symbol);
+                TileShapes.Add(shape);
             }
 
-            public void Remove(MapComponent2D symbol)
+            public void Remove(MapComponent2D shape)
             {
-                TileShapes.Remove(symbol);
+                TileShapes.Remove(shape);
             }
         }
 
@@ -265,9 +265,9 @@ namespace RealmStudioShapeRenderingLib
 
         public void Add(MapComponent2D shape)
         {
-            if (shape is MapSymbol ms)
+            if (shape is MapSymbol || shape is IDrawnMapComponent)
             {
-                Enqueue(ms);
+                Enqueue(shape);
             }
             else
             {
@@ -366,43 +366,72 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
-        public void UpdateSymbolTiles(MapSymbol symbol, SKRect oldBounds, SKRect newBounds)
+        public void UpdateShapeTiles(MapComponent2D shape, SKRect oldBounds, SKRect newBounds)
         {
-            var affected = SKRect.Union(oldBounds, newBounds);
+            // Build old tile set
+            HashSet<(int x, int y)> oldTiles = [];
 
-            int minX = (int)MathF.Floor(affected.Left / TileSize);
-            int maxX = (int)MathF.Floor(affected.Right / TileSize);
+            int oldMinX = (int)MathF.Floor(oldBounds.Left / TileSize);
+            int oldMaxX = (int)MathF.Floor(oldBounds.Right / TileSize);
 
-            int minY = (int)MathF.Floor(affected.Top / TileSize);
-            int maxY = (int)MathF.Floor(affected.Bottom / TileSize);
+            int oldMinY = (int)MathF.Floor(oldBounds.Top / TileSize);
+            int oldMaxY = (int)MathF.Floor(oldBounds.Bottom / TileSize);
 
-            // Remove from tiles no longer intersecting
-            foreach (var tile in _tiles.Values)
+            for (int x = oldMinX; x <= oldMaxX; x++)
             {
-                if (tile.Contains(symbol) && !tile.Bounds.IntersectsWith(newBounds))
+                for (int y = oldMinY; y <= oldMaxY; y++)
                 {
-                    tile.Remove(symbol);
+                    oldTiles.Add((x, y));
+                }
+            }
+
+            // Build new tile set
+            HashSet<(int x, int y)> newTiles = [];
+
+            int newMinX = (int)MathF.Floor(newBounds.Left / TileSize);
+            int newMaxX = (int)MathF.Floor(newBounds.Right / TileSize);
+
+            int newMinY = (int)MathF.Floor(newBounds.Top / TileSize);
+            int newMaxY = (int)MathF.Floor(newBounds.Bottom / TileSize);
+
+            for (int x = newMinX; x <= newMaxX; x++)
+            {
+                for (int y = newMinY; y <= newMaxY; y++)
+                {
+                    newTiles.Add((x, y));
+                }
+            }
+
+            // Remove from tiles no longer occupied
+            foreach (var key in oldTiles.Except(newTiles))
+            {
+                if (_tiles.TryGetValue(key, out var tile))
+                {
+                    tile.Remove(shape);
                     tile.IsModified = true;
                 }
             }
 
-            // Add to new tiles
-            for (int x = minX; x <= maxX; x++)
+            // Add to newly occupied tiles
+            foreach (var key in newTiles.Except(oldTiles))
             {
-                for (int y = minY; y <= maxY; y++)
-                {
-                    if (_tiles.TryGetValue((x, y), out var tile))
-                    {
-                        if (!tile.Contains(symbol))
-                        {
-                            tile.Add(symbol);
-                        }
+                var tile = GetOrCreateTile(key.x, key.y);
 
-                        tile.IsModified = true;
-                    }
+                tile.Add(shape);
+                tile.IsModified = true;
+            }
+
+            // Mark tiles occupied before and after as dirty
+            foreach (var key in oldTiles.Union(newTiles))
+            {
+                if (_tiles.TryGetValue(key, out var tile))
+                {
+                    tile.IsModified = true;
                 }
             }
         }
+
+
 
         // -------------------------------------------------
         // MapSymbol Z Ordering

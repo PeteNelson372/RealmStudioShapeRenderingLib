@@ -22,19 +22,25 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapVignette : MapComponent2D
     {
+        [XmlElement]
         public float VignetteStrength { get; set; } = 0.5f;
 
+        [XmlElement]
         public SKColor VignetteColor { get; set; } = SKColor.Parse("#C9977B");
 
+        [XmlElement]
         public VignetteShapeType VignetteShape { get; set; } = VignetteShapeType.Oval;
 
+        [XmlIgnore]
         public bool IsModified { get; set; } = true;
 
+        [XmlIgnore]
         public SKImage? CachedImage { get; set; }
 
         public MapVignette() { }

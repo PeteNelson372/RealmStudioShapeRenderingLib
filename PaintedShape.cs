@@ -3,6 +3,7 @@
 namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
+    using System.Xml.Serialization;
 
     /// <summary>
     /// A painted, blob-style shape built from stamped circular brush strokes.
@@ -13,12 +14,13 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
         // Brush configuration
         // -------------------------------------------------
-
+        [XmlElement]
         public float BrushRadius { get; set; } = 12f;
 
-        /// <summary>
-        /// Minimum spacing between brush stamps as a fraction of radius.
-        /// </summary>
+        //
+        // Minimum spacing between brush stamps as a fraction of radius.
+        //
+        [XmlElement]
         public float BrushSpacing { get; set; } = 0.5f;
 
         // -------------------------------------------------
@@ -30,6 +32,7 @@ namespace RealmStudioShapeRenderingLib
         {
             FillType = SKPathFillType.EvenOdd
         };
+
 
         // -------------------------------------------------
         // Painting API (called by tools / commands)

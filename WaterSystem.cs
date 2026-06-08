@@ -1,19 +1,29 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class WaterSystem : ISelectable
     {
+        [XmlElement]
         public string Id { get; } = Guid.NewGuid().ToString();
+
+        [XmlElement]
         public string Name { get; set; } = string.Empty;
+
+        [XmlElement]
         public string Description { get; set; } = string.Empty;
 
+        [XmlArray]
+        [XmlArrayItem("WateryBody", Type = typeof(WaterBody))]
         public HashSet<WaterBody> WaterBodies { get; set; } = [];
 
         public bool IsEmpty => WaterBodies.Count == 0;
 
+        [XmlElement]
         public SKPath MergedGeometry { get; set; } = new();
 
+        [XmlElement]
         public SKRect Bounds
         {
             get
@@ -29,8 +39,10 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public WaterRenderSettings RenderSettings { get; set; } = new();
 
+        [XmlIgnore]
         public bool IsSelected { get; set; }
         
 

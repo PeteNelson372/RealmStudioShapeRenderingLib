@@ -22,6 +22,7 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -57,30 +58,44 @@ namespace RealmStudioShapeRenderingLib
             };
         }
 
+        [XmlElement]
         public float MapPixelWidth { get; set; } = 0f;
 
+        [XmlElement]
         public float MapPixelHeight { get; set; } = 0f;
 
+        [XmlElement]
         public string MapAreaUnits { get; set; } = "pixels";
 
+        [XmlElement]
         public SKColor MeasureLineColor { get; set; } = new SKColor(138, 26, 0, 191);
 
+        [XmlElement]
         public bool UseMapUnits { get; set; }
 
+        [XmlElement]
         public bool MeasureArea { get; set; }
 
+        [XmlArray]
+        [XmlArrayItem("Point", Type = typeof(SKPoint))]
         public List<SKPoint> MeasurePoints { get; set; } = [];
 
+        [XmlIgnore]
         public SKPaint MeasureLinePaint { get; set; }
 
+        [XmlIgnore]
         public SKPaint MeasureAreaPaint { get; set; }
 
+        [XmlIgnore]
         public SKPaint MeasureValuePaint { get; set; }
 
+        [XmlIgnore]
         public SKPaint MeasureValueOutlinePaint { get; set; }
 
+        [XmlElement]
         public float TotalMeasureLength { get; set; }
 
+        [XmlElement]
         public bool RenderValue { get; set; }
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null)

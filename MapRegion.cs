@@ -22,29 +22,49 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapRegion : MapComponent2D
     {
+        [XmlElement]
         public string RegionName { get; set; } = string.Empty;
+
+        [XmlElement]
         public string RegionDescription { get; set; } = string.Empty;
 
+        [XmlElement]
         public SKColor RegionBorderColor { get; set; } = SKColor.Parse("#0056B3");
+
+        [XmlElement]
         public int RegionBorderWidth { get; set; } = 10;
+
+        [XmlElement]
         public int RegionInnerOpacity { get; set; } = 64;
+
+        [XmlElement]
         public int RegionBorderSmoothing { get; set; } = 20;
+
+        [XmlElement]
         public PathType RegionBorderType { get; set; } = PathType.SolidLinePath;
 
+        [XmlIgnore]
         public SKPaint RegionBorderPaint { get; set; } = new();
 
+        [XmlIgnore]
         public SKPaint RegionInnerPaint { get; set; } = new();
 
+        [XmlElement]
         public SKPath BoundaryPath { get; set; } = new();
 
+        [XmlIgnore]
         private readonly List<MapRegionPoint> _mapRegionPoints = [];
+
+        [XmlIgnore]
         public SKPoint SnappedStartPoint { get; set; } = SKPoint.Empty;
 
+        [XmlIgnore]
         public bool IsEditing { get; set; } = false;
 
         public MapRegion() { }

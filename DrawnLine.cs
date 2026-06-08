@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -24,6 +25,8 @@ namespace RealmStudioShapeRenderingLib
             StrokeMiter = 1.0f
         };
 
+        [XmlArray]
+        [XmlArrayItem("Point", Type = typeof(SKPoint))]
         public List<SKPoint> Points
         {
             get => _points;
@@ -33,6 +36,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public SKColor Color
         {
             get => _color;
@@ -43,6 +47,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public int BrushSize
         {
             get => _brushSize;
@@ -52,6 +57,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public bool DrawTexture
         {
             get => _drawTexture;
@@ -62,6 +68,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public string TextureId
         {
             get => _textureId;
@@ -72,6 +79,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlIgnore]
         public SKImage? Texture
         {
             get => _texture;
@@ -82,6 +90,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public int TextureOpacity
         {
             get => _textureOpacity;
@@ -92,6 +101,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public float TextureScale
         {
             get => _textureScale;

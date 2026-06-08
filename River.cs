@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -10,6 +11,8 @@ namespace RealmStudioShapeRenderingLib
 
     public class River : WaterBody
     {
+        [XmlArray]
+        [XmlArrayItem("Point", Type = typeof(SKPoint))]
         public List<SKPoint> ControlPoints { get; } = [];
 
         public float VariationSeed { get; set; }
@@ -21,6 +24,8 @@ namespace RealmStudioShapeRenderingLib
 
         public River()
         {
+            // TODO: if a variation seed is set when the River is loaded
+            // with the map, don't generate a new one
             VariationSeed = Random.Shared.NextSingle() * 1000f;
             Editor = new EditablePolylineEditor(ControlPoints)
             {

@@ -3,6 +3,7 @@
 namespace RealmStudioShapeRenderingLib
 {
     using SkiaSharp;
+    using System.Xml.Serialization;
 
     public abstract class Shape2D : MapComponent2D
     {
@@ -22,27 +23,24 @@ namespace RealmStudioShapeRenderingLib
             FillType = SKPathFillType.EvenOdd
         };
 
-        /// <summary>
-        /// Path used for hit testing, clipping, and fills.
-        /// </summary>
+        // Path used for hit testing, clipping, and fills.        
+        [XmlElement]
         public SKPath HitPath { get; protected set; } = new()
         {
             FillType = SKPathFillType.EvenOdd,
         };
 
-        /// <summary>
-        /// Path representing the outline/perimeter of the shape.
-        /// </summary>
+
+        // Path representing the outline/perimeter of the shape.
+        [XmlElement]
         public SKPath PerimeterPath { get; protected set; } = new()
         {
             FillType = SKPathFillType.EvenOdd,
         };
 
-        /// <summary>
-        /// Axis-aligned bounds in world space.
-        /// </summary>
+        // Axis-aligned bounds in world space.
+        [XmlElement]
         public override SKRect Bounds => HitPath.Bounds;
-
 
         // -------------------------------------------------
         // Geometry

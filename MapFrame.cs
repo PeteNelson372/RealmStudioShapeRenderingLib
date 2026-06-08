@@ -21,13 +21,12 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
-using ExCSS;
 using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    [XmlRoot("mapframe", IsNullable = false)]
+    [XmlRoot("MapFrame", IsNullable = false)]
     public class MapFrame
     {
         [XmlElement("FrameName")]

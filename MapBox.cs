@@ -29,18 +29,28 @@ namespace RealmStudioShapeRenderingLib
     [XmlRoot("mapbox", Namespace = "RealmStudio", IsNullable = false)]
     public class MapBox
     {
+        [XmlElement]
         public string? BoxName { get; set; }
 
         [XmlIgnore]
         public SKBitmap? BoxBitmap { get; set; }
 
+        [XmlElement]
         public string? BoxBitmapPath { get; set; }
 
+        [XmlElement]
         public string? BoxXmlFilePath { get; set; }
 
+        [XmlElement]
         public float BoxCenterLeft { get; set; }
+
+        [XmlElement]
         public float BoxCenterTop { get; set; }
+
+        [XmlElement]
         public float BoxCenterRight { get; set; }
+
+        [XmlElement]
         public float BoxCenterBottom { get; set; }
     }
 }

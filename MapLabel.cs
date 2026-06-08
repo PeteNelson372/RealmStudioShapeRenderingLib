@@ -1,36 +1,61 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapLabel : MapComponent2D, ITransformable2D
     {
+        [XmlElement]
         public string Text { get; set; } = string.Empty;
 
+        [XmlElement]
         public SKPoint Location { get; set; }
 
         private SKPoint _baselineLocation;
 
+        [XmlElement]
         public float Rotation { get; set; }
+
+        [XmlElement]
         public float Scale { get; set; } = 1f;
+
+        [XmlElement]
         public bool Mirror { get; set; }
 
+        [XmlElement]
         public FontStyleModel FontStyle { get; set; } = new();
 
+        [XmlElement]
         public SKColor FontColor { get; set; } = SKColors.White;
 
+        [XmlElement]
         public bool HasOutline { get; set; }
+
+        [XmlElement]
         public float OutlineWidth { get; set; }
+
+        [XmlElement]
         public SKColor OutlineColor { get; set; }
 
+        [XmlElement]
         public bool HasGlow { get; set; }
+
+        [XmlElement]
         public float GlowStrength { get; set; }
+
+        [XmlElement]
         public SKColor GlowColor { get; set; }
 
+        [XmlElement]
         public SKPath? CurvePath { get; set; }
 
+        [XmlIgnore]
         public bool BoundsModified { get; set; } = true;
+
+        [XmlIgnore]
         public bool IsEditing { get; set; }
 
+        [XmlElement]
         // accurate curved bounds
         public SKRect CurveBounds { get; private set; }
 

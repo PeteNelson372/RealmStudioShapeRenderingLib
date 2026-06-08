@@ -16,8 +16,8 @@ namespace RealmStudioShapeRenderingLib
         // Identity
         // -------------------------------------------------
 
-        [XmlAttribute("guid")]
-        public Guid MapGuid { get; set; } = Guid.NewGuid();
+        [XmlAttribute("id")]
+        public string MapId { get; set; } = Guid.NewGuid().ToString();
 
         [XmlAttribute("name")]
         public string MapName { get; set; } = string.Empty;
@@ -73,8 +73,10 @@ namespace RealmStudioShapeRenderingLib
         [XmlAttribute("theme")]
         public string MapTheme { get; set; } = string.Empty;
 
+        [XmlElement("Background")]
         public MapBackgroundSettings Background { get; set; } = new();
 
+        [XmlElement("Ocean")]
         public OceanSettings Ocean { get; set; } = new();
 
         // -------------------------------------------------

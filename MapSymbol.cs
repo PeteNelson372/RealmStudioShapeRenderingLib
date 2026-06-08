@@ -22,30 +22,43 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {    public class MapSymbol(SKRect localBounds) : MapComponent2D, ITransformable2D
     {
+        [XmlElement]
         public required MapSymbolDefinition SymbolDefinition { get; init; }
 
+        [XmlElement]
         public string Name { get; set; } = string.Empty;
 
+        [XmlElement]
         public string Description { get; set; } = string.Empty;
 
+        [XmlElement]
         public string WorldAnvilArticleId { get; set; } = string.Empty;
 
+        [XmlElement]
         public SKPoint Location { get; set; }
         
+        [XmlElement]
         public float Rotation { get; set; }
         
+        [XmlElement]
         public float Scale { get; set; } = 1f;
 
+        [XmlElement]
         public bool Mirror { get; set; }
 
+        [XmlElement]
         public SKColor TintColor { get; set; } = SKColors.White;
 
+        [XmlArray]
+        [XmlArrayItem("SymbolColor", Type = typeof(SKColor))]
         public SKColor[] CustomSymbolColors { get; set; } = new SKColor[3];
 
+        [XmlElement]
         public override SKRect LocalBounds { get; set; } = localBounds;
 
         private SymbolImageResource? symbolImage = null;
@@ -345,7 +358,6 @@ namespace RealmStudioShapeRenderingLib
 
             canvas.Restore();
         }
-
 
         public static void DrawSymbolCentered(
             SKCanvas canvas,

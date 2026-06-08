@@ -22,29 +22,40 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapGrid : MapComponent2D
     {
+        [XmlIgnore]
         public bool GridEnabled { get; set; }
 
+        [XmlElement]
         public MapGridType GridType { get; set; } = MapGridType.Square;
 
+        [XmlElement]
         public SKColor GridColor { get; set; } = new SKColor(0, 0, 0, 126);
 
+        [XmlElement]
         public int GridLayerIndex { get; set; } = MapBuilder.DEFAULTGRIDLAYER;
 
+        [XmlElement]
         public int GridSize { get; set; } = 64;
 
+        [XmlElement]
         public int GridLineWidth { get; set; } = 2;
 
+        [XmlElement]
         public bool ShowGridSize { get; set; } = true;
 
+        [XmlElement]
         public float MapAreaWidth { get; set; } = 0f;
 
+        [XmlElement]
         public float MapAreaHeight { get; set; } = 0f;
 
+        [XmlElement]
         public string MapAreaUnits { get; set; } = "pixels";
 
         public MapGrid() { }

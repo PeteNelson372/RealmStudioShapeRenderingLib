@@ -22,19 +22,34 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapWindrose : MapComponent2D
     {
-        public Guid WindroseGuid { get; set; } = Guid.NewGuid();
+        [XmlElement]
         public SKPoint Location { get; set; }
+
+        [XmlElement]
         public SKColor WindroseColor { get; set; } = SKColor.Parse("#7F3D3728");
+
+        [XmlElement]
         public int DirectionCount { get; set; } = 16;
+
+        [XmlElement]
         public int LineWidth { get; set; } = 2;
+
+        [XmlElement]
         public int InnerRadius { get; set; }
+
+        [XmlElement]
         public int OuterRadius { get; set; } = 1000;
+
+        [XmlElement]
         public int InnerCircles { get; set; }
+
+        [XmlElement]
         public bool FadeOut { get; set; }
 
         public SKPaint? _windrosePaint;

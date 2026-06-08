@@ -22,6 +22,7 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -43,30 +44,34 @@ namespace RealmStudioShapeRenderingLib
 
         private bool _shaderValuesModified = true;
 
-        private SKPaint _polygonPaint = new()
+        private readonly SKPaint _polygonPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
             StrokeCap = SKStrokeCap.Butt
         };
 
-        private SKPaint _fillPaint = new()
+        private readonly SKPaint _fillPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true
         };
 
+        [XmlElement]
         public SKPoint TopLeft
         {
             get => _topLeft;
             set => _topLeft = value;
         }
+
+        [XmlElement]
         public SKPoint BottomRight
         {
             get => _bottomRight;
             set => _bottomRight = value;
         }
 
+        [XmlElement]
         public SKColor Color
         {
             get => _color;
@@ -77,6 +82,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -86,6 +92,8 @@ namespace RealmStudioShapeRenderingLib
                 _shaderValuesModified = true;
             }
         }
+
+        [XmlElement]
         public float TextureOpacity
         {
             get => _textureOpacity;
@@ -96,6 +104,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public float TextureScale
         {
             get => _textureScale;
@@ -105,22 +114,29 @@ namespace RealmStudioShapeRenderingLib
                 _shaderValuesModified = true;
             }
         }
+
+        [XmlElement]
         public int BrushSize
         {
             get => _brushSize;
             set => _brushSize = value;
         }
+
+        [XmlElement]
         public int Rotation
         {
             get => _rotation;
             set => _rotation = value;
         }
+
+        [XmlElement]
         public DrawingFillType FillType
         {
             get => _fillType;
             set => _fillType = value;
         }
 
+        [XmlElement]
         public int Sides
         {
             get => _sides;
@@ -132,6 +148,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public string FillImageId
         {
             get => _fillImageId;
@@ -142,6 +159,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlIgnore]
         public SKImage? FillImage
         {
             get => _fillImage;

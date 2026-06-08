@@ -22,22 +22,37 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class MapPath : Shape2D
     {
+        [XmlElement]
         public string MapPathName { get; set; } = "";
+
+        [XmlElement]
         public string MapPathDescription { get; set; } = string.Empty;
+
+        [XmlArray]
+        [XmlArrayItem("Point", Type = typeof(SKPoint))]
         public List<SKPoint> ControlPoints { get; } = [];
+
+        [XmlElement]
         public float VariationSeed { get; set; }
         public EditablePolylineEditor Editor { get; }
+
+        [XmlElement]
         public PathRenderStyle RenderStyle { get; set; } = new();
 
+        [XmlElement]
         public bool DrawOverSymbols { get; set; } = false;
 
         public MapPath()
         {
+            // TODO: if a variation seed is set when the MapPath is
+            // loaded with the map, do not set the seed
+
             VariationSeed = Random.Shared.NextSingle() * 1000f;
             Editor = new EditablePolylineEditor(ControlPoints)
             {

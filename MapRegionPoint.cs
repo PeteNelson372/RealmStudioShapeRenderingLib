@@ -22,6 +22,7 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -29,8 +30,10 @@ namespace RealmStudioShapeRenderingLib
     {
         private const int _pointCircleRadius = 5;
 
+        [XmlElement]
         public SKPoint RegionPoint { get; set; }
 
+        [XmlIgnore]
         public bool IsSelected { get; set; }
 
         public MapRegionPoint() { }

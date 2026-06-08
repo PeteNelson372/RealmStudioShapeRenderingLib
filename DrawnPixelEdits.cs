@@ -1,5 +1,5 @@
 ﻿/**************************************************************************************************************************
-* Copyright 2024, Peter R. Nelson
+* Copyright 2025, Peter R. Nelson
 *
 * This file is part of the RealmStudio application. The RealmStudio application is intended
 * for creating fantasy maps for gaming and world building.
@@ -26,40 +26,62 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class MapBrush
+    public sealed class DrawnPixelEdits : MapComponent2D, IDrawnMapComponent
+    {
+        private List<PixelEdit> _mapPixelEdits = [];
+
+        [XmlArray]
+        [XmlArrayItem("PixelEdit", Type = typeof(PixelEdit))]
+        public List<PixelEdit> MapPixelEdits
+        {
+            get => _mapPixelEdits;
+            set => _mapPixelEdits = value;
+        }
+
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        {
+            using SKPaint paint = new()
+            {
+                IsAntialias = false,
+                Style = SKPaintStyle.Fill
+            };
+
+            foreach (var edit in _mapPixelEdits)
+            {
+                paint.Color = edit.NewColor;
+
+                canvas.DrawRect(
+                    edit.Location.X,
+                    edit.Location.Y,
+                    1,
+                    1,
+                    paint);
+            }
+        }
+
+        public override bool HitTest(SKPoint worldPos)
+        {
+            return false;
+        }
+
+        public override IShapeState CaptureState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void RestoreState(IShapeState state)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PixelEdit
     {
         [XmlElement]
-        public string BrushName { get; set; } = string.Empty;
-
-        [XmlIgnore]
-        public List<SKBitmap?> BrushBitmaps { get; set; } = [];
-
-        [XmlArray("BrushImages")]
-        [XmlArrayItem("Image")]
-        public List<string> BrushImages { get; set; } = [];
-
+        public SKPoint Location = new SKPoint();
         [XmlElement]
-        public SKColor BrushColor { get; set; } = SKColors.Black;
-
+        public SKColor OriginalColor = SKColor.Empty;
         [XmlElement]
-        public SKSize BrushSize { get; set; } = SKSize.Empty;
-
-        [XmlElement]
-        public int BrushSpacing { get; set; } = 8;
-
-        [XmlElement]
-        public BrushBehavior Behavior { get; set; } = BrushBehavior.Continuous;
-
-        [XmlElement]
-        public BrushPixelMode PixelMode { get; set; } = BrushPixelMode.Density;
-        
-        [XmlElement]
-        public BrushSelectionMode BrushSelectionMode { get; set; } = BrushSelectionMode.Single;
-        
-        [XmlElement]
-        public bool RandomRotation { get; set; }
-        
-        [XmlElement]
-        public bool WorldAligned { get; set; }
+        public SKColor NewColor = SKColor.Empty;
     }
 }

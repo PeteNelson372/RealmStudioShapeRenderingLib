@@ -22,7 +22,9 @@
 *
 ***************************************************************************************************************************/
 #nullable enable
+
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -32,76 +34,85 @@ namespace RealmStudioShapeRenderingLib
         // Base land fill & outline (non-gradient)
         // -------------------------------------------------
 
+        [XmlElement]
         public bool UseTextureBackground { get; set; } = true;
 
+        [XmlElement]
         public SKColor LandformBackgroundColor { get; set; } = new (140, 180, 120);
 
+        [XmlElement]
         public SKColor LandformOutlineColor { get; set; } = new(62, 55, 40);
 
+        [XmlElement]
         public string? LandformTextureId { get; set; }
 
+        [XmlElement]
         public float? LandformTextureScale { get; set; } = 1.0f;
 
+        [XmlElement]
         public bool LandformTextureMirror { get; set; }
 
+        [XmlElement]
         public int LandformOutlineWidth { get; set; } = 2;
 
         // -------------------------------------------------
         // Interior shading (gradient inward from coast)
         // -------------------------------------------------
 
+        [XmlElement]
         public bool EnableInteriorShading { get; set; } = true;
 
+        [XmlElement]
         public float InteriorShadingDepth { get; set; } = 200f;
 
+        [XmlElement]
         public int InteriorShadingSteps { get; set; } = 32;
 
-        /// <summary>
-        /// How far inland the shading reaches (world units)
-        /// </summary>
+        // How far inland the shading reaches (world units)
+        [XmlElement]
         public float LandShadingDepth { get; set; } = 200f;
 
-        /// <summary>
-        /// Number of gradient steps (higher = smoother)
-        /// </summary>
+        // Number of gradient steps (higher = smoother)
+        [XmlElement]
         public int Steps { get; set; } = 24;
 
-        /// <summary>
-        /// Color near the coastline
-        /// </summary>
-        public SKColor CoastColor { get; set; }
-            = new SKColor(80, 110, 70);
+        // Color near the coastline
+        [XmlElement]
+        public SKColor CoastColor { get; set; } = new SKColor(80, 110, 70);
 
-        /// <summary>
-        /// Color deeper inland
-        /// </summary>
-        public SKColor InlandColor { get; set; }
-            = new SKColor(140, 180, 120);
+        // Color deeper inland
+        [XmlElement]
+        public SKColor InlandColor { get; set; } = new SKColor(140, 180, 120);
 
-        /// <summary>
-        /// Alpha inland
-        /// </summary>
+        // Alpha inland
+        [XmlElement]
         public byte MaxAlpha { get; set; } = 110;
 
-        /// <summary>
-        /// Alpha near the coast (0 = no shading at coast, 255 = full shading at coast)
-        /// </summary>
+        // Alpha near the coast (0 = no shading at coast, 255 = full shading at coast)
+        [XmlElement]
         public byte MinAlpha { get; set; } = 20;
 
-        /// <summary>
-        /// Controls how quickly shading falls off inward
-        /// </summary>
+        // Controls how quickly shading falls off inward
+        [XmlElement]
         public float FalloffPower { get; set; } = 1.8f;
 
+        [XmlElement]
         public bool EnableNoise { get; set; } = true;
+
+        [XmlElement]
         public float NoiseStrength { get; set; } = 0.1f;   // 0–0.5 recommended
+
+        [XmlElement]
         public float NoiseScale { get; set; } = 0.02f;     // smaller = larger features
+
+        [XmlElement]
         public int NoiseSeed { get; set; } = 1337;
 
+        [XmlElement]
         public float DepthScale { get; set; } = 0.35f;   // % of min dimension
 
+        [XmlElement]
         public float InteriorCurvePower { get; set; } = 2.0f;
-
 
         public LandformShadingSettings Clone()
         {
@@ -123,5 +134,4 @@ namespace RealmStudioShapeRenderingLib
             };
         }
     }
-
 }

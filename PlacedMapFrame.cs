@@ -22,24 +22,49 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class PlacedMapFrame : MapComponent2D
     {
+        [XmlElement]
         public MapFrame? FrameDefinition {  get; set; }
+
+        [XmlIgnore]
         public bool FrameEnabled { get; set; } = true;
+
+        [XmlElement]
         public SKColor FrameTint { get; set; } = SKColors.WhiteSmoke;
+
+        [XmlElement]
         public float FrameScale { get; set; } = 1.0F;
 
+        [XmlIgnore]
         public SKBitmap? PatchA { get; set; }   // top left corner
+
+        [XmlIgnore]
         public SKBitmap? PatchB { get; set; }  // top middle
+
+        [XmlIgnore]
         public SKBitmap? PatchC { get; set; }  // top right corner
+
+        [XmlIgnore]
         public SKBitmap? PatchD { get; set; }  // left side
+
+        [XmlIgnore]
         public SKBitmap? PatchE { get; set; }  // middle
+
+        [XmlIgnore]
         public SKBitmap? PatchF { get; set; }  // right side
+
+        [XmlIgnore]
         public SKBitmap? PatchG { get; set; }  // bottom left corner
+
+        [XmlIgnore]
         public SKBitmap? PatchH { get; set; }  // bottom middle
+
+        [XmlIgnore]
         public SKBitmap? PatchI { get; set; }  // bottom right corner
 
         public override IShapeState CaptureState()

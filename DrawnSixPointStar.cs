@@ -22,9 +22,7 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Schema;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -45,31 +43,34 @@ namespace RealmStudioShapeRenderingLib
 
         private bool _shaderValuesModified = true;
 
-        private SKPaint _starPaint = new()
+        private readonly SKPaint _starPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
             StrokeCap = SKStrokeCap.Butt
         };
 
-        private SKPaint _fillPaint = new()
+        private readonly SKPaint _fillPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true
         };
 
+        [XmlElement]
         public SKPoint Center
         {
             get => _center;
             set => _center = value;
         }
 
+        [XmlElement]
         public float Radius
         {
             get => _radius;
             set => _radius = value;
         }
 
+        [XmlElement]
         public SKColor Color
         {
             get => _color;
@@ -80,6 +81,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -90,24 +92,28 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public int BrushSize
         {
             get => _brushSize;
             set => _brushSize = value;
         }
 
+        [XmlElement]
         public int Rotation
         {
             get => _rotation;
             set => _rotation = value;
         }
 
+        [XmlElement]
         public DrawingFillType FillType
         {
             get => _fillType;
             set => _fillType = value;
         }
 
+        [XmlElement]
         public float TextureOpacity
         {
             get => _textureOpacity;
@@ -118,6 +124,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public float TextureScale
         {
             get => _textureScale;
@@ -128,6 +135,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public string FillImageId
         {
             get => _fillImageId;
@@ -138,6 +146,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlIgnore]
         public SKImage? FillImage
         {
             get => _fillImage;

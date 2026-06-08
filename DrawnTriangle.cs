@@ -22,6 +22,7 @@
 *
 ***************************************************************************************************************************/
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -43,30 +44,34 @@ namespace RealmStudioShapeRenderingLib
 
         private bool _shaderValuesModified = true;
 
-        private SKPaint _trianglePaint = new()
+        private readonly SKPaint _trianglePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
             StrokeCap = SKStrokeCap.Butt
         };
 
-        private SKPaint _fillPaint = new()
+        private readonly SKPaint _fillPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true
         };
 
+        [XmlElement]
         public SKPoint TopLeft
         {
             get => _topLeft;
             set => _topLeft = value;
         }
+
+        [XmlElement]
         public SKPoint BottomRight
         {
             get => _bottomRight;
             set => _bottomRight = value;
         }
 
+        [XmlElement]
         public SKColor Color
         {
             get => _color;
@@ -77,6 +82,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -87,6 +93,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public float TextureOpacity
         {
             get => _textureOpacity;
@@ -97,6 +104,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public float TextureScale
         {
             get => _textureScale;
@@ -107,28 +115,35 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
         public int BrushSize
         {
             get => _brushSize;
             set => _brushSize = value;
         }
+
+        [XmlElement]
         public int Rotation
         {
             get => _rotation;
             set => _rotation = value;
         }
+
+        [XmlElement]
         public DrawingFillType FillType
         {
             get => _fillType;
             set => _fillType = value;
         }
 
+        [XmlElement]
         public bool DrawRight
         {
             get => _drawRight;
             set => _drawRight = value;
         }
 
+        [XmlElement]
         public string FillImageId
         {
             get => _fillImageId;
@@ -139,6 +154,7 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlIgnore]
         public SKImage? FillImage
         {
             get => _fillImage;
@@ -164,8 +180,7 @@ namespace RealmStudioShapeRenderingLib
                     _fillShader = SKShader.CreateBitmap(textureBitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);
 
                     _shaderValuesModified = false;
-                }
-                ;
+                };
 
                 _fillPaint.Shader = _fillShader;
                 _fillPaint.Style = SKPaintStyle.StrokeAndFill;

@@ -1,42 +1,56 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class PlacedMapBox : MapComponent2D, ITransformable2D
     {
+        [XmlElement]
         public MapBox? BaseBox;
 
-        public Guid BoxGuid { get; set; } = Guid.NewGuid();
-
+        [XmlIgnore]
         public SKBitmap? BoxBitmap { get; set; }
 
+        [XmlElement]
         public SKColor BoxTint { get; set; } = SKColors.White;
 
         // 9-patch center region in SOURCE bitmap coordinates
+        [XmlElement]
         public float BoxCenterLeft { get; set; }
+
+        [XmlElement]
         public float BoxCenterTop { get; set; }
+
+        [XmlElement]
         public float BoxCenterRight { get; set; }
+
+        [XmlElement]
         public float BoxCenterBottom { get; set; }
 
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
 
+        [XmlElement]
         public SKPoint TopLeft
         {
             get => _topLeft;
             set => _topLeft = value;
         }
 
+        [XmlElement]
         public SKPoint BottomRight
         {
             get => _bottomRight;
             set => _bottomRight = value;
         }
 
+        [XmlElement]
         public float Rotation { get; set; }
 
+        [XmlElement]
         public float Scale { get; set; } = 1f;
 
+        [XmlElement]
         public bool Mirror { get; set; }
 
         private SKPoint _startTopLeft;

@@ -2,6 +2,7 @@
 {
     using SkiaSharp;
     using System;
+    using System.Xml.Serialization;
 
     public enum LandformRenderMode
     {
@@ -14,37 +15,40 @@
         // -------------------------------------------------
         // Serialized settings (data-only)
         // -------------------------------------------------
-
+        [XmlElement]
         public string LandformName { get; set; } = string.Empty;
-
+        [XmlElement]
         public string LandformDescription { get; set; } = string.Empty;
-
+        [XmlElement]
         public string WorldAnvilArticleId { get; set; } = string.Empty;
-
+        [XmlElement]
         public CoastlineSettings Coastline { get; set; } = new();
+        [XmlElement]
         public LandformShadingSettings Shading { get; set; } = new();
-
+        [XmlIgnore]
         public LandformRenderMode RenderMode { get; set; } = LandformRenderMode.Final;
-
+        [XmlIgnore]
         private SKImage? _interiorShadingMask;
 
         // -------------------------------------------------
         // Runtime-resolved state
         // -------------------------------------------------
-
+        [XmlIgnore]
         private SKImage? _resolvedFillTexture;
+        [XmlIgnore]
         private SKShader? _resolvedTextureShader;
-
+        [XmlIgnore]
         private SKPicture? _interiorCache;
+        [XmlIgnore]
         private SKPicture? _coastlineCache;
-
+        [XmlIgnore]
         public SKPicture? InteriorPicture => _interiorCache;
+        [XmlIgnore]
         public SKPicture? CoastlinePicture => _coastlineCache;
-
+        [XmlIgnore]
         private bool _renderModified = true;
-
+        [XmlIgnore]
         public bool IsInteractive { get; private set; }
-
 
         public void CloneSettingsFrom(Landform source)
         {

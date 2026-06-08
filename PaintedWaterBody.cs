@@ -1,20 +1,23 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class PaintedWaterBody : WaterBody
     {
+        [XmlArray]
+        [XmlArrayItem("Point", Type = typeof(SKPoint))]
         public List<SKPoint> ControlPoints { get; } = [];
 
         // -------------------------------------------------
         // Brush configuration
         // -------------------------------------------------
 
+        [XmlElement]
         public float BrushRadius { get; set; } = 12f;
 
-        /// <summary>
-        /// Minimum spacing between brush stamps as a fraction of radius.
-        /// </summary>
+        // Minimum spacing between brush stamps as a fraction of radius.
+        [XmlElement]
         public float BrushSpacing { get; set; } = 0.5f;
 
         // -------------------------------------------------

@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -34,8 +35,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public string RegionDescription { get; set; } = string.Empty;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor RegionBorderColor { get; set; } = SKColor.Parse("#0056B3");
+
+        [XmlElement("RegionBorderColor")]
+        public string RegionBorderColorXml
+        {
+            get => XmlColorConverter.Serialize(RegionBorderColor);
+            set => RegionBorderColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public int RegionBorderWidth { get; set; } = 10;
@@ -55,11 +63,12 @@ namespace RealmStudioShapeRenderingLib
         [XmlIgnore]
         public SKPaint RegionInnerPaint { get; set; } = new();
 
-        [XmlElement]
+        [XmlIgnore]
         public SKPath BoundaryPath { get; set; } = new();
 
-        [XmlIgnore]
-        private readonly List<MapRegionPoint> _mapRegionPoints = [];
+        [XmlArray]
+        [XmlArrayItem("RegionPoint", Type = typeof(MapRegionPoint))]
+        public List<MapRegionPoint> MapRegionPoints { get; set; } = [];
 
         [XmlIgnore]
         public SKPoint SnappedStartPoint { get; set; } = SKPoint.Empty;
@@ -71,9 +80,9 @@ namespace RealmStudioShapeRenderingLib
 
         public void AddRegionPoint(SKPoint point)
         {
-            _mapRegionPoints.Add(new MapRegionPoint(point));
+            MapRegionPoints.Add(new MapRegionPoint(point));
 
-            using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+            using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
 
             BoundaryPath.Dispose();
 
@@ -83,9 +92,9 @@ namespace RealmStudioShapeRenderingLib
 
         public void InsertRegionPoint(int index, SKPoint point)
         {
-            _mapRegionPoints.Insert(index, new MapRegionPoint(point));
+            MapRegionPoints.Insert(index, new MapRegionPoint(point));
 
-            using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+            using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
 
             BoundaryPath.Dispose();
 
@@ -93,17 +102,15 @@ namespace RealmStudioShapeRenderingLib
             Bounds = BoundaryPath.Bounds;
         }
 
-        public IReadOnlyList<MapRegionPoint> RegionPoints => _mapRegionPoints;
-
-        public int RegionPointCount => _mapRegionPoints.Count;
+        public int RegionPointCount => MapRegionPoints.Count;
 
         public void RemoveRegionPointAt(int index)
         {
-            if (index >= 0 && index < _mapRegionPoints.Count)
+            if (index >= 0 && index < MapRegionPoints.Count)
             {
-                _mapRegionPoints.RemoveAt(index);
+                MapRegionPoints.RemoveAt(index);
 
-                using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+                using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
 
                 BoundaryPath.Dispose();
 
@@ -114,10 +121,10 @@ namespace RealmStudioShapeRenderingLib
 
         public void RemoveRegionPoint(MapRegionPoint mrp)
         {
-            if (_mapRegionPoints.Contains(mrp))
+            if (MapRegionPoints.Contains(mrp))
             {
-                _mapRegionPoints.Remove(mrp);
-                using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+                MapRegionPoints.Remove(mrp);
+                using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
 
                 BoundaryPath.Dispose();
 
@@ -128,13 +135,13 @@ namespace RealmStudioShapeRenderingLib
 
         public void Move(float dx, float dy)
         {
-            for (int i = 0; i < _mapRegionPoints.Count; i++)
+            for (int i = 0; i < MapRegionPoints.Count; i++)
             {
-                MapRegionPoint point = _mapRegionPoints[i];
+                MapRegionPoint point = MapRegionPoints[i];
                 point.RegionPoint = new SKPoint(point.RegionPoint.X + dx, point.RegionPoint.Y + dy);
             }
 
-            using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+            using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
            
             BoundaryPath.Dispose();
             
@@ -147,7 +154,7 @@ namespace RealmStudioShapeRenderingLib
             if (mrp.IsSelected)
             {                
                 mrp.RegionPoint = newPoint;
-                using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+                using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
                 BoundaryPath.Dispose();
                 BoundaryPath = new(path);
                 Bounds = BoundaryPath.Bounds;
@@ -166,7 +173,7 @@ namespace RealmStudioShapeRenderingLib
                 Smoothing = RegionBorderSmoothing
             };
 
-            RegionRenderer.Render(canvas, [.. _mapRegionPoints.Select(p => p.RegionPoint)], regionBorderStyle);
+            RegionRenderer.Render(canvas, [.. MapRegionPoints.Select(p => p.RegionPoint)], regionBorderStyle);
             
             if (IsSelected)
             {
@@ -180,15 +187,15 @@ namespace RealmStudioShapeRenderingLib
                     float minDistance = 20;
                     float totalDistance = 0;
 
-                    for (int i = 0; i < _mapRegionPoints.Count; i++)
+                    for (int i = 0; i < MapRegionPoints.Count; i++)
                     {
-                        MapRegionPoint point = _mapRegionPoints[i];
+                        MapRegionPoint point = MapRegionPoints[i];
 
                         bool renderPoint = false;
 
-                        if (i < _mapRegionPoints.Count - 1)
+                        if (i < MapRegionPoints.Count - 1)
                         {
-                            float distance = SKPoint.Distance(point.RegionPoint, _mapRegionPoints[i + 1].RegionPoint);
+                            float distance = SKPoint.Distance(point.RegionPoint, MapRegionPoints[i + 1].RegionPoint);
                             totalDistance += distance;
 
                             if (totalDistance > minDistance)
@@ -253,7 +260,7 @@ namespace RealmStudioShapeRenderingLib
                 RegionBorderType = RegionBorderType,
                 MapRegionPoints =
                     [
-                        .._mapRegionPoints.Select(
+                        ..MapRegionPoints.Select(
                             p => new MapRegionPoint(
                                 new SKPoint(
                                     p.RegionPoint.X,
@@ -276,10 +283,10 @@ namespace RealmStudioShapeRenderingLib
                 RegionBorderSmoothing = regionState.RegionBorderSmoothing;
                 RegionBorderType = regionState.RegionBorderType;
 
-                _mapRegionPoints.Clear();
-                _mapRegionPoints.AddRange(regionState.MapRegionPoints.Select(p => new MapRegionPoint(new SKPoint(p.RegionPoint.X, p.RegionPoint.Y))));
+                MapRegionPoints.Clear();
+                MapRegionPoints.AddRange(regionState.MapRegionPoints.Select(p => new MapRegionPoint(new SKPoint(p.RegionPoint.X, p.RegionPoint.Y))));
                 
-                using SKPath path = Utilities.BuildClosedPath([.. _mapRegionPoints.Select(p => p.RegionPoint)]);
+                using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
                 
                 BoundaryPath.Dispose();
                 BoundaryPath = new(path);

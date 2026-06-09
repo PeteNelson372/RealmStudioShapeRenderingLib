@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -23,7 +24,14 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool ColorOverlayEnabled { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor OverlayColor { get; set; } = SKColors.Transparent;
+
+        [XmlElement("OverlayColor")]
+        public string OverlayColorXml
+        {
+            get => XmlColorConverter.Serialize(OverlayColor);
+            set => OverlayColor = XmlColorConverter.Deserialize(value);
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -15,8 +16,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float Width { get; set; } = 6f;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor Color { get; set; } = new SKColor(75, 49, 26, 255);
+
+        [XmlElement("Color")]
+        public string ColorXml
+        {
+            get => XmlColorConverter.Serialize(Color);
+            set => Color = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public float Opacity { get; set; } = 1f;
@@ -31,8 +39,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float BorderWidth { get; set; } = 2f;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor BorderColor { get; set; } = new SKColor(75, 49, 26, 255);
+
+        [XmlElement("BorderColor")]
+        public string BorderColorXml
+        {
+            get => XmlColorConverter.Serialize(BorderColor);
+            set => BorderColor = XmlColorConverter.Deserialize(value);
+        }
 
         // -------------------------------------------------
         // Dash / pattern
@@ -51,11 +66,25 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool UseGradient { get; set; } = false;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor GradientStart { get; set; } = SKColors.White;
 
-        [XmlElement]
+        [XmlElement("GradientStart")]
+        public string GradientStartXml
+        {
+            get => XmlColorConverter.Serialize(GradientStart);
+            set => GradientStart = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor GradientEnd { get; set; } = SKColors.Black;
+
+        [XmlElement("GradientEnd")]
+        public string GradientEndXml
+        {
+            get => XmlColorConverter.Serialize(GradientEnd);
+            set => GradientEnd = XmlColorConverter.Deserialize(value);
+        }
 
         // -------------------------------------------------
         // Texture

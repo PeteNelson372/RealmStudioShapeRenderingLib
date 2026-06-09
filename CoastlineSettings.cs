@@ -21,51 +21,82 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
     public class CoastlineSettings
     {
         // User selection
+        [XmlElement]
         public LandformCoastlineStyle CoastlineStyle { get; set; }
             = LandformCoastlineStyle.UniformBlend;
 
         // Common numeric parameters
+        [XmlElement]
         public int EffectDistance { get; set; } = 120;
 
+        [XmlElement]
         public float UniformOutlineOuterRingRatio { get; set; } = 0.15f;
 
         // Base color
+        [XmlIgnore]
         public SKColor CoastlineColor { get; set; } = SKColor.Parse("#BB9CC3B7");
 
+        [XmlElement("CoastlineColor")]
+        public string CoastlineColorXml
+        {
+            get => XmlColorConverter.Serialize(CoastlineColor);
+            set => CoastlineColor = XmlColorConverter.Deserialize(value);
+        }
+
         // Alpha falloff
+        [XmlElement]
         public byte MaxAlpha { get; set; } = 110;
+
+        [XmlElement]
         public byte MinAlpha { get; set; } = 20;
 
+        [XmlElement]
         public float DepthScale { get; set; } = 0.35f;   // % of min dimension
 
+        [XmlElement]
         public float ExteriorCurvePower { get; set; } = 2.0f;
 
-        /// <summary>
-        /// Controls how quickly shading falls off outward
-        /// </summary>
+        // Controls how quickly shading falls off outward
+        [XmlElement]
         public float FalloffPower { get; set; } = 1.8f;
 
         // Textures
+        [XmlElement]
         public string? HatchTextureId { get; set; }
+
+        [XmlElement]
         public string? DashTextureId { get; set; }
+
+        [XmlElement]
         public string? CircularTextureId { get; set; }
 
+        [XmlIgnore]
         public SKImage? HatchTexture { get; set; }
+
+        [XmlIgnore]
         public SKImage? DashTexture { get; set; }
 
         // other parameters
+        [XmlElement]
         public int TextureOpacity { get; set; }
+
+        [XmlElement]
         public int TextureScale { get; set; }
+
+        [XmlElement]
         public string? HatchBlendMode { get; set; }
 
         // Behavior toggles
+        [XmlElement]
         public bool PaintGradient { get; set; } = true;
 
         public CoastlineSettings Clone()

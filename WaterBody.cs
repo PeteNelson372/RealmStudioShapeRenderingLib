@@ -1,15 +1,26 @@
 ﻿using SkiaSharp;
+using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
+    [XmlInclude(typeof(River))]
+    [XmlInclude(typeof(Lake))]
+    [XmlInclude(typeof(PaintedWaterBody))]
     public class WaterBody : Shape2D
     {
-        public WaterSystem? WaterSystem { get; internal set; } 
+        [XmlIgnore]
+        public WaterSystem? WaterSystem { get; set; }
+
+        [XmlElement]
         public string Name { get; set; } = string.Empty;
+
+        [XmlElement]
         public string Description { get; set; } = string.Empty;
 
+        [XmlIgnore]
         public bool IsInteractive { get; set; } = true;
 
+        [XmlElement]
         public WaterRenderSettings RenderSettings { get; set; } = new();
 
         public void BeginInteractive()

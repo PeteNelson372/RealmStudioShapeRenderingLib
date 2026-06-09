@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -8,8 +9,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public PathType PathType { get; set; } = PathType.SolidLinePath;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor PathColor { get; set; } = SKColor.Parse("#4B311A");
+
+        [XmlElement("PathColor")]
+        public string PathColorXml
+        {
+            get => XmlColorConverter.Serialize(PathColor);
+            set => PathColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public float PathWidth { get; set; } = 4f;

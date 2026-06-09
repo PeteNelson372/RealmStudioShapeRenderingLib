@@ -15,15 +15,18 @@ namespace RealmStudioShapeRenderingLib
         public string Description { get; set; } = string.Empty;
 
         [XmlArray]
-        [XmlArrayItem("WateryBody", Type = typeof(WaterBody))]
-        public HashSet<WaterBody> WaterBodies { get; set; } = [];
+        [XmlArrayItem("WaterBody", Type = typeof(WaterBody))]
+        [XmlArrayItem("River", Type = typeof(River))]
+        [XmlArrayItem("Lake", Type = typeof(Lake))]
+        [XmlArrayItem("PaintedWaterBody", Type = typeof(PaintedWaterBody))]
+        public List<WaterBody> WaterBodies { get; set; } = [];
 
         public bool IsEmpty => WaterBodies.Count == 0;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKPath MergedGeometry { get; set; } = new();
 
-        [XmlElement]
+        [XmlIgnore]
         public SKRect Bounds
         {
             get
@@ -43,8 +46,7 @@ namespace RealmStudioShapeRenderingLib
         public WaterRenderSettings RenderSettings { get; set; } = new();
 
         [XmlIgnore]
-        public bool IsSelected { get; set; }
-        
+        public bool IsSelected { get; set; }   
 
         private SKImage? _shadingMask;
         private bool _renderModified = true;
@@ -53,12 +55,13 @@ namespace RealmStudioShapeRenderingLib
         private int _maskOriginY = 0;
         private bool _interactive;
 
+        // public constructor needed for serialization
+        public WaterSystem() { }
+
         public void Add(WaterBody body)
         {
             WaterBodies.Add(body);
             body.WaterSystem = this;
-
-            //Bounds = Bounds.IsEmpty ? body.Bounds : SKRect.Union(Bounds, body.Bounds);
 
             if (MergedGeometry == null || MergedGeometry.IsEmpty)
             {

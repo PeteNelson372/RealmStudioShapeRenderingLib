@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -30,7 +31,7 @@ namespace RealmStudioShapeRenderingLib
     {
         private SKPoint _center;
         private float _radius;
-        private SKColor _color = SKColors.Black;
+        private SKColor _starColor = SKColors.Black;
         private SKColor _fillColor = SKColors.Transparent;
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
@@ -70,18 +71,25 @@ namespace RealmStudioShapeRenderingLib
             set => _radius = value;
         }
 
-        [XmlElement]
-        public SKColor Color
+        [XmlIgnore]
+        public SKColor StarColor
         {
-            get => _color;
+            get => _starColor;
             set
             {
-                _color = value;
+                _starColor = value;
                 _shaderValuesModified = true;
             }
         }
 
-        [XmlElement]
+        [XmlElement("StarColor")]
+        public string StarColorXml
+        {
+            get => XmlColorConverter.Serialize(StarColor);
+            set => StarColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -90,6 +98,13 @@ namespace RealmStudioShapeRenderingLib
                 _fillColor = value;
                 _shaderValuesModified = true;
             }
+        }
+
+        [XmlElement("FillColor")]
+        public string FillColorXml
+        {
+            get => XmlColorConverter.Serialize(FillColor);
+            set => FillColor = XmlColorConverter.Deserialize(value);
         }
 
         [XmlElement]
@@ -159,7 +174,7 @@ namespace RealmStudioShapeRenderingLib
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null)
         {
-            _starPaint.Color = Color;
+            _starPaint.Color = StarColor;
             _starPaint.StrokeWidth = BrushSize;
 
             if (FillType == DrawingFillType.Texture && FillImage != null)

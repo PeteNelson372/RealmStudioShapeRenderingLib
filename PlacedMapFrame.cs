@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -28,14 +29,21 @@ namespace RealmStudioShapeRenderingLib
 {
     public class PlacedMapFrame : MapComponent2D
     {
-        [XmlElement]
+        [XmlIgnore]
         public MapFrame? FrameDefinition {  get; set; }
 
         [XmlIgnore]
         public bool FrameEnabled { get; set; } = true;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor FrameTint { get; set; } = SKColors.WhiteSmoke;
+
+        [XmlElement("FrameTint")]
+        public string FrameTintXml
+        {
+            get => XmlColorConverter.Serialize(FrameTint);
+            set => FrameTint = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public float FrameScale { get; set; } = 1.0F;

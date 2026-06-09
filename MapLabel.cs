@@ -1,4 +1,6 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -25,8 +27,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public FontStyleModel FontStyle { get; set; } = new();
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor FontColor { get; set; } = SKColors.White;
+
+        [XmlElement("FontColor")]
+        public string FontColorXml
+        {
+            get => XmlColorConverter.Serialize(FontColor);
+            set => FontColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public bool HasOutline { get; set; }
@@ -34,8 +43,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float OutlineWidth { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor OutlineColor { get; set; }
+
+        [XmlElement("OutlineColor")]
+        public string OutlineColorXml
+        {
+            get => XmlColorConverter.Serialize(OutlineColor);
+            set => OutlineColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public bool HasGlow { get; set; }
@@ -43,11 +59,37 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float GlowStrength { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor GlowColor { get; set; }
 
-        [XmlElement]
+        [XmlElement("GlowColor")]
+        public string GlowColorXml
+        {
+            get => XmlColorConverter.Serialize(GlowColor);
+            set => GlowColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKPath? CurvePath { get; set; }
+
+        [XmlElement("CurveGeometry")]
+        public string GeometryData
+        {
+            get => CurvePath != null ? CurvePath.ToSvgPathData() : string.Empty;
+
+            set
+            {
+                CurvePath?.Dispose();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    CurvePath = new SKPath();
+                    return;
+                }
+
+                CurvePath = SKPath.ParseSvgPathData(value);
+            }
+        }
 
         [XmlIgnore]
         public bool BoundsModified { get; set; } = true;
@@ -55,7 +97,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlIgnore]
         public bool IsEditing { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         // accurate curved bounds
         public SKRect CurveBounds { get; private set; }
 
@@ -63,6 +105,8 @@ namespace RealmStudioShapeRenderingLib
         private float _startFontSize;
 
         private SKFont? _renderFont {  get; set; }
+
+        [XmlElement, AllowNull]
         public SKFont? RenderFont => _renderFont;
 
         // =========================

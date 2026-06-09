@@ -21,11 +21,13 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
-{    public class MapSymbol(SKRect localBounds) : MapComponent2D, ITransformable2D
+{
+    public class MapSymbol() : MapComponent2D, ITransformable2D
     {
         [XmlElement]
         public required MapSymbolDefinition SymbolDefinition { get; init; }
@@ -51,15 +53,39 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool Mirror { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor TintColor { get; set; } = SKColors.White;
 
-        [XmlArray]
-        [XmlArrayItem("SymbolColor", Type = typeof(SKColor))]
+        [XmlElement("TintColor")]
+        public string TintColorXml
+        {
+            get => XmlColorConverter.Serialize(TintColor);
+            set => TintColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor[] CustomSymbolColors { get; set; } = new SKColor[3];
 
+        [XmlArray("CustomSymbolColors")]
+        [XmlArrayItem("SymbolColor")]
+        public string[] CustomSymbolColorsXml
+        {
+            get => [.. CustomSymbolColors.Select(XmlColorConverter.Serialize)];
+
+            set
+            {
+                if (value == null)
+                {
+                    CustomSymbolColors = [];
+                    return;
+                }
+
+                CustomSymbolColors = [.. value.Select(XmlColorConverter.Deserialize)];
+            }
+        }
+
         [XmlElement]
-        public override SKRect LocalBounds { get; set; } = localBounds;
+        public override SKRect LocalBounds { get; set; }
 
         private SymbolImageResource? symbolImage = null;
 

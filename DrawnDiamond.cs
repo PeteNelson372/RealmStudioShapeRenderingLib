@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -30,7 +31,7 @@ namespace RealmStudioShapeRenderingLib
     {
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
-        private SKColor _color = SKColors.Black;
+        private SKColor _diamondColor = SKColors.Black;
         private SKColor _fillColor = SKColors.Transparent;
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
@@ -70,18 +71,25 @@ namespace RealmStudioShapeRenderingLib
             set => _bottomRight = value;
         }
 
-        [XmlElement]
-        public SKColor Color
+        [XmlIgnore]
+        public SKColor DiamondColor
         {
-            get => _color;
+            get => _diamondColor;
             set
             {
-                _color = value;
+                _diamondColor = value;
                 _shaderValuesModified = true;
             }
         }
 
-        [XmlElement]
+        [XmlElement("DiamondColor")]
+        public string DiamondColorXml
+        {
+            get => XmlColorConverter.Serialize(DiamondColor);
+            set => DiamondColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -90,6 +98,13 @@ namespace RealmStudioShapeRenderingLib
                 _fillColor = value;
                 _shaderValuesModified = true;
             }
+        }
+
+        [XmlElement("FillColor")]
+        public string FillColorXml
+        {
+            get => XmlColorConverter.Serialize(FillColor);
+            set => FillColor = XmlColorConverter.Deserialize(value);
         }
 
         [XmlElement]
@@ -159,7 +174,7 @@ namespace RealmStudioShapeRenderingLib
             SKRect rect = new(TopLeft.X, TopLeft.Y, BottomRight.X, BottomRight.Y);
             Bounds = rect;
 
-            _diamondPaint.Color = Color;
+            _diamondPaint.Color = DiamondColor;
             _diamondPaint.StrokeWidth = BrushSize;
 
             if (FillType == DrawingFillType.Texture && FillImage != null)

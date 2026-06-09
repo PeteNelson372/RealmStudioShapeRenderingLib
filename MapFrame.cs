@@ -26,7 +26,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    [XmlRoot("MapFrame", IsNullable = false)]
+    [XmlRoot("mapframe", IsNullable = false)]
     public class MapFrame
     {
         [XmlElement("FrameName")]

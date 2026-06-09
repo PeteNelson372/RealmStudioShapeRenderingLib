@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -11,8 +12,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlIgnore]
         public SKBitmap? BoxBitmap { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor BoxTint { get; set; } = SKColors.White;
+
+        [XmlElement("BoxTint")]
+        public string BoxTintXml
+        {
+            get => XmlColorConverter.Serialize(BoxTint);
+            set => BoxTint = XmlColorConverter.Deserialize(value);
+        }
 
         // 9-patch center region in SOURCE bitmap coordinates
         [XmlElement]

@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -8,8 +9,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public MapBrush? SourceBrush { get; init; }
 
-        [XmlElement]
-        public SKColor Color { get; init; }
+        [XmlIgnore]
+        public SKColor Color { get; set; }
+
+        [XmlElement("Color")]
+        public string ColorXml
+        {
+            get => XmlColorConverter.Serialize(Color);
+            set => Color = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public int BrushSize { get; init; }

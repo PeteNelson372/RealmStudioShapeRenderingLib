@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -67,8 +68,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public string MapAreaUnits { get; set; } = "pixels";
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor MeasureLineColor { get; set; } = new SKColor(138, 26, 0, 191);
+
+        [XmlElement("MeasureLineColor")]
+        public string MeasureLineColorXml
+        {
+            get => XmlColorConverter.Serialize(MeasureLineColor);
+            set => MeasureLineColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public bool UseMapUnits { get; set; }
@@ -76,9 +84,31 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool MeasureArea { get; set; }
 
-        [XmlArray]
-        [XmlArrayItem("Point", Type = typeof(SKPoint))]
+        [XmlIgnore]
         public List<SKPoint> MeasurePoints { get; set; } = [];
+
+        [XmlElement("MeasurePoints")]
+        public string PointsList
+        {
+            get => string.Join(";", MeasurePoints.Select(p => $"{p.X},{p.Y}"));
+
+            set
+            {
+                MeasurePoints.Clear();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return;
+                }
+
+                foreach (string pair in value.Split(';'))
+                {
+                    string[] parts = pair.Split(',');
+
+                    MeasurePoints.Add(new SKPoint(float.Parse(parts[0]), float.Parse(parts[1])));
+                }
+            }
+        }
 
         [XmlIgnore]
         public SKPaint MeasureLinePaint { get; set; }

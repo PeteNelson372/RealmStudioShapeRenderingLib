@@ -23,6 +23,7 @@
 ***************************************************************************************************************************/
 #nullable enable
 
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -37,11 +38,25 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool UseTextureBackground { get; set; } = true;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor LandformBackgroundColor { get; set; } = new (140, 180, 120);
 
-        [XmlElement]
+        [XmlElement("LandformBackgroundColor")]
+        public string LandformBackgroundColorXml
+        {
+            get => XmlColorConverter.Serialize(LandformBackgroundColor);
+            set => LandformBackgroundColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor LandformOutlineColor { get; set; } = new(62, 55, 40);
+
+        [XmlElement("LandformOutlineColor")]
+        public string LandformOutlineColorXml
+        {
+            get => XmlColorConverter.Serialize(LandformOutlineColor);
+            set => LandformOutlineColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public string? LandformTextureId { get; set; }
@@ -77,12 +92,26 @@ namespace RealmStudioShapeRenderingLib
         public int Steps { get; set; } = 24;
 
         // Color near the coastline
-        [XmlElement]
+        [XmlIgnore]
         public SKColor CoastColor { get; set; } = new SKColor(80, 110, 70);
 
+        [XmlElement("CoastColor")]
+        public string CoastColorXml
+        {
+            get => XmlColorConverter.Serialize(CoastColor);
+            set => CoastColor = XmlColorConverter.Deserialize(value);
+        }
+
         // Color deeper inland
-        [XmlElement]
+        [XmlIgnore]
         public SKColor InlandColor { get; set; } = new SKColor(140, 180, 120);
+
+        [XmlElement("InlandColor")]
+        public string InlandColorXml
+        {
+            get => XmlColorConverter.Serialize(InlandColor);
+            set => InlandColor = XmlColorConverter.Deserialize(value);
+        }
 
         // Alpha inland
         [XmlElement]

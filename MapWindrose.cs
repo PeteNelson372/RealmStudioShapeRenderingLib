@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -31,8 +32,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public SKPoint Location { get; set; }
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor WindroseColor { get; set; } = SKColor.Parse("#7F3D3728");
+
+        [XmlElement("WindroseColor")]
+        public string WindroseColorXml
+        {
+            get => XmlColorConverter.Serialize(WindroseColor);
+            set => WindroseColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public int DirectionCount { get; set; } = 16;
@@ -52,6 +60,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool FadeOut { get; set; }
 
+        [XmlIgnore]
         public SKPaint? _windrosePaint;
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null)

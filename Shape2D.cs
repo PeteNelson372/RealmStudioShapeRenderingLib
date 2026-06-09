@@ -18,13 +18,8 @@ namespace RealmStudioShapeRenderingLib
         // Geometry ownership
         // -------------------------------------------------
 
-        protected SKPath _cachedPath = new()
-        {
-            FillType = SKPathFillType.EvenOdd
-        };
-
         // Path used for hit testing, clipping, and fills.        
-        [XmlElement]
+        [XmlIgnore]
         public SKPath HitPath { get; protected set; } = new()
         {
             FillType = SKPathFillType.EvenOdd,
@@ -32,14 +27,35 @@ namespace RealmStudioShapeRenderingLib
 
 
         // Path representing the outline/perimeter of the shape.
-        [XmlElement]
+        [XmlIgnore]
         public SKPath PerimeterPath { get; protected set; } = new()
         {
             FillType = SKPathFillType.EvenOdd,
         };
 
+        [XmlElement("Geometry")]
+        public string GeometryData
+        {
+            get => HitPath.ToSvgPathData();
+
+            set
+            {
+                HitPath.Dispose();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    HitPath = new SKPath();
+                    return;
+                }
+
+                HitPath = SKPath.ParseSvgPathData(value);
+
+                RebuildPerimeter();
+            }
+        }
+
         // Axis-aligned bounds in world space.
-        [XmlElement]
+        [XmlIgnore]
         public override SKRect Bounds => HitPath.Bounds;
 
         // -------------------------------------------------
@@ -48,13 +64,9 @@ namespace RealmStudioShapeRenderingLib
 
         protected virtual void SetGeometry(SKPath newGeometry)
         {
-            _cachedPath.Dispose();
-            _cachedPath = new(newGeometry)
-            {
-                FillType= SKPathFillType.EvenOdd,
-            };
+            HitPath.Dispose();
 
-            HitPath = new SKPath(_cachedPath)
+            HitPath = new SKPath(newGeometry)
             {
                 FillType = SKPathFillType.EvenOdd,
             };
@@ -92,6 +104,8 @@ namespace RealmStudioShapeRenderingLib
         /// </summary>
         protected virtual void RebuildPerimeter()
         {
+            PerimeterPath.Dispose();
+
             // Default perimeter = same as filled geometry
             PerimeterPath = new SKPath(HitPath)
             {

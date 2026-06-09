@@ -5,9 +5,31 @@ namespace RealmStudioShapeRenderingLib
 {
     public class PaintedWaterBody : WaterBody
     {
-        [XmlArray]
-        [XmlArrayItem("Point", Type = typeof(SKPoint))]
+        [XmlIgnore]
         public List<SKPoint> ControlPoints { get; } = [];
+
+        [XmlElement("ControlPoints")]
+        public string PointsList
+        {
+            get => string.Join(";", ControlPoints.Select(p => $"{p.X},{p.Y}"));
+
+            set
+            {
+                ControlPoints.Clear();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return;
+                }
+
+                foreach (string pair in value.Split(';'))
+                {
+                    string[] parts = pair.Split(',');
+
+                    ControlPoints.Add(new SKPoint(float.Parse(parts[0]), float.Parse(parts[1])));
+                }
+            }
+        }
 
         // -------------------------------------------------
         // Brush configuration
@@ -78,9 +100,9 @@ namespace RealmStudioShapeRenderingLib
             if (_strokePath.IsEmpty)
                 return;
 
-            SKPath result = _cachedPath.IsEmpty
+            SKPath result = HitPath.IsEmpty
                 ? new SKPath(_strokePath)
-                : _cachedPath.Op(_strokePath, SKPathOp.Union);
+                : HitPath.Op(_strokePath, SKPathOp.Union);
 
             _strokePath.Reset();
             SetGeometry(result);

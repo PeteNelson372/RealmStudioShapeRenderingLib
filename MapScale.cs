@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -43,15 +44,36 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public int ScaleLineWidth { get; set; } = 3;  // width of the outline around the scale
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor ScaleColor1 { get; set; } = SKColors.Black;  // odd numbered segment color
 
-        [XmlElement]
+        [XmlElement("ScaleColor1")]
+        public string ScaleColor1Xml
+        {
+            get => XmlColorConverter.Serialize(ScaleColor1);
+            set => ScaleColor1 = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor ScaleColor2 { get; set; } = SKColors.White;  // even numbered segment color
 
-        [XmlElement]
+        [XmlElement("ScaleColor2")]
+        public string ScaleColor2Xml
+        {
+            get => XmlColorConverter.Serialize(ScaleColor2);
+            set => ScaleColor2 = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor ScaleColor3 { get; set; } = SKColors.Black;  // line color of scale outline
-        
+
+        [XmlElement("ScaleColor3")]
+        public string ScaleColor3Xml
+        {
+            get => XmlColorConverter.Serialize(ScaleColor3);
+            set => ScaleColor3 = XmlColorConverter.Deserialize(value);
+        }
+
         [XmlElement]
         public float ScaleDistance { get; set; } = 100.0F;  // distance of each segment
 
@@ -64,14 +86,28 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public FontStyleModel ScaleFont { get; set; } = new FontStyleModel(); // scale segment label font, color, outline
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor ScaleFontColor { get; set; } = SKColors.White;
-        
+
+        [XmlElement("ScaleFontColor")]
+        public string ScaleFontColorXml
+        {
+            get => XmlColorConverter.Serialize(ScaleFontColor);
+            set => ScaleFontColor = XmlColorConverter.Deserialize(value);
+        }
+
         [XmlElement]
         public int ScaleOutlineWidth { get; set; } = 1;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor ScaleOutlineColor { get; set; } = SKColors.Black;
+
+        [XmlElement("ScaleOutlineColor")]
+        public string ScaleOutlineColorXml
+        {
+            get => XmlColorConverter.Serialize(ScaleOutlineColor);
+            set => ScaleOutlineColor = XmlColorConverter.Deserialize(value);
+        }
 
         private SKPaint SegmentOutlinePaint = new();
         private SKPaint EvenSegmentPaint = new();

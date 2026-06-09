@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -14,14 +15,35 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float DeepBias { get; set; } = 1.0f;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor ShorelineColor { get; set; } = SKColor.Parse("#A19076");
 
-        [XmlElement]
+        [XmlElement("ShorelineColor")]
+        public string ShorelineColorXml
+        {
+            get => XmlColorConverter.Serialize(ShorelineColor);
+            set => ShorelineColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor DeepWaterColor { get; set; } = new SKColor(120, 180, 220, 255);
 
-        [XmlElement]
+        [XmlElement("DeepWaterColor")]
+        public string DeepWaterColorXml
+        {
+            get => XmlColorConverter.Serialize(DeepWaterColor);
+            set => DeepWaterColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor ShallowWaterColor { get; set; } = new SKColor(30, 80, 140, 255);
+
+        [XmlElement("ShallowWaterColor")]
+        public string ShallowWaterColorXml
+        {
+            get => XmlColorConverter.Serialize(ShallowWaterColor);
+            set => ShallowWaterColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public float ShorelineWidth { get; set; } = 2f;
@@ -44,6 +66,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float MeanderStrength { get; set; } = 1.0f;
 
+        [XmlIgnore]
         public SKColor[]? DepthColorLUT;
 
         public static WaterRenderSettings Clone(WaterRenderSettings other)

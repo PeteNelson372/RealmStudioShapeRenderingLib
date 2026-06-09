@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -31,22 +32,52 @@ namespace RealmStudioShapeRenderingLib
     {
         [XmlAttribute]
         public bool IsDefault { get; set; } = false;
+
         [XmlElement]
         public string PresetXmlFilePath { get; set; } = string.Empty;
+
         [XmlElement]
         public string LabelPresetName { get; set; } = string.Empty;
+
         [XmlElement]
         public string LabelPresetTheme { get; set; } = string.Empty;
-        [XmlElement]
+
+        [XmlIgnore]
         public SKColor LabelColor { get; set; } = SKColor.Empty;
-        [XmlElement]
+
+        [XmlElement("LabelColor")]
+        public string LabelColorXml
+        {
+            get => XmlColorConverter.Serialize(LabelColor);
+            set => LabelColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor LabelOutlineColor { get; set; } = SKColor.Empty;
+
+        [XmlElement("LabelOutlineColor")]
+        public string LabelOutlineColorXml
+        {
+            get => XmlColorConverter.Serialize(LabelOutlineColor);
+            set => LabelOutlineColor = XmlColorConverter.Deserialize(value);
+        }
+
         [XmlElement]
         public float LabelOutlineWidth { get; set; } = 0;
-        [XmlElement]
+
+        [XmlIgnore]
         public SKColor LabelGlowColor { get; set; } = SKColor.Empty;
+
+        [XmlElement("LabelGlowColor")]
+        public string LabelGlowColorXml
+        {
+            get => XmlColorConverter.Serialize(LabelGlowColor);
+            set => LabelGlowColor = XmlColorConverter.Deserialize(value);
+        }
+
         [XmlElement]
         public int LabelGlowStrength { get; set; } = 0;
+
         [XmlElement]
         public string LabelFontString { get; set; } = string.Empty;
     }

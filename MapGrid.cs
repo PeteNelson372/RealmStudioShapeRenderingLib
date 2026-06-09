@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -34,8 +35,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public MapGridType GridType { get; set; } = MapGridType.Square;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor GridColor { get; set; } = new SKColor(0, 0, 0, 126);
+
+        [XmlElement("GridColor")]
+        public string GridColorXml
+        {
+            get => XmlColorConverter.Serialize(GridColor);
+            set => GridColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public int GridLayerIndex { get; set; } = MapBuilder.DEFAULTGRIDLAYER;

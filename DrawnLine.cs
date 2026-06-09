@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using RealmStudioX.WPF.EditorUtilities;
+using SkiaSharp;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -6,7 +7,7 @@ namespace RealmStudioShapeRenderingLib
     public sealed class DrawnLine : MapComponent2D, IDrawnMapComponent
     {
         private List<SKPoint> _points = [];
-        private SKColor _color = SKColors.Black;
+        private SKColor _lineColor = SKColors.Black;
         private int _brushSize = 2;
         private bool _drawTexture = false;
         private string _textureId = string.Empty;
@@ -25,8 +26,7 @@ namespace RealmStudioShapeRenderingLib
             StrokeMiter = 1.0f
         };
 
-        [XmlArray]
-        [XmlArrayItem("Point", Type = typeof(SKPoint))]
+        [XmlIgnore]
         public List<SKPoint> Points
         {
             get => _points;
@@ -36,16 +36,50 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
-        [XmlElement]
-        public SKColor Color
+        [XmlElement("Points")]
+        public string PointsList
         {
-            get => _color;
+            get => string.Join(";", Points.Select(p => $"{p.X},{p.Y}"));
+
             set
             {
-                _color = value;
+                Points.Clear();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return;
+                }
+
+                foreach (string pair in value.Split(';'))
+                {
+                    string[] parts = pair.Split(',');
+
+                    Points.Add(
+                        new SKPoint(
+                            float.Parse(parts[0]),
+                            float.Parse(parts[1])));
+                }
+            }
+        }
+
+        [XmlIgnore]
+        public SKColor LineColor
+        {
+            get => _lineColor;
+            set
+            {
+                _lineColor = value;
                 _shaderValuesModified = true;
             }
         }
+
+        [XmlElement("LineColor")]
+        public string LineColorXml
+        {
+            get => XmlColorConverter.Serialize(LineColor);
+            set => LineColor = XmlColorConverter.Deserialize(value);
+        }
+
 
         [XmlElement]
         public int BrushSize
@@ -140,13 +174,13 @@ namespace RealmStudioShapeRenderingLib
 
             Bounds = bounds;
 
-            ShaderPaint.Color = Color;
+            ShaderPaint.Color = LineColor;
             ShaderPaint.StrokeWidth = BrushSize;
             ShaderPaint.StrokeCap = SKStrokeCap.Round;
 
             if (_shaderValuesModified)
             {
-                SKShader StrokeShader = SKShader.CreateColor(Color);
+                SKShader StrokeShader = SKShader.CreateColor(LineColor);
 
                 if (DrawTexture && Texture != null)
                 {
@@ -154,7 +188,7 @@ namespace RealmStudioShapeRenderingLib
                     using SKBitmap textureBitmap = Utilities.SetBitmapOpacity(scaledTexture, TextureOpacity / 255f);
 
                     // combine the stroke color with the bitmap color
-                    ShaderPaint.ColorFilter = SKColorFilter.CreateBlendMode(Color, SKBlendMode.Modulate);
+                    ShaderPaint.ColorFilter = SKColorFilter.CreateBlendMode(LineColor, SKBlendMode.Modulate);
 
                     // if the fill type is texture, we need to create a shader from the bitmap
                     StrokeShader = SKShader.CreateBitmap(textureBitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);

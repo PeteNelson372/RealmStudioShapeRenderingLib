@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -78,10 +79,26 @@ namespace RealmStudioShapeRenderingLib
     public class PixelEdit
     {
         [XmlElement]
-        public SKPoint Location = new SKPoint();
-        [XmlElement]
+        public SKPoint Location = new();
+
+        [XmlIgnore]
         public SKColor OriginalColor = SKColor.Empty;
-        [XmlElement]
+
+        [XmlElement("OriginalColor")]
+        public string OriginalColorXml
+        {
+            get => XmlColorConverter.Serialize(OriginalColor);
+            set => OriginalColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor NewColor = SKColor.Empty;
+
+        [XmlElement("NewColor")]
+        public string NewColorXml
+        {
+            get => XmlColorConverter.Serialize(NewColor);
+            set => NewColor = XmlColorConverter.Deserialize(value);
+        }
     }
 }

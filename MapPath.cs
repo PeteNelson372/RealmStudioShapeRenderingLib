@@ -34,9 +34,31 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public string MapPathDescription { get; set; } = string.Empty;
 
-        [XmlArray]
-        [XmlArrayItem("Point", Type = typeof(SKPoint))]
+        [XmlIgnore]
         public List<SKPoint> ControlPoints { get; } = [];
+
+        [XmlElement("ControlPoints")]
+        public string PointsList
+        {
+            get => string.Join(";", ControlPoints.Select(p => $"{p.X},{p.Y}"));
+
+            set
+            {
+                ControlPoints.Clear();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return;
+                }
+
+                foreach (string pair in value.Split(';'))
+                {
+                    string[] parts = pair.Split(',');
+
+                    ControlPoints.Add(new SKPoint(float.Parse(parts[0]), float.Parse(parts[1])));
+                }
+            }
+        }
 
         [XmlElement]
         public float VariationSeed { get; set; }

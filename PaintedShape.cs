@@ -71,13 +71,13 @@ namespace RealmStudioShapeRenderingLib
 
         public void EraseCircle(SKPoint point, float radius)
         {
-            if (_cachedPath.IsEmpty)
+            if (HitPath.IsEmpty)
                 return;
 
             using var erasePath = new SKPath();
             erasePath.AddCircle(point.X, point.Y, radius);
 
-            SKPath result = _cachedPath.Op(erasePath, SKPathOp.Difference);
+            SKPath result = HitPath.Op(erasePath, SKPathOp.Difference);
             SetGeometry(result);
         }
 
@@ -99,12 +99,12 @@ namespace RealmStudioShapeRenderingLib
             if (_strokePath.IsEmpty)
                 return;
 
-            SKPath result = _cachedPath.IsEmpty
+            SKPath result = HitPath.IsEmpty
                 ? new SKPath(_strokePath)
                 {
                     FillType = SKPathFillType.EvenOdd
                 }
-                : _cachedPath.Op(_strokePath, SKPathOp.Union);
+                : HitPath.Op(_strokePath, SKPathOp.Union);
 
             _strokePath.Reset();
             _strokePath.FillType = SKPathFillType.EvenOdd;

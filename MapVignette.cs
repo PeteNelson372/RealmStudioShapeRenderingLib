@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -31,8 +32,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public float VignetteStrength { get; set; } = 0.5f;
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor VignetteColor { get; set; } = SKColor.Parse("#C9977B");
+
+        [XmlElement("VignetteColor")]
+        public string VignetteColorXml
+        {
+            get => XmlColorConverter.Serialize(VignetteColor);
+            set => VignetteColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public VignetteShapeType VignetteShape { get; set; } = VignetteShapeType.Oval;

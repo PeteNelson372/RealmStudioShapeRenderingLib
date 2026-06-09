@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -38,8 +39,15 @@ namespace RealmStudioShapeRenderingLib
         [XmlArrayItem("Image")]
         public List<string> BrushImages { get; set; } = [];
 
-        [XmlElement]
+        [XmlIgnore]
         public SKColor BrushColor { get; set; } = SKColors.Black;
+
+        [XmlElement("BrushColor")]
+        public string BrushColorXml
+        {
+            get => XmlColorConverter.Serialize(BrushColor);
+            set => BrushColor = XmlColorConverter.Deserialize(value);
+        }
 
         [XmlElement]
         public SKSize BrushSize { get; set; } = SKSize.Empty;

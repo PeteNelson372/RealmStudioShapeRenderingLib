@@ -38,14 +38,39 @@ namespace RealmStudioShapeRenderingLib
             BlendMode = SKBlendMode.Clear
         };
 
-        [XmlArray]
-        [XmlArrayItem("Point", Type = typeof(SKPoint))]
+        [XmlIgnore]
         public List<SKPoint> Points
         {
             get => _points;
             set
             {
                 _points = value ?? throw new ArgumentNullException(nameof(value), "Points cannot be null.");
+            }
+        }
+
+        [XmlElement("Points")]
+        public string PointsList
+        {
+            get => string.Join(";", Points.Select(p => $"{p.X},{p.Y}"));
+
+            set
+            {
+                Points.Clear();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return;
+                }
+
+                foreach (string pair in value.Split(';'))
+                {
+                    string[] parts = pair.Split(',');
+
+                    Points.Add(
+                        new SKPoint(
+                            float.Parse(parts[0]),
+                            float.Parse(parts[1])));
+                }
             }
         }
 

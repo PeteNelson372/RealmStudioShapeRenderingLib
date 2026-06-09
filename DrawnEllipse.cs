@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -30,7 +31,7 @@ namespace RealmStudioShapeRenderingLib
     {
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
-        private SKColor _color = SKColors.Black;
+        private SKColor _ellipseColor = SKColors.Black;
         private SKColor _fillColor = SKColors.Transparent;
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
@@ -70,18 +71,25 @@ namespace RealmStudioShapeRenderingLib
             set => _bottomRight = value;
         }
 
-        [XmlElement]
-        public SKColor Color
+        [XmlIgnore]
+        public SKColor EllipseColor
         {
-            get => _color;
+            get => _ellipseColor;
             set
             {
-                _color = value;
+                _ellipseColor = value;
                 _shaderValuesModified = true;
             }
         }
 
-        [XmlElement]
+        [XmlElement("EllipseColor")]
+        public string EllipseColorXml
+        {
+            get => XmlColorConverter.Serialize(EllipseColor);
+            set => EllipseColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -90,6 +98,13 @@ namespace RealmStudioShapeRenderingLib
                 _fillColor = value;
                 _shaderValuesModified = true;
             }
+        }
+
+        [XmlElement("FillColor")]
+        public string FillColorXml
+        {
+            get => XmlColorConverter.Serialize(FillColor);
+            set => FillColor = XmlColorConverter.Deserialize(value);
         }
 
         [XmlElement]
@@ -163,7 +178,7 @@ namespace RealmStudioShapeRenderingLib
             Bounds = rect;
             Bounds = SKRect.Inflate(Bounds, 2, 2);
 
-            _ellipsePaint.Color = Color;
+            _ellipsePaint.Color = EllipseColor;
             _ellipsePaint.StrokeWidth = BrushSize;
 
 

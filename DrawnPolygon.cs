@@ -21,6 +21,7 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -29,7 +30,7 @@ namespace RealmStudioShapeRenderingLib
     public sealed class DrawnPolygon : MapComponent2D, IDrawnMapComponent
     {
         private List<SKPoint> _points = [];
-        private SKColor _color = SKColors.Black;
+        private SKColor _polygonColor = SKColors.Black;
         private SKColor _fillColor = SKColors.Transparent;
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
@@ -55,8 +56,7 @@ namespace RealmStudioShapeRenderingLib
             IsAntialias = true
         };
 
-        [XmlArray]
-        [XmlArrayItem("Point", Type = typeof(SKPoint))]
+        [XmlIgnore]
         public List<SKPoint> Points
         {
             get => _points;
@@ -66,18 +66,51 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
-        [XmlElement]
-        public SKColor Color
+        [XmlElement("Points")]
+        public string PointsList
         {
-            get => _color;
+            get => string.Join(";", Points.Select(p => $"{p.X},{p.Y}"));
+
             set
             {
-                _color = value;
+                Points.Clear();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return;
+                }
+
+                foreach (string pair in value.Split(';'))
+                {
+                    string[] parts = pair.Split(',');
+
+                    Points.Add(
+                        new SKPoint(
+                            float.Parse(parts[0]),
+                            float.Parse(parts[1])));
+                }
+            }
+        }
+
+        [XmlIgnore]
+        public SKColor PolygonColor
+        {
+            get => _polygonColor;
+            set
+            {
+                _polygonColor = value;
                 _shaderValuesModified = true;
             }
         }
 
-        [XmlElement]
+        [XmlElement("PolygonColor")]
+        public string PolygonColorXml
+        {
+            get => XmlColorConverter.Serialize(PolygonColor);
+            set => PolygonColor = XmlColorConverter.Deserialize(value);
+        }
+
+        [XmlIgnore]
         public SKColor FillColor
         {
             get => _fillColor;
@@ -86,6 +119,13 @@ namespace RealmStudioShapeRenderingLib
                 _fillColor = value;
                 _shaderValuesModified = true;
             }
+        }
+
+        [XmlElement("FillColor")]
+        public string FillColorXml
+        {
+            get => XmlColorConverter.Serialize(FillColor);
+            set => FillColor = XmlColorConverter.Deserialize(value);
         }
 
         [XmlElement]
@@ -155,6 +195,8 @@ namespace RealmStudioShapeRenderingLib
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null)
         {
+            _polygonPaint.Color = PolygonColor;
+            _polygonPaint.StrokeWidth = BrushSize;
 
             if (FillType == DrawingFillType.Texture && FillImage != null)
             {
@@ -168,8 +210,7 @@ namespace RealmStudioShapeRenderingLib
                     _fillShader = SKShader.CreateBitmap(textureBitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);
 
                     _shaderValuesModified = false;
-                }
-                ;
+                };
 
                 _fillPaint.Shader = _fillShader;
                 _fillPaint.Style = SKPaintStyle.StrokeAndFill;

@@ -45,12 +45,6 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public VignetteShapeType VignetteShape { get; set; } = VignetteShapeType.Oval;
 
-        [XmlIgnore]
-        public bool IsModified { get; set; } = true;
-
-        [XmlIgnore]
-        public SKImage? CachedImage { get; set; }
-
         public MapVignette() { }
 
         public void RenderOvalVignette(SKCanvas canvas)
@@ -169,23 +163,14 @@ namespace RealmStudioShapeRenderingLib
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null)
         {
-            if (IsModified)
+            if (VignetteShape == VignetteShapeType.Rectangle)
             {
-                int width = (int)(Bounds.Width > 0 ? (int)Bounds.Width : canvas.LocalClipBounds.Width);
-                int height = (int)(Bounds.Height > 0 ? (int)Bounds.Height : canvas.LocalClipBounds.Height);
-
-                if (VignetteShape == VignetteShapeType.Rectangle)
-                {
-                    RenderRectangleVignette(canvas);
-                }
-                else
-                {
-                    RenderOvalVignette(canvas);
-                }
+                RenderRectangleVignette(canvas);
             }
-
-            //canvas.DrawImage(CachedImage, 0, 0);
-            //IsModified = false;
+            else
+            {
+                RenderOvalVignette(canvas);
+            }
         }
 
         public override bool HitTest(SKPoint worldPos)

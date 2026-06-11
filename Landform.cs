@@ -50,6 +50,11 @@
         [XmlIgnore]
         public bool IsInteractive { get; private set; }
 
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            RebuildPerimeter();
+        }
+
         public void CloneSettingsFrom(Landform source)
         {
             Shading = source.Shading.Clone();

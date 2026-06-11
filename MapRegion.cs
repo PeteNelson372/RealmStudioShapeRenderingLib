@@ -78,6 +78,16 @@ namespace RealmStudioShapeRenderingLib
 
         public MapRegion() { }
 
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            using SKPath path = Utilities.BuildClosedPath([.. MapRegionPoints.Select(p => p.RegionPoint)]);
+
+            BoundaryPath.Dispose();
+
+            BoundaryPath = new(path);
+            Bounds = BoundaryPath.Bounds;
+        }
+
         public void AddRegionPoint(SKPoint point)
         {
             MapRegionPoints.Add(new MapRegionPoint(point));

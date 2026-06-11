@@ -57,5 +57,7 @@ namespace RealmStudioShapeRenderingLib
         public abstract IShapeState CaptureState();
 
         public abstract void RestoreState(IShapeState state);
+
+        public virtual void FinalizeShapeGeometry(RealmStudioMap map) {}
     }
 }

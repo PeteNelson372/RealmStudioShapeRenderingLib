@@ -299,6 +299,21 @@ namespace RealmStudioShapeRenderingLib
         // Shape Management
         // -------------------------------------------------
 
+        public void RebuildIndexes()
+        {
+            _tiles.Clear();
+            _grid.Clear();
+
+            foreach (MapComponent2D shape in _shapes)
+            {
+                if (shape is MapSymbol ||
+                    shape is IDrawnMapComponent)
+                {
+                    IndexShape(shape);
+                }
+            }
+        }
+
         public void Enqueue(MapComponent2D shape)
         {
             if (shape == null)
@@ -342,7 +357,11 @@ namespace RealmStudioShapeRenderingLib
 
             _shapes.Add(shape);
 
-            // Add symbols to tiles (multi-tile aware)
+            IndexShape(shape);
+        }
+
+        private void IndexShape(MapComponent2D shape)
+        {
             var bounds = shape.Bounds;
 
             var topLeft = new SKPoint(bounds.Left, bounds.Top);
@@ -352,6 +371,7 @@ namespace RealmStudioShapeRenderingLib
             var maxTile = GetTileCoord(bottomRight);
 
             for (int x = minTile.x; x <= maxTile.x; x++)
+            {
                 for (int y = minTile.y; y <= maxTile.y; y++)
                 {
                     var tile = GetOrCreateTile(x, y);
@@ -359,7 +379,7 @@ namespace RealmStudioShapeRenderingLib
                     tile.Add(shape);
                     tile.IsModified = true;
                 }
-
+            }
 
             AddToSpatialGrid(shape);
         }

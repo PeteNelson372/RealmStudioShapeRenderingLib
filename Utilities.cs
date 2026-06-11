@@ -341,6 +341,55 @@ namespace RealmStudioShapeRenderingLib
             return resized;
         }
 
+        public static SKBitmap BuildColorizedBrushBitmap(SKBitmap densityBrush, SKColor selectedColor)
+        {
+            SKBitmap result =
+                new(
+                    densityBrush.Width,
+                    densityBrush.Height,
+                    SKColorType.Rgba8888,
+                    SKAlphaType.Premul);
+
+            for (int y = 0; y < densityBrush.Height; y++)
+            {
+                for (int x = 0; x < densityBrush.Width; x++)
+                {
+                    SKColor brushPixel =
+                        densityBrush.GetPixel(x, y);
+
+                    //
+                    // Brush is grayscale:
+                    // Black = full paint
+                    // White = no paint
+                    //
+
+                    byte gray =
+                        (byte)((brushPixel.Red +
+                                brushPixel.Green +
+                                brushPixel.Blue) / 3);
+
+                    byte coverage =
+                        (byte)(255 - gray);
+
+                    byte alpha =
+                        (byte)(
+                            (selectedColor.Alpha * coverage)
+                            / 255);
+
+                    result.SetPixel(
+                        x,
+                        y,
+                        new SKColor(
+                            selectedColor.Red,
+                            selectedColor.Green,
+                            selectedColor.Blue,
+                            alpha));
+                }
+            }
+
+            return result;
+        }
+    
         public static SKBitmap ExtractRegion(
             SKBitmap source,
             int x,

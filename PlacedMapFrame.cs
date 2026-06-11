@@ -29,7 +29,7 @@ namespace RealmStudioShapeRenderingLib
 {
     public class PlacedMapFrame : MapComponent2D
     {
-        [XmlIgnore]
+        [XmlElement]
         public MapFrame? FrameDefinition {  get; set; }
 
         [XmlIgnore]

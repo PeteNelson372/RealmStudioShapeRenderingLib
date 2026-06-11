@@ -66,10 +66,7 @@ namespace RealmStudioShapeRenderingLib
                 {
                     string[] parts = pair.Split(',');
 
-                    Points.Add(
-                        new SKPoint(
-                            float.Parse(parts[0]),
-                            float.Parse(parts[1])));
+                    Points.Add(new SKPoint(float.Parse(parts[0]), float.Parse(parts[1])));
                 }
             }
         }

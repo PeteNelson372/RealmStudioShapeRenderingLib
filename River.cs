@@ -48,9 +48,6 @@ namespace RealmStudioShapeRenderingLib
 
         public River()
         {
-            // TODO: if a variation seed is set when the River is loaded
-            // with the map, don't generate a new one
-            VariationSeed = Random.Shared.NextSingle() * 1000f;
             Editor = new EditablePolylineEditor(ControlPoints)
             {
                 OnChanged = () =>
@@ -60,6 +57,15 @@ namespace RealmStudioShapeRenderingLib
                     WaterSystem?.InvalidateRenderCache();
                 }
             };
+        }
+
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            SetGeometry(Utilities.BuildPath(ControlPoints));
+
+            RebuildGeometry();
+            WaterSystem?.GeometryModified();
+            WaterSystem?.InvalidateRenderCache();
         }
 
         public void RebuildGeometry()

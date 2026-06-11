@@ -29,7 +29,7 @@ namespace RealmStudioShapeRenderingLib
 {
     public class MapGrid : MapComponent2D
     {
-        [XmlIgnore]
+        [XmlElement]
         public bool GridEnabled { get; set; }
 
         [XmlElement]

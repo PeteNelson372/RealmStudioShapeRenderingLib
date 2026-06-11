@@ -6,7 +6,7 @@ namespace RealmStudioX.WPF.EditorUtilities
     {
         public static string Serialize(SKColor color)
         {
-            return $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}{color.Alpha:X2}";
+            return $"#{color.Alpha:X2}{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
         }
 
         public static SKColor Deserialize(string value)

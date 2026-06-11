@@ -109,6 +109,11 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement, AllowNull]
         public SKFont? RenderFont => _renderFont;
 
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            BoundsModified = true;
+        }
+
         // =========================
         // Rendering
         // =========================

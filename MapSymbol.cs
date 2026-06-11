@@ -91,6 +91,11 @@ namespace RealmStudioShapeRenderingLib
 
         private float _startScale;
 
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            UpdateBounds();
+        }
+
         public override IShapeState CaptureState()
         {
             return new MapSymbolState

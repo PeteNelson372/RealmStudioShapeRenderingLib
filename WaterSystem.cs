@@ -58,6 +58,28 @@ namespace RealmStudioShapeRenderingLib
         // public constructor needed for serialization
         public WaterSystem() { }
 
+        public void FinalizeWaterSystem(RealmStudioMap map)
+        {
+            _interactive = false;
+
+            foreach (WaterBody wb in WaterBodies)
+            {
+                wb.WaterSystem = this;
+                wb.EndInteractive();
+
+                if (MergedGeometry == null || MergedGeometry.IsEmpty)
+                {
+                    MergedGeometry = new SKPath(wb.HitPath);
+                    RenderSettings = WaterRenderSettings.Clone(wb.RenderSettings);
+                    return;
+                }
+
+                _geometryModified = true;
+
+                InvalidateRenderCache();
+            }
+        }
+
         public void Add(WaterBody body)
         {
             WaterBodies.Add(body);

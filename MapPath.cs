@@ -60,8 +60,6 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
-        [XmlElement]
-        public float VariationSeed { get; set; }
         public EditablePolylineEditor Editor { get; }
 
         [XmlElement]
@@ -72,10 +70,6 @@ namespace RealmStudioShapeRenderingLib
 
         public MapPath()
         {
-            // TODO: if a variation seed is set when the MapPath is
-            // loaded with the map, do not set the seed
-
-            VariationSeed = Random.Shared.NextSingle() * 1000f;
             Editor = new EditablePolylineEditor(ControlPoints)
             {
                 OnChanged = () =>
@@ -83,6 +77,11 @@ namespace RealmStudioShapeRenderingLib
                     SetGeometry(Utilities.BuildPath(ControlPoints));
                 }
             };
+        }
+
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            SetGeometry(Utilities.BuildPath(ControlPoints));
         }
 
         public override void Render(SKCanvas canvas, FontManager? _)

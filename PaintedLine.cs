@@ -137,6 +137,20 @@ namespace RealmStudioShapeRenderingLib
             IsFinalized = false;
         }
 
+        public override void FinalizeShapeGeometry(RealmStudioMap map)
+        {
+            Initialize(map.MapWidth, map.MapHeight);
+
+            foreach (SKPoint point in Points)
+            {
+                StampBrush(point);
+            }
+
+            UpdateBounds();
+
+            FinalizeStroke();
+        }
+
 
         // =================================================
         // Add paint point

@@ -8,6 +8,17 @@ namespace RealmStudioShapeRenderingLib
         private const float PI_OVER_180 = (float)Math.PI / 180F;
         private const double SELECTION_FUZZINESS = 4;
 
+        public static string MakeSafeFileName(string fileName)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                fileName =
+                    fileName.Replace(c, '_');
+            }
+
+            return fileName.Trim();
+        }
+
         public static List<SKPoint> PolyPoints(SKPoint location, float sides, float radius, float start)
         {
             List<SKPoint> points = [];

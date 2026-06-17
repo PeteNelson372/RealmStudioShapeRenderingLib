@@ -275,8 +275,39 @@ namespace RealmStudioShapeRenderingLib
         Icecap
     }
 
+    public enum RealmCreationOperation
+    {
+        NotSet,
+        CreateMap,
+        CreateProject,
+    }
+
     public enum RealmMapType
     {
+        [Description("Not Set")]
+        NotSet,
+        [Description("World")]
+        World,
+        [Description("Region")]
+        Region,
+        [Description("City")]
+        City,
+        [Description("Other Realm Type")]
+        Other,
+        [Description("Interior Floor")]
+        InteriorFloor,
+        [Description("Dungeon Level")]
+        DungeonLevel,
+        [Description("Ship Deck")]
+        ShipDeck,
+        [Description("Solar System Body")]
+        SolarSystemBody
+    }
+
+    public enum RealmProjectType
+    {
+        [Description("Not Set")]
+        NotSet,
         [Description("World")]
         World,
         [Description("Region")]
@@ -293,14 +324,6 @@ namespace RealmStudioShapeRenderingLib
         Ship,
         [Description("Other Realm Type")]
         Other,
-        [Description("Interior Floor")]
-        InteriorFloor,
-        [Description("Dungeon Level")]
-        DungeonLevel,
-        [Description("Ship Deck")]
-        ShipDeck,
-        [Description("Solar System Body")]
-        SolarSystemBody
     }
 
     public enum FontPanelOpener

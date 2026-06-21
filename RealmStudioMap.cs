@@ -107,16 +107,11 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
 
         [XmlIgnore]
-        public bool IsSaved { get; private set; }
+        public bool IsModified { get; private set; }
 
         public void MarkChanged()
         {
-            IsSaved = false;
-        }
-
-        public void MarkSaved()
-        {
-            IsSaved = true;
+            IsModified = true;
         }
 
         // -------------------------------------------------

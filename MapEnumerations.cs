@@ -326,11 +326,21 @@ namespace RealmStudioShapeRenderingLib
         Other,
     }
 
-    public enum FontPanelOpener
+    public enum MessageDialogResult
     {
-        NotSet,
-        LabelFontButton,
-        ScaleFontButton
+        None,
+
+        OK,
+        Cancel,
+
+        Yes,
+        No,
+
+        Abort,
+        Retry,
+        Ignore,
+
+        Delete
     }
 
     public enum RealmMeasurementUnits

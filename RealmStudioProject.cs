@@ -22,6 +22,6 @@ namespace RealmStudioShapeRenderingLib
 
         public MapMetadata Metadata { get; set; } = new();
 
-        public SKBitmap? Preview { get; set; }
+        public SKBitmap Preview { get; set; } = new();
     }
 }

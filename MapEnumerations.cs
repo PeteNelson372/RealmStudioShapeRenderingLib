@@ -340,7 +340,10 @@ namespace RealmStudioShapeRenderingLib
         Retry,
         Ignore,
 
-        Delete
+        Delete,
+
+        Restore,
+        Import
     }
 
     public enum RealmMeasurementUnits

@@ -122,13 +122,7 @@ namespace RealmStudioShapeRenderingLib
         {
             _surface?.Dispose();
 
-            _surface =
-                SKSurface.Create(
-                    new SKImageInfo(
-                        width,
-                        height,
-                        SKColorType.Rgba8888,
-                        SKAlphaType.Premul));
+            _surface = SKSurface.Create(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul));
 
             _surfaceCanvas = _surface.Canvas;
 
@@ -207,15 +201,11 @@ namespace RealmStudioShapeRenderingLib
                     break;
 
                 case BrushSelectionMode.Random:
-                    renderBitmap =
-                        Brush!.Bitmaps[
-                            Random.Shared.Next(Brush.Bitmaps.Count)];
+                    renderBitmap = Brush!.Bitmaps[Random.Shared.Next(Brush.Bitmaps.Count)];
                     break;
 
                 case BrushSelectionMode.Sequential:
-                    renderBitmap =
-                        Brush!.Bitmaps[
-                            _points.Count % Brush.Bitmaps.Count];
+                    renderBitmap = Brush!.Bitmaps[_points.Count % Brush.Bitmaps.Count];
                     break;
             }
 
@@ -232,17 +222,9 @@ namespace RealmStudioShapeRenderingLib
             {
                 using SKPaint patternPaint = new();
 
-                patternPaint.Shader =
-                    SKShader.CreateBitmap(
-                        renderBitmap,
-                        SKShaderTileMode.Repeat,
-                        SKShaderTileMode.Repeat);
+                patternPaint.Shader = SKShader.CreateBitmap(renderBitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);
 
-                _surfaceCanvas.DrawCircle(
-                    point.X,
-                    point.Y,
-                    Brush.BrushSize / 2f,
-                    patternPaint);
+                _surfaceCanvas.DrawCircle(point.X, point.Y, Brush.BrushSize / 2f, patternPaint);
             }
 
             //
@@ -255,8 +237,7 @@ namespace RealmStudioShapeRenderingLib
 
                 if (RandomRotation)
                 {
-                    angle =
-                        Random.Shared.NextSingle() * 360f;
+                    angle = Random.Shared.NextSingle() * 360f;
                 }
 
                 using (new SKAutoCanvasRestore(_surfaceCanvas))
@@ -268,9 +249,7 @@ namespace RealmStudioShapeRenderingLib
                         _surfaceCanvas.Translate(-point.X, -point.Y);
                     }
 
-                    _surfaceCanvas.DrawBitmap(
-                        renderBitmap,
-                        destRect);
+                    _surfaceCanvas.DrawBitmap(renderBitmap, destRect);
                 }
             }
 
@@ -313,17 +292,13 @@ namespace RealmStudioShapeRenderingLib
                 return;
             }
 
-            float minX =
-                _points.Min(p => p.X);
+            float minX = _points.Min(p => p.X);
 
-            float minY =
-                _points.Min(p => p.Y);
+            float minY = _points.Min(p => p.Y);
 
-            float maxX =
-                _points.Max(p => p.X);
+            float maxX = _points.Max(p => p.X);
 
-            float maxY =
-                _points.Max(p => p.Y);
+            float maxY = _points.Max(p => p.Y);
 
             Bounds =
                 new SKRect(
@@ -337,9 +312,7 @@ namespace RealmStudioShapeRenderingLib
         // Render
         // =================================================
 
-        public override void Render(
-            SKCanvas canvas,
-            FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
         {
             // ---------------------------------------------
             // Active stroke
@@ -347,13 +320,9 @@ namespace RealmStudioShapeRenderingLib
 
             if (!IsFinalized && _surface != null)
             {
-                using SKImage image =
-                    _surface.Snapshot();
+                using SKImage image = _surface.Snapshot();
 
-                canvas.DrawImage(
-                    image,
-                    0,
-                    0);
+                canvas.DrawImage(image, 0, 0);
 
                 return;
             }
@@ -364,10 +333,7 @@ namespace RealmStudioShapeRenderingLib
 
             if (_cachedImage != null)
             {
-                canvas.DrawImage(
-                    _cachedImage,
-                    0,
-                    0);
+                canvas.DrawImage(_cachedImage, 0, 0);
             }
         }
 
@@ -375,8 +341,7 @@ namespace RealmStudioShapeRenderingLib
         // Hit testing
         // =================================================
 
-        public override bool HitTest(
-            SKPoint worldPos)
+        public override bool HitTest(SKPoint worldPos)
         {
             return Bounds.Contains(worldPos);
         }
@@ -390,8 +355,7 @@ namespace RealmStudioShapeRenderingLib
             throw new NotImplementedException();
         }
 
-        public override void RestoreState(
-            IShapeState state)
+        public override void RestoreState(IShapeState state)
         {
             throw new NotImplementedException();
         }

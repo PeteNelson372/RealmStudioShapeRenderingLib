@@ -55,10 +55,10 @@ namespace RealmStudioShapeRenderingLib
         public const int MEASURELAYER = 22;
         public const int DRAWINGLAYER = 23;
         public const int VIGNETTELAYER = 24;
-        public const int SELECTIONLAYER = 25;
+        //public const int SELECTIONLAYER = 25;
         public const int HEIGHTMAPLAYER = 26;
-        public const int WORKLAYER = 27;
-        public const int WORKLAYER2 = 28;
+        //public const int WORKLAYER = 27;
+        //public const int WORKLAYER2 = 28;
 
         // landform layers are reused for interior, dungeon, shipdeck, and planet maps
         public const int INTERIOROUTLINELAYER = 6;
@@ -76,8 +76,6 @@ namespace RealmStudioShapeRenderingLib
         public const int PLANETOUTLINELAYER = 6;
         public const int PLANETLAYER = 7;
         public const int PLANETDRAWINGLAYER = 8;
-
-        public static readonly int MAP_LAYER_COUNT = WORKLAYER2 + 1;
 
         // layer static methods
         public static MapLayer GetMapLayerByIndex(RealmStudioMap map, int layerIndex)
@@ -120,11 +118,6 @@ namespace RealmStudioShapeRenderingLib
         {
             CreateMapLayers(ref currentMap);
 
-            if (MAP_LAYER_COUNT != currentMap.MapLayers.Count)
-            {
-                throw new Exception("Error constructing map. Map layer count error");
-            }
-
             return currentMap;
         }
 
@@ -141,13 +134,7 @@ namespace RealmStudioShapeRenderingLib
                 MapAreaUnits = mapAreaUnits,
             };
 
-
             CreateMapLayers(ref map);
-
-            if (MAP_LAYER_COUNT != map.MapLayers.Count)
-            {
-                throw new Exception("Error constructing map. Map layer count error");
-            }
 
             return map;
         }
@@ -276,24 +263,24 @@ namespace RealmStudioShapeRenderingLib
             layer = ConstructMapLayer("vignette", VIGNETTELAYER, map.MapWidth, map.MapHeight, true);
             map.MapLayers.Add(layer);
 
-            layer = ConstructMapLayer("selection", SELECTIONLAYER, map.MapWidth, map.MapHeight, false);
-            map.MapLayers.Add(layer);
+            //layer = ConstructMapLayer("selection", SELECTIONLAYER, map.MapWidth, map.MapHeight, false);
+            //map.MapLayers.Add(layer);
 
             layer = ConstructMapLayer("heightmap", HEIGHTMAPLAYER, map.MapWidth, map.MapHeight, false);
             map.MapLayers.Add(layer);
 
-            layer = ConstructMapLayer("work", WORKLAYER, map.MapWidth, map.MapHeight, false);
-            map.MapLayers.Add(layer);
+            //layer = ConstructMapLayer("work", WORKLAYER, map.MapWidth, map.MapHeight, false);
+            //map.MapLayers.Add(layer);
 
-            layer = ConstructMapLayer("work2", WORKLAYER2, map.MapWidth, map.MapHeight, false);
-            map.MapLayers.Add(layer);
+            //layer = ConstructMapLayer("work2", WORKLAYER2, map.MapWidth, map.MapHeight, false);
+            //map.MapLayers.Add(layer);
         }
 
         public static void ConstructMissingLayersForMap(RealmStudioMap map)
         {
             List<string> allLayerNames = ["base", "oceantexture", "oceantextureoverlay", "oceandrawing", "windrose", "aboveoceangridlayer",
             "coastline","landform","landdrawing","water","waterdrawing","belowsymbolsgrid","pathlower","symbols","pathupper","region",
-            "regionoverlay", "grid","boxes","labels","overlay","frame","measures","userdrawing","vignette","selection","heightmap","work", "work2"];
+            "regionoverlay", "grid","boxes","labels","overlay","frame","measures","userdrawing","vignette","heightmap"];
 
             List<string> mapLayerNames = [];
             for (int i = 0; i < map.MapLayers.Count; i++)
@@ -462,27 +449,9 @@ namespace RealmStudioShapeRenderingLib
                             map.MapLayers.Add(layer);
                         }
                         break;
-                    case "selection":
-                        {
-                            MapLayer layer = ConstructMapLayer("selection", SELECTIONLAYER, map.MapWidth, map.MapHeight, false);
-                            map.MapLayers.Add(layer);
-                        }
-                        break;
                     case "heightmap":
                         {
                             MapLayer layer = ConstructMapLayer("heightmap", HEIGHTMAPLAYER, map.MapWidth, map.MapHeight, false);
-                            map.MapLayers.Add(layer);
-                        }
-                        break;
-                    case "work":
-                        {
-                            MapLayer layer = ConstructMapLayer("work", WORKLAYER, map.MapWidth, map.MapHeight, false);
-                            map.MapLayers.Add(layer);
-                        }
-                        break;
-                    case "work2":
-                        {
-                            MapLayer layer = ConstructMapLayer("work2", WORKLAYER2, map.MapWidth, map.MapHeight, false);
                             map.MapLayers.Add(layer);
                         }
                         break;

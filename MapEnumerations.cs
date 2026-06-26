@@ -46,6 +46,7 @@ namespace RealmStudioShapeRenderingLib
         LandformSelect,
         LandformHeightMapSelect,
         RealmAreaSelect,
+        RealmLassoSelect,
         WaterFeatureSelect,
         PathSelect,
         PathPaint,

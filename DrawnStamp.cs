@@ -107,6 +107,9 @@ namespace RealmStudioShapeRenderingLib
 
                 canvas.DrawImage(StampImage,
                     new SKPoint(TopLeft.X - (StampImage.Width / 2), TopLeft.Y - (StampImage.Height / 2)), null);
+
+                // TODO: not accurate when the stamp image is rotated
+                Bounds = new SKRect(TopLeft.X, TopLeft.Y, TopLeft.X + StampImage.Width, TopLeft.Y + StampImage.Height);
             }
         }
 

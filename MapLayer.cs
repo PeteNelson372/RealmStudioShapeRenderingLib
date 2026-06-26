@@ -94,7 +94,7 @@ namespace RealmStudioShapeRenderingLib
         public string MapLayerName { get; set; } = "";
 
         [XmlAttribute]
-        public float MapLayerOrder { get; set; }
+        public int MapLayerOrder { get; set; }
 
         [XmlIgnore]
         public bool ShowLayer { get; set; } = true;

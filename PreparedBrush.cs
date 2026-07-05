@@ -20,10 +20,10 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int BrushSize { get; init; }
+        public int BrushSize { get; set; }
 
         [XmlElement]
-        public int BrushSpacing { get; init; } = 0;
+        public int BrushSpacing { get; set; } = 0;
 
         [XmlIgnore]
         public List<SKBitmap> Bitmaps { get; init; } = [];

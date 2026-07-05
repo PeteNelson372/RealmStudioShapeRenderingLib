@@ -8,7 +8,7 @@ namespace RealmStudioShapeRenderingLib
 {
     public class ShapeShadingStyle
     {
-        [XmlElement]
+        [XmlIgnore]
         public SKColor? Color;
 
         [XmlElement("Color")]

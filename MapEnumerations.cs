@@ -156,6 +156,14 @@ namespace RealmStudioShapeRenderingLib
         // could define other types, like swamp, canal, inland sea, etc.
     }
 
+    public enum ColorPaletteType
+    {
+        SymbolColors,
+        LandformColors,
+        WaterFeatureColors,
+        OceanColors,
+    }
+
     public enum PathType
     {
         SolidLinePath,
@@ -461,6 +469,7 @@ namespace RealmStudioShapeRenderingLib
         None,
         Box,
         Brush,
+        ColorPalette,
         Frame,
         Icon,
         LabelPreset,

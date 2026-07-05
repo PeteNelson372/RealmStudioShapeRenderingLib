@@ -1,5 +1,7 @@
 ﻿using Clipper2Lib;
 using SkiaSharp;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -354,6 +356,23 @@ namespace RealmStudioShapeRenderingLib
 
         public static SKBitmap BuildColorizedBrushBitmap(SKBitmap densityBrush, SKColor selectedColor)
         {
+            //
+            // NOTE:
+            //
+            // This implementation intentionally uses GetPixel()/SetPixel().
+            //
+            // Several attempts were made to replace it with direct pixel access
+            // (Span<>, pointers, Gray8 access, etc.) for performance.
+            //
+            // Although those implementations were substantially faster, none
+            // exactly reproduced Skia's behavior for all supported brush formats
+            // (Gray8, RGBA, multi-bitmap brushes, premultiplied alpha, etc.).
+            //
+            // Since brush preparation is now performed asynchronously and after scaling, the
+            // performance of this method is no longer user-visible, so correctness
+            // is preferred.
+            //
+
             SKBitmap result =
                 new(
                     densityBrush.Width,
@@ -365,8 +384,7 @@ namespace RealmStudioShapeRenderingLib
             {
                 for (int x = 0; x < densityBrush.Width; x++)
                 {
-                    SKColor brushPixel =
-                        densityBrush.GetPixel(x, y);
+                    SKColor brushPixel = densityBrush.GetPixel(x, y);
 
                     //
                     // Brush is grayscale:
@@ -379,18 +397,11 @@ namespace RealmStudioShapeRenderingLib
                                 brushPixel.Green +
                                 brushPixel.Blue) / 3);
 
-                    byte coverage =
-                        (byte)(255 - gray);
+                    byte coverage = (byte)(255 - gray);
 
-                    byte alpha =
-                        (byte)(
-                            (selectedColor.Alpha * coverage)
-                            / 255);
+                    byte alpha = (byte)((selectedColor.Alpha * coverage) / 255);
 
-                    result.SetPixel(
-                        x,
-                        y,
-                        new SKColor(
+                    result.SetPixel(x, y, new SKColor(
                             selectedColor.Red,
                             selectedColor.Green,
                             selectedColor.Blue,
@@ -400,7 +411,7 @@ namespace RealmStudioShapeRenderingLib
 
             return result;
         }
-    
+
         public static SKBitmap ExtractRegion(
             SKBitmap source,
             int x,

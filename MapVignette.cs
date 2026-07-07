@@ -161,7 +161,7 @@ namespace RealmStudioShapeRenderingLib
             canvas.DrawRect(rect, paint);
         }
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             if (VignetteShape == VignetteShapeType.Rectangle)
             {

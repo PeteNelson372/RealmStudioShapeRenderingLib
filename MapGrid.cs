@@ -68,7 +68,7 @@ namespace RealmStudioShapeRenderingLib
 
         public MapGrid() { }
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             if (GridEnabled)
             {

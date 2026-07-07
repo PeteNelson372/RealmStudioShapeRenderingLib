@@ -50,7 +50,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public virtual SKRect Bounds { get; set; } // world bounds
 
-        public abstract void Render(SKCanvas canvas, FontManager? fontManager = null);
+        public abstract void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null);
 
         public abstract bool HitTest(SKPoint worldPos);
 

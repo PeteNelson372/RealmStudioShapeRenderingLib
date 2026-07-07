@@ -179,9 +179,7 @@ namespace RealmStudioShapeRenderingLib
             BoxBitmap = bitmap;
         }
 
-        public override void Render(
-            SKCanvas canvas,
-            FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             if (BoxBitmap == null)
                 return;

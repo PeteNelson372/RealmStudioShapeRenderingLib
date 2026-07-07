@@ -49,6 +49,7 @@ namespace RealmStudioShapeRenderingLib
                 }
 
                 HitPath = SKPath.ParseSvgPathData(value);
+                HitPath.FillType = SKPathFillType.EvenOdd;
 
                 RebuildPerimeter();
             }
@@ -136,7 +137,7 @@ namespace RealmStudioShapeRenderingLib
         /// <summary>
         /// Default rendering behavior. Subclasses must override.
         /// </summary>
-        public override void Render(SKCanvas canvas, FontManager? _)
+        public override void Render(SKCanvas canvas, FontManager? _, SKPath? clipPath = null)
         {
             throw new ApplicationException("Shape2D.Render called. This method must be overridden.");
         }

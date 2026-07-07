@@ -84,7 +84,7 @@ namespace RealmStudioShapeRenderingLib
             SetGeometry(Utilities.BuildPath(ControlPoints));
         }
 
-        public override void Render(SKCanvas canvas, FontManager? _)
+        public override void Render(SKCanvas canvas, FontManager? _, SKPath? clipPath = null)
         {
             PathRenderer.Render(canvas, ControlPoints, RenderStyle);
         }

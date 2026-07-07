@@ -178,7 +178,7 @@ namespace RealmStudioShapeRenderingLib
 
 
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             _trianglePaint.Color = TriangleColor;
             _trianglePaint.StrokeWidth = BrushSize;

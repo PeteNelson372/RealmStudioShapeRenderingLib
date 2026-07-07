@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.ComponentModel;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
@@ -18,6 +19,17 @@ namespace RealmStudioShapeRenderingLib
         // =================================================
 
         private PreparedBrush? _brush;
+
+
+        // =================================================
+        // Clipped rendering
+        // =================================================
+
+        [DefaultValue(false)]
+        public bool RequiresLandformClipping { get; set; } = false;
+
+        [DefaultValue(false)]
+        public bool RequiresWaterSystemClipping { get; set; } = false;
 
         // =================================================
         // Rendering surface
@@ -312,28 +324,46 @@ namespace RealmStudioShapeRenderingLib
         // Render
         // =================================================
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
-            // ---------------------------------------------
-            // Active stroke
-            // ---------------------------------------------
-
-            if (!IsFinalized && _surface != null)
+            using (new SKAutoCanvasRestore(canvas))
             {
-                using SKImage image = _surface.Snapshot();
+                if (RequiresLandformClipping || RequiresWaterSystemClipping)
+                {
+                    if (clipPath == null || clipPath.IsEmpty)
+                    {
+                        // clipping is required (PaintedLine drawn on LANDDRAWINGLAYER or WATERDRAWINGLAYER)
+                        // but the clip path is empty or null, so don't render the PaintedLine
+                        return;
+                    }
 
-                canvas.DrawImage(image, 0, 0);
+                    canvas.ClipPath(clipPath);
 
-                return;
-            }
+                    // debugging
+                    //canvas.DrawPath(clipPath, PaintObjects.DebugPaint2);
+                }
 
-            // ---------------------------------------------
-            // Cached finalized stroke
-            // ---------------------------------------------
+                // ---------------------------------------------
+                // Active stroke
+                // ---------------------------------------------
 
-            if (_cachedImage != null)
-            {
-                canvas.DrawImage(_cachedImage, 0, 0);
+                if (!IsFinalized && _surface != null)
+                {
+                    using SKImage image = _surface.Snapshot();
+
+                    canvas.DrawImage(image, 0, 0);
+
+                    return;
+                }
+
+                // ---------------------------------------------
+                // Cached finalized stroke
+                // ---------------------------------------------
+
+                if (_cachedImage != null)
+                {
+                    canvas.DrawImage(_cachedImage, 0, 0);
+                }
             }
         }
 

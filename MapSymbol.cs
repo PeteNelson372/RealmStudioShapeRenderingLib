@@ -348,7 +348,7 @@ namespace RealmStudioShapeRenderingLib
             };
         }
 
-        public override void Render(SKCanvas canvas, FontManager? _)
+        public override void Render(SKCanvas canvas, FontManager? _, SKPath? clipPath = null)
         {
             var context = RenderContextScope.Current;
 

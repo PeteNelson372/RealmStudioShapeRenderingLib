@@ -88,7 +88,7 @@ namespace RealmStudioShapeRenderingLib
             Bounds = p.Bounds;
         }
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             foreach (SKPoint erasePoint in Points)
             {

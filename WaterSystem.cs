@@ -94,7 +94,7 @@ namespace RealmStudioShapeRenderingLib
 
             _geometryModified = true;
 
-            InvalidateRenderCache();
+            InvalidateRenderCache();            
         }
 
         public void Remove(WaterBody body)

@@ -732,7 +732,7 @@ namespace RealmStudioShapeRenderingLib
         // Rendering
         // -------------------------------------------------
 
-        public void Draw(SKCanvas canvas, SKRect viewport)
+        public void Draw(SKCanvas canvas, SKRect viewport, SKPath? landClip = null, SKPath? waterClip = null)
         {
             if (!ShowLayer || !Drawable)
                 return;
@@ -748,7 +748,7 @@ namespace RealmStudioShapeRenderingLib
                 {
                     if (_tiles.TryGetValue((x, y), out var tile))
                     {
-                        EnsureTileCache(tile);
+                        EnsureTileCache(tile, landClip, waterClip);
 
                         if (tile.Image != null)
                         {
@@ -758,7 +758,7 @@ namespace RealmStudioShapeRenderingLib
                 }
         }
 
-        private void EnsureTileCache(LayerTile tile)
+        private void EnsureTileCache(LayerTile tile, SKPath? landClip = null, SKPath? waterClip = null)
         {
             if (!tile.IsModified && tile.Image != null)
             {
@@ -779,13 +779,28 @@ namespace RealmStudioShapeRenderingLib
 
             foreach (var shape in _shapes)
             {
-                if (!tile.TileShapes.Contains(shape))
-                    continue;
+                if (shape != null)
+                {
+                    if (!tile.TileShapes.Contains(shape))
+                        continue;
 
-                if (!shape.Bounds.IntersectsWith(tile.Bounds))
-                    continue;
+                    if (!shape.Bounds.IntersectsWith(tile.Bounds))
+                        continue;
 
-                shape.Render(canvas);
+                    SKPath? clipPath = new();
+
+                    if (shape is PaintedLine && this.MapLayerOrder == MapBuilder.LANDDRAWINGLAYER)
+                    {
+                        clipPath = landClip;
+                    }
+
+                    if (shape is PaintedLine && this.MapLayerOrder == MapBuilder.WATERDRAWINGLAYER)
+                    {
+                        clipPath = waterClip;
+                    }
+
+                    shape.Render(canvas, null, clipPath);
+                }
             }
 
             canvas.Restore();

@@ -125,14 +125,17 @@ namespace RealmStudioShapeRenderingLib
         protected override void RebuildPerimeter()
         {
             // For painted shapes, the perimeter is the outline of the filled region
-            PerimeterPath = new SKPath(HitPath);
+            PerimeterPath = new SKPath(HitPath)
+            {
+                FillType = SKPathFillType.EvenOdd
+            };
         }
 
         // -------------------------------------------------
         // Rendering
         // -------------------------------------------------
 
-        public override void Render(SKCanvas canvas, FontManager? _)
+        public override void Render(SKCanvas canvas, FontManager? _, SKPath? clipPath = null)
         {
             if (HitPath.IsEmpty)
                 return;

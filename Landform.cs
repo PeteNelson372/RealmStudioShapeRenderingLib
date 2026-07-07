@@ -166,7 +166,7 @@
         // -------------------------------------------------
         // Rendering
         // -------------------------------------------------
-        public override void Render(SKCanvas canvas, FontManager? _)
+        public override void Render(SKCanvas canvas, FontManager? _, SKPath? clipPath = null)
         {
             // the Render method only handles interactive mode
             if (HitPath.IsEmpty)

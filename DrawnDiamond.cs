@@ -169,7 +169,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             SKRect rect = new(TopLeft.X, TopLeft.Y, BottomRight.X, BottomRight.Y);
             Bounds = rect;

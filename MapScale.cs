@@ -176,7 +176,7 @@ namespace RealmStudioShapeRenderingLib
             throw new NotImplementedException();
         }
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             ConstructPaintObjects();
 

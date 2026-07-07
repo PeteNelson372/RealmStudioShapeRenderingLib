@@ -39,7 +39,7 @@ namespace RealmStudioShapeRenderingLib
             set => _mapPixelEdits = value;
         }
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager = null)
+        public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
             using SKPaint paint = new()
             {

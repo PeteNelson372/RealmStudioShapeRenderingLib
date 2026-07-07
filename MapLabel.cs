@@ -118,7 +118,7 @@ namespace RealmStudioShapeRenderingLib
         // Rendering
         // =========================
 
-        public override void Render(SKCanvas canvas, FontManager? fontManager)
+        public override void Render(SKCanvas canvas, FontManager? fontManager, SKPath? clipPath = null)
         {
             ArgumentNullException.ThrowIfNull(fontManager);
 

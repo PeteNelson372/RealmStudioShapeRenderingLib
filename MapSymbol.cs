@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class MapSymbol() : MapComponent2D, ITransformable2D
+    public class MapSymbol() : MapComponent2D, ITransformable2D, IAlignable
     {
         [XmlElement]
         public required MapSymbolDefinition SymbolDefinition { get; init; }
@@ -52,6 +52,9 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlElement]
         public bool Mirror { get; set; }
+
+        [XmlIgnore]
+        public bool IsTransformTarget { get; set; } = false;
 
         [XmlIgnore]
         public SKColor TintColor { get; set; } = SKColors.White;
@@ -376,7 +379,12 @@ namespace RealmStudioShapeRenderingLib
             var paint = CreatePaint(symbolImage);
             DrawSymbolCentered(canvas, LocalBounds, Scale, symbolImage, paint);
 
-            
+            if (IsSelected && !IsTransformTarget)
+            {
+                //canvas.DrawRect(Bounds, PaintObjects.MapSymbolSelectPaint);
+            }
+
+
             // Debug bounds
             //canvas.DrawRect(LocalBounds, new SKPaint
             //{

@@ -26,7 +26,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class MapPath : Shape2D
+    public class MapPath : Shape2D, IPointListShape, IAlignable
     {
         [XmlElement]
         public string MapPathName { get; set; } = "";
@@ -35,7 +35,7 @@ namespace RealmStudioShapeRenderingLib
         public string MapPathDescription { get; set; } = string.Empty;
 
         [XmlIgnore]
-        public List<SKPoint> ControlPoints { get; } = [];
+        public List<SKPoint> ControlPoints { get; set; } = [];
 
         [XmlElement("ControlPoints")]
         public string PointsList
@@ -60,6 +60,9 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlIgnore]
+        List<SKPoint> IPointListShape.Points { get => ControlPoints; set => throw new NotImplementedException(); }
+
         public EditablePolylineEditor Editor { get; }
 
         [XmlElement]
@@ -67,6 +70,7 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlElement]
         public bool DrawOverSymbols { get; set; } = false;
+
 
         public MapPath()
         {
@@ -107,6 +111,58 @@ namespace RealmStudioShapeRenderingLib
                     RenderStyle.Texture = opacitySetBitmap;
                 }
             }
+        }
+
+        public override bool HitTest(SKPoint worldPos)
+        {
+            float HitTestWidth = Math.Max(10f, RenderStyle.Width + 4f);
+
+            using SKPaint hitPaint = new()
+            {
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = HitTestWidth,
+                StrokeCap = SKStrokeCap.Round,
+                StrokeJoin = SKStrokeJoin.Round,
+                IsAntialias = false
+            };
+
+            using SKPath hitPath = new();
+            using SKPath mapPath = Utilities.BuildPath(ControlPoints);
+
+            hitPaint.GetFillPath(mapPath, hitPath);
+
+            // Quick rejection test
+            SKRect bounds = hitPath.Bounds;
+            if (!bounds.Contains(worldPos))
+            {
+                return false;
+            }
+
+            return hitPath.Contains(worldPos.X, worldPos.Y);
+        }
+
+        public override IShapeState CaptureState()
+        {
+            return new DrawnMapComponentState
+            {
+                Points = [.. ControlPoints],
+                RenderStyle = RenderStyle.Clone(),
+                Name = MapPathName,
+                Description = MapPathDescription,
+            };
+        }
+
+        public override void RestoreState(IShapeState state)
+        {
+            if (state is not DrawnMapComponentState s)
+            {
+                return;
+            }
+
+            ControlPoints = [.. s.Points];
+            RenderStyle = s.RenderStyle != null ? s.RenderStyle.Clone() : new PathRenderStyle();
+            MapPathName = s.Name;
+            MapPathDescription = s.Description;
         }
     }
 }

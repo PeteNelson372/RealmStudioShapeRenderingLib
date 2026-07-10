@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnPolygon : MapComponent2D, IDrawnMapComponent
+    public sealed class DrawnPolygon : MapComponent2D, IPointListShape, IAlignable
     {
         private List<SKPoint> _points = [];
         private SKColor _polygonColor = SKColors.Black;
@@ -267,12 +267,38 @@ namespace RealmStudioShapeRenderingLib
 
         public override IShapeState CaptureState()
         {
-            throw new NotImplementedException();
+            return new DrawnMapComponentState
+            {
+                Points = [..Points],
+                ComponentColor = PolygonColor,
+                FillColor = FillColor,
+                TextureOpacity = TextureOpacity,
+                TextureScale = TextureScale,
+                BrushSize = BrushSize,
+                Rotation = Rotation,
+                FillType = FillType,
+                FillImageId = FillImageId,
+                FillImage = FillImage,
+            };
         }
 
         public override void RestoreState(IShapeState state)
         {
-            throw new NotImplementedException();
+            if (state is not DrawnMapComponentState s)
+            {
+                return;
+            }
+
+            Points = [..s.Points];
+            PolygonColor = s.ComponentColor;
+            FillColor = s.FillColor;
+            TextureOpacity = s.TextureOpacity;
+            TextureScale = s.TextureScale;
+            BrushSize = s.BrushSize;
+            Rotation = s.Rotation;
+            FillType = s.FillType;
+            FillImageId = s.FillImageId;
+            FillImage = s.FillImage;
         }
     }
 }

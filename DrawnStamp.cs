@@ -26,7 +26,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnStamp : MapComponent2D, IDrawnMapComponent
+    public sealed class DrawnStamp : MapComponent2D, IPositionImageShape, IAlignable
     {
         private SKPoint _topLeft;
         private int _rotation;
@@ -120,12 +120,30 @@ namespace RealmStudioShapeRenderingLib
 
         public override IShapeState CaptureState()
         {
-            throw new NotImplementedException();
+            return new DrawnMapComponentState
+            {
+                TopLeft = TopLeft,
+                TextureOpacity = Opacity,
+                TextureScale = Scale,
+                Rotation = Rotation,
+                StampPath = StampPath,
+                StampImage = StampImage,
+            };
         }
 
         public override void RestoreState(IShapeState state)
         {
-            throw new NotImplementedException();
+            if (state is not DrawnMapComponentState s)
+            {
+                return;
+            }
+
+            TopLeft = s.TopLeft;
+            Opacity = s.TextureOpacity;
+            Scale = s.TextureScale;
+            Rotation = s.Rotation;
+            StampPath = s.StampPath;
+            StampImage = s.StampImage;
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class PlacedMapBox : MapComponent2D, ITransformable2D
+    public class PlacedMapBox : MapComponent2D, ITransformable2D, IAlignable
     {
         [XmlElement]
         public MapBox? BaseBox;

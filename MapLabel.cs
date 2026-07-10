@@ -5,7 +5,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class MapLabel : MapComponent2D, ITransformable2D
+    public class MapLabel : MapComponent2D, ITransformable2D, IAlignable
     {
         [XmlElement]
         public string Text { get; set; } = string.Empty;
@@ -96,6 +96,9 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlIgnore]
         public bool IsEditing { get; set; }
+
+        [XmlIgnore]
+        public bool IsTransformTarget { get; set; } = false;
 
         [XmlIgnore]
         // accurate curved bounds

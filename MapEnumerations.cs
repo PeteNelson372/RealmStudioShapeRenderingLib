@@ -58,8 +58,9 @@ namespace RealmStudioShapeRenderingLib
         SymbolColor,
         LabelSelect,
         DrawLabel,
-        DrawArcLabelPath,
-        DrawBezierLabelPath,
+        DrawArcLayoutPath,
+        DrawFreeformLayoutPath,
+        DrawStraightLayoutPath,
         DrawBox,
         PlaceWindrose,
         SelectMapScale,
@@ -162,6 +163,27 @@ namespace RealmStudioShapeRenderingLib
         LandformColors,
         WaterFeatureColors,
         OceanColors,
+    }
+
+    public enum AlignmentType
+    {
+        Left,
+        Center,
+        Right,
+        Top,
+        Middle,
+        Bottom,
+        Path,
+        Distribute,
+    }
+
+    public enum PlacementStrategy
+    {
+        Even,
+        FixedSpacing,
+        Random,
+        Vertices,
+        Custom
     }
 
     public enum PathType

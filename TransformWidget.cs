@@ -357,7 +357,7 @@
                     // -------------------------------------------------
                     // Draw the curve path
                     // -------------------------------------------------
-                    canvas.DrawPath(label.CurvePath, PaintObjects.LabelPathPaint);
+                    canvas.DrawPath(label.CurvePath, PaintObjects.LayoutPathPaint);
                 }
             }
 

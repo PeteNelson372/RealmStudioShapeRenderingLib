@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnArrow : MapComponent2D, IDrawnMapComponent
+    public sealed class DrawnArrow : MapComponent2D, IRectangularShape, IAlignable
     {
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
@@ -56,6 +56,15 @@ namespace RealmStudioShapeRenderingLib
             Style = SKPaintStyle.Fill,
             IsAntialias = true
         };
+
+        [XmlIgnore]
+        public override SKRect Bounds
+        {
+            get
+            {
+                return new SKRect(TopLeft.X, TopLeft.Y, BottomRight.X, BottomRight.Y);
+            }
+        }
 
         [XmlElement]
         public SKPoint TopLeft
@@ -256,12 +265,40 @@ namespace RealmStudioShapeRenderingLib
 
         public override IShapeState CaptureState()
         {
-            throw new NotImplementedException();
+            return new DrawnMapComponentState
+            {
+                TopLeft = TopLeft,
+                BottomRight = BottomRight,
+                ComponentColor = ArrowColor,
+                FillColor = FillColor,
+                TextureOpacity = TextureOpacity,
+                TextureScale = TextureScale,
+                BrushSize = BrushSize,
+                Rotation = Rotation,
+                FillType = FillType,
+                FillImageId = FillImageId,
+                FillImage = FillImage,
+            };
         }
 
         public override void RestoreState(IShapeState state)
         {
-            throw new NotImplementedException();
+            if (state is not DrawnMapComponentState s)
+            {
+                return;
+            }
+
+            TopLeft = s.TopLeft;
+            BottomRight = s.BottomRight;
+            ArrowColor = s.ComponentColor;
+            FillColor = s.FillColor;
+            TextureOpacity = s.TextureOpacity;
+            TextureScale = s.TextureScale;
+            BrushSize = s.BrushSize;
+            Rotation = s.Rotation;
+            FillType = s.FillType;
+            FillImageId = s.FillImageId;
+            FillImage = s.FillImage;
         }
     }
 }

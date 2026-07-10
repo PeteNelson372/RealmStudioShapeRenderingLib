@@ -197,8 +197,8 @@ namespace RealmStudioShapeRenderingLib
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
-            Color = SKColors.LawnGreen,
-            StrokeWidth = 1,
+            Color = SKColors.Crimson,
+            StrokeWidth = 2,
             PathEffect = SKPathEffect.CreateDash([3F, 3F], 6F),
         };
 
@@ -299,7 +299,7 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([4F, 2F], 6F),
         };
 
-        public readonly static SKPaint LabelPathPaint = new()
+        public readonly static SKPaint LayoutPathPaint = new()
         {
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,

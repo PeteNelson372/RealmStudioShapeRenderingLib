@@ -256,8 +256,8 @@ namespace RealmStudioShapeRenderingLib
                             if (i == 0 || i == ScaleSegmentCount)
                             {
                                 SKPoint drawPoint = new(labelPoint.X - (bounds.Width / 2f), labelPoint.Y);
-                                canvas.DrawText(distanceText, drawPoint, skScaleFont, OutlinePaint);
-                                canvas.DrawText(distanceText, drawPoint, skScaleFont, ScaleLabelPaint);
+                                canvas.DrawText(distanceText, drawPoint, SKTextAlign.Center, skScaleFont, OutlinePaint);
+                                canvas.DrawText(distanceText, drawPoint, SKTextAlign.Center, skScaleFont, ScaleLabelPaint);
                             }
                         }
                         break;
@@ -266,16 +266,16 @@ namespace RealmStudioShapeRenderingLib
                             if (int.IsEvenInteger(i))
                             {
                                 SKPoint drawPoint = new(labelPoint.X - (bounds.Width / 2f), labelPoint.Y);
-                                canvas.DrawText(distanceText, drawPoint, skScaleFont, OutlinePaint);
-                                canvas.DrawText(distanceText, drawPoint, skScaleFont, ScaleLabelPaint);
+                                canvas.DrawText(distanceText, drawPoint, SKTextAlign.Center, skScaleFont, OutlinePaint);
+                                canvas.DrawText(distanceText, drawPoint, SKTextAlign.Center, skScaleFont, ScaleLabelPaint);
                             }
                         }
                         break;
                     case ScaleNumbersDisplayLocation.All:
                         {
                             SKPoint drawPoint = new(labelPoint.X - (bounds.Width / 2f), labelPoint.Y);
-                            canvas.DrawText(distanceText, drawPoint, skScaleFont, OutlinePaint);
-                            canvas.DrawText(distanceText, drawPoint, skScaleFont, ScaleLabelPaint);
+                            canvas.DrawText(distanceText, drawPoint, SKTextAlign.Center, skScaleFont, OutlinePaint);
+                            canvas.DrawText(distanceText, drawPoint, SKTextAlign.Center, skScaleFont, ScaleLabelPaint);
                         }
                         break;
                 }
@@ -295,8 +295,8 @@ namespace RealmStudioShapeRenderingLib
                 unitLabelY = (int)(unitLabelY + bounds.Height * 2);
 
                 SKPoint unitLabelPoint = new(unitLabelX, unitLabelY);
-                canvas.DrawText(ScaleDistanceUnit, unitLabelPoint, skScaleFont, OutlinePaint);
-                canvas.DrawText(ScaleDistanceUnit, unitLabelPoint, skScaleFont, ScaleLabelPaint);
+                canvas.DrawText(ScaleDistanceUnit, unitLabelPoint, SKTextAlign.Center, skScaleFont, OutlinePaint);
+                canvas.DrawText(ScaleDistanceUnit, unitLabelPoint, SKTextAlign.Center, skScaleFont, ScaleLabelPaint);
             }
 
         }

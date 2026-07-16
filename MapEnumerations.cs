@@ -179,11 +179,10 @@ namespace RealmStudioShapeRenderingLib
 
     public enum PlacementStrategy
     {
+        None,
         Even,
-        FixedSpacing,
+        Fixed,
         Random,
-        Vertices,
-        Custom
     }
 
     public enum PathType

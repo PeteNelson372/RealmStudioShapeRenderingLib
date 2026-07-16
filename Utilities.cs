@@ -146,55 +146,90 @@ namespace RealmStudioShapeRenderingLib
 
         public static SKPath BuildPath(IReadOnlyList<SKPoint> points)
         {
-            var path = new SKPath();
+            using SKPathBuilder pathBuilder = new();
 
             if (points == null || points.Count < 2)
-                return path;
+            {
+                return new SKPath();
+            }
 
-            path.MoveTo(points[0]);
+            pathBuilder.MoveTo(points[0]);
 
             for (int i = 1; i < points.Count; i++)
             {
-                path.LineTo(points[i]);
+                pathBuilder.LineTo(points[i]);
             }
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             return path;
         }
 
+        public static SKPath ReversePath(SKPath path)
+        {
+            using SKPathBuilder pathBuilder = new();
+
+            if (path.Points == null || path.IsEmpty || path.PointCount < 2)
+            {
+                return new SKPath();
+            }
+
+            pathBuilder.MoveTo(path.Points[^1]);
+
+            for (int i = path.PointCount - 2; i >= 0; i--)
+            {
+                pathBuilder.LineTo(path.Points[i]);
+            }
+
+            var reversedPath = pathBuilder.Snapshot();
+            pathBuilder.Detach();
+
+            return reversedPath;
+        }
+
         public static SKPath BuildClosedPath(IReadOnlyList<SKPoint> points)
         {
-            var path = new SKPath();
+            using SKPathBuilder pathBuilder = new();
 
             if (points == null || points.Count < 2)
-                return path;
+            {
+                return new SKPath();
+            }
 
-            path.MoveTo(points[0]);
+            pathBuilder.MoveTo(points[0]);
 
             for (int i = 1; i < points.Count; i++)
             {
-                path.LineTo(points[i]);
+                pathBuilder.LineTo(points[i]);
             }
 
-            //path.LineTo(points[0]);
+            pathBuilder.Close();
 
-            path.Close();
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             return path;
         }
 
         public static SKPath BuildPath2(IReadOnlyList<SKPoint> points)
         {
-            SKPath path = new();
+            using SKPathBuilder pathBuilder = new();
 
-            if (points == null || points.Count < 3)
-                return path;
+            if (points == null || points.Count < 2)
+            {
+                return new SKPath();
+            }
 
-            path.MoveTo(points[0]);
+            pathBuilder.MoveTo(points[0]);
 
             for (int j = 0; j < points.Count - 2; j += 3)
             {
-                path.CubicTo(points[j], points[j + 1], points[j + 2]);
+                pathBuilder.CubicTo(points[j], points[j + 1], points[j + 2]);
             }
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             return path;
         }
@@ -333,7 +368,7 @@ namespace RealmStudioShapeRenderingLib
             };
 
             // draw original into new bitmap with opacity applied
-            canvas.DrawBitmap(source, 0, 0, paint);
+            canvas.DrawBitmap(source, 0, 0, SKSamplingOptions.Default, paint);
 
             return result;
         }
@@ -438,7 +473,8 @@ namespace RealmStudioShapeRenderingLib
             canvas.DrawBitmap(
                 source,
                 sourceRect,
-                destRect);
+                destRect,
+                SKSamplingOptions.Default);
 
             return result;
         }
@@ -491,7 +527,7 @@ namespace RealmStudioShapeRenderingLib
         {
             var contours = ExtractContours(path);
 
-            var newPath = new SKPath();
+            var newPathBuilder = new SKPathBuilder();
 
             foreach (var contour in contours)
             {
@@ -500,13 +536,16 @@ namespace RealmStudioShapeRenderingLib
                 if (simplified.Count < 3)
                     continue;
 
-                newPath.MoveTo(simplified[0]);
+                newPathBuilder.MoveTo(simplified[0]);
 
                 for (int i = 1; i < simplified.Count; i++)
-                    newPath.LineTo(simplified[i]);
+                    newPathBuilder.LineTo(simplified[i]);
 
-                newPath.Close();
+                newPathBuilder.Close();
             }
+
+            var newPath = newPathBuilder.Snapshot();
+            newPathBuilder.Detach();
 
             return newPath;
         }
@@ -514,10 +553,10 @@ namespace RealmStudioShapeRenderingLib
         
         public static SKPath BuildOffsetPath(IReadOnlyList<SKPoint> pts, float offset)
         {
-            var path = new SKPath();
+            var pathBuilder = new SKPathBuilder();
 
             if (pts.Count < 3)
-                return path;
+                return new SKPath();
 
             var offsetPts = new List<SKPoint>(pts.Count);
 
@@ -540,14 +579,83 @@ namespace RealmStudioShapeRenderingLib
                     pts[i].Y + normal.Y * offset));
             }
 
-            path.MoveTo(offsetPts[0]);
+            pathBuilder.MoveTo(offsetPts[0]);
 
             for (int i = 1; i < offsetPts.Count; i++)
             {
-                path.LineTo(offsetPts[i]);
+                pathBuilder.LineTo(offsetPts[i]);
             }
 
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
+
             return path;
+        }
+
+        public static SKPath BuildOffsetPath2(IReadOnlyList<SKPoint> points, float offset)
+        {
+            if (points.Count < 2)
+                return new SKPath();
+
+            List<SKPoint> offsetPoints =
+                OffsetPoints(points, offset);
+
+            return BuildPath(offsetPoints);
+        }
+
+        public static List<SKPoint> OffsetPoints(IReadOnlyList<SKPoint> points, float offset)
+        {
+            List<SKPoint> result = new(points.Count);
+
+            if (points.Count < 2)
+                return result;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                SKPoint tangent;
+
+                if (i == 0)
+                {
+                    tangent = points[1] - points[0];
+                }
+                else if (i == points.Count - 1)
+                {
+                    tangent = points[^1] - points[^2];
+                }
+                else
+                {
+                    // Use a wider stencil when possible for a smoother tangent.
+                    int i0 = Math.Max(0, i - 2);
+                    int i1 = Math.Min(points.Count - 1, i + 2);
+
+                    tangent = points[i1] - points[i0];
+                }
+
+                float length = MathF.Sqrt(
+                    tangent.X * tangent.X +
+                    tangent.Y * tangent.Y);
+
+                if (length < 1e-6f)
+                {
+                    result.Add(points[i]);
+                    continue;
+                }
+
+                tangent = new SKPoint(
+                    tangent.X / length,
+                    tangent.Y / length);
+
+                // Rotate tangent 90° to get the left normal.
+                SKPoint normal = new(
+                    -tangent.Y,
+                     tangent.X);
+
+                result.Add(new SKPoint(
+                    points[i].X + normal.X * offset,
+                    points[i].Y + normal.Y * offset));
+            }
+
+            return result;
         }
 
         internal static List<SKPoint> GetParallelRegionPoints(List<SKPoint> points, float distance, ParallelDirection location)
@@ -619,8 +727,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
-            using var outline = new SKPath();
-            strokePaint.GetFillPath(centerPath, outline);
+            using SKPathBuilder strokePathBuilder = new();
+
+            strokePaint.GetFillPath(centerPath, strokePathBuilder, 1.0f);
+            using var outline = strokePathBuilder.Snapshot();
+            strokePathBuilder.Detach();
 
             var contour = ExtractContour(outline);
 
@@ -637,11 +748,14 @@ namespace RealmStudioShapeRenderingLib
             float dx = MathF.Cos(angle) * size;
             float dy = MathF.Sin(angle) * size;
 
-            var path = new SKPath();
+            var pathBuilder = new SKPathBuilder();
 
-            path.MoveTo(-dx, -dy);
-            path.LineTo(0, 0);
-            path.LineTo(-dx, dy);
+            pathBuilder.MoveTo(-dx, -dy);
+            pathBuilder.LineTo(0, 0);
+            pathBuilder.LineTo(-dx, dy);
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             return path;
         }
@@ -723,7 +837,7 @@ namespace RealmStudioShapeRenderingLib
                 if (length <= 0f)
                     continue;
 
-                var contourPath = new SKPath();
+                using var contourPathBuilder = new SKPathBuilder();
 
                 const int sampleCount = 128; // increase if shapes are complex
                 bool first = true;
@@ -736,17 +850,21 @@ namespace RealmStudioShapeRenderingLib
                     {
                         if (first)
                         {
-                            contourPath.MoveTo(pt);
+                            contourPathBuilder.MoveTo(pt);
                             first = false;
                         }
                         else
                         {
-                            contourPath.LineTo(pt);
+                            contourPathBuilder.LineTo(pt);
                         }
                     }
                 }
 
-                contourPath.Close();
+                contourPathBuilder.Close();
+
+                var contourPath = contourPathBuilder.Snapshot();
+                contourPathBuilder.Detach();
+
                 result.Add(contourPath);
 
             } while (measure.NextContour());

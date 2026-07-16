@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnSixPointStar : MapComponent2D, ICenterRadiusShape, IAlignable
+    public sealed class DrawnSixPointStar : MapComponent2D, ICenterRadiusShape, IAlignable, IRotatable
     {
         private SKPoint _center;
         private float _radius;
@@ -36,7 +36,7 @@ namespace RealmStudioShapeRenderingLib
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
         private int _brushSize = 2;
-        private int _rotation;
+        private float _rotation;
         private DrawingFillType _fillType = DrawingFillType.None;
         private string _fillImageId = string.Empty;
         private SKImage? _fillImage;
@@ -115,7 +115,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int Rotation
+        public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
@@ -229,7 +229,7 @@ namespace RealmStudioShapeRenderingLib
 
             using SKPath path = Utilities.BuildClosedPath(points);
 
-            path.MoveTo(points[0]);
+            //path.MoveTo(points[0]);
 
             Bounds = path.Bounds;
 

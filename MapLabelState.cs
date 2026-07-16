@@ -27,5 +27,7 @@ namespace RealmStudioShapeRenderingLib
 
         // path/curve data
         public SKPath? CurvePath { get; set; }
+
+        public float CurvePathOffset { get; set; }
     }
 }

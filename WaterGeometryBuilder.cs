@@ -241,17 +241,20 @@ namespace RealmStudioShapeRenderingLib
             float lakeSize,
             int fieldSize)
         {
-            SKPath path = new();
+            SKPathBuilder pathBuilder = new();
 
             if (contour.Count < 3)
-                return path;
+                return new SKPath();
 
-            path.MoveTo(contour[0]);
+            pathBuilder.MoveTo(contour[0]);
 
             for (int i = 1; i < contour.Count; i++)
-                path.LineTo(contour[i]);
+                pathBuilder.LineTo(contour[i]);
 
-            path.Close();
+            pathBuilder.Close();
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             float scale = lakeSize / fieldSize;
 

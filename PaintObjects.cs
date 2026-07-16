@@ -539,7 +539,14 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([10, 6], 0)
         };
 
-
+        public readonly static SKPaint DebugPaint4 = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = false,
+            Color = SKColors.LimeGreen,
+            StrokeWidth = 2,
+            PathEffect = SKPathEffect.CreateDash([10, 6], 0)
+        };
     }
        
 }

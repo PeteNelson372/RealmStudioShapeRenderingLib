@@ -28,6 +28,19 @@ namespace RealmStudioShapeRenderingLib
 {
     public class MapPath : Shape2D, IPointListShape, IAlignable
     {
+        public MapPath()
+        {
+            Editor = new EditablePolylineEditor(ControlPoints)
+            {
+                OnChanged = () =>
+                {
+                    Editor!.RebuildEditablePoints();
+                    SetGeometry(Utilities.BuildPath(ControlPoints));
+                    OnGeometryChanged();
+                }
+            };
+        }
+
         [XmlElement]
         public string MapPathName { get; set; } = "";
 
@@ -63,6 +76,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlIgnore]
         List<SKPoint> IPointListShape.Points { get => ControlPoints; set => throw new NotImplementedException(); }
 
+        [XmlIgnore]
         public EditablePolylineEditor Editor { get; }
 
         [XmlElement]
@@ -71,18 +85,6 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public bool DrawOverSymbols { get; set; } = false;
 
-
-        public MapPath()
-        {
-            Editor = new EditablePolylineEditor(ControlPoints)
-            {
-                OnChanged = () =>
-                {
-                    SetGeometry(Utilities.BuildPath(ControlPoints));
-                }
-            };
-        }
-
         public override void FinalizeShapeGeometry(RealmStudioMap map)
         {
             SetGeometry(Utilities.BuildPath(ControlPoints));
@@ -90,6 +92,21 @@ namespace RealmStudioShapeRenderingLib
 
         public override void Render(SKCanvas canvas, FontManager? _, SKPath? clipPath = null)
         {
+            if (ControlPoints.Count == 0)
+            {
+                throw new Exception("Map Path Render. ControlPoints.Count is zero.");
+            }
+
+            if (RenderStyle == null)
+            {
+                throw new Exception("Map Path Render. RenderStyle is null.");
+            }
+
+            if (HitPath.Handle == 0 || HitPath == null || HitPath.IsEmpty)
+            {
+                SetGeometry(Utilities.BuildPath(ControlPoints));
+            }
+
             PathRenderer.Render(canvas, ControlPoints, RenderStyle);
         }
 
@@ -126,10 +143,13 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = false
             };
 
-            using SKPath hitPath = new();
             using SKPath mapPath = Utilities.BuildPath(ControlPoints);
 
-            hitPaint.GetFillPath(mapPath, hitPath);
+            using SKPathBuilder hitPathBuilder = new();
+
+            hitPaint.GetFillPath(PerimeterPath, hitPathBuilder, 1.0f);
+            var hitPath = hitPathBuilder.Snapshot();
+            hitPathBuilder.Detach();
 
             // Quick rejection test
             SKRect bounds = hitPath.Bounds;
@@ -145,7 +165,7 @@ namespace RealmStudioShapeRenderingLib
         {
             return new DrawnMapComponentState
             {
-                Points = [.. ControlPoints],
+                Points = [..ControlPoints],
                 RenderStyle = RenderStyle.Clone(),
                 Name = MapPathName,
                 Description = MapPathDescription,
@@ -159,10 +179,33 @@ namespace RealmStudioShapeRenderingLib
                 return;
             }
 
-            ControlPoints = [.. s.Points];
+            if (s.Points.Count == 0)
+            {
+                throw new Exception("Map Path Restore State. Points.Count is zero.");
+            }
+
+            ControlPoints.Clear();
+            ControlPoints = [..s.Points];
+
+            if (ControlPoints.Count == 0)
+            {
+                throw new Exception("Map Path Restore State. ControlPoints.Count is zero.");
+            }
+
             RenderStyle = s.RenderStyle != null ? s.RenderStyle.Clone() : new PathRenderStyle();
             MapPathName = s.Name;
             MapPathDescription = s.Description;
+
+            if (Editor != null && Editor.OnChanged != null)
+            {
+                Editor.Points = ControlPoints;
+                if (Editor.Points.Count == 0)
+                {
+                    throw new Exception("Map Path Restore State. Editor Points.Count is zero.");
+                }
+
+                Editor.OnChanged();
+            }
         }
     }
 }

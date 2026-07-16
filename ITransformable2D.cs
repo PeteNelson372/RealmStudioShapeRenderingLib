@@ -2,10 +2,9 @@
 
 namespace RealmStudioShapeRenderingLib
 {
-    public interface ITransformable2D
+    public interface ITransformable2D: IRotatable
     {
         SKPoint Location { get; set; }
-        float Rotation { get; set; }
         float Scale { get; set; }
 
         SKRect GetLocalBounds();

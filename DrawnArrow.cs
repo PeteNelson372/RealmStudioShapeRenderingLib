@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnArrow : MapComponent2D, IRectangularShape, IAlignable
+    public sealed class DrawnArrow : MapComponent2D, IRectangularShape, IAlignable, IRotatable
     {
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
@@ -36,7 +36,7 @@ namespace RealmStudioShapeRenderingLib
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
         private int _brushSize = 2;
-        private int _rotation;
+        private float _rotation;
         private DrawingFillType _fillType = DrawingFillType.None;
         private string _fillImageId = string.Empty;
         private SKImage? _fillImage;
@@ -146,7 +146,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int Rotation
+        public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
@@ -232,15 +232,18 @@ namespace RealmStudioShapeRenderingLib
 
             SKPoint p7 = new(TopLeft.X, TopLeft.Y + (rect.Height * 0.8F));
 
-            using SKPath path = new();
-            path.MoveTo(p1);
-            path.LineTo(p2);
-            path.LineTo(p3);
-            path.LineTo(p4);
-            path.LineTo(p5);
-            path.LineTo(p6);
-            path.LineTo(p7);
-            path.Close();
+            using SKPathBuilder pathBuilder = new();
+            pathBuilder.MoveTo(p1);
+            pathBuilder.LineTo(p2);
+            pathBuilder.LineTo(p3);
+            pathBuilder.LineTo(p4);
+            pathBuilder.LineTo(p5);
+            pathBuilder.LineTo(p6);
+            pathBuilder.LineTo(p7);
+            pathBuilder.Close();
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             using SKAutoCanvasRestore autoRestore = new(canvas, true);
             if (Rotation != 0)

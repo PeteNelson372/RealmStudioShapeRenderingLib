@@ -26,14 +26,14 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnStamp : MapComponent2D, IPositionImageShape, IAlignable
+    public sealed class DrawnStamp : MapComponent2D, IPositionImageShape, IAlignable, IRotatable
     {
         private SKPoint _topLeft;
-        private int _rotation;
+        private float _rotation;
         private float _opacity = 1.0f;
         private float _scale = 1.0f;
         private string _stampPath = string.Empty;
-        private SKImage? _stampImage;
+        private SKImage _stampImage = SKImage.FromBitmap(new SKBitmap());
 
         [XmlElement]
         public SKPoint TopLeft
@@ -43,7 +43,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int Rotation
+        public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
@@ -85,7 +85,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlIgnore]
-        public SKImage? StampImage
+        public SKImage StampImage
         {
             get => _stampImage;
             set
@@ -106,7 +106,7 @@ namespace RealmStudioShapeRenderingLib
                 }
 
                 canvas.DrawImage(StampImage,
-                    new SKPoint(TopLeft.X - (StampImage.Width / 2), TopLeft.Y - (StampImage.Height / 2)), null);
+                    new SKPoint(TopLeft.X - (StampImage.Width / 2), TopLeft.Y - (StampImage.Height / 2)), SKSamplingOptions.Default, null);
 
                 // TODO: not accurate when the stamp image is rotated
                 Bounds = new SKRect(TopLeft.X, TopLeft.Y, TopLeft.X + StampImage.Width, TopLeft.Y + StampImage.Height);

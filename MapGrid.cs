@@ -153,7 +153,7 @@ namespace RealmStudioShapeRenderingLib
                         IsAntialias = true,
                     };
 
-                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, gridLabelFont, glowPaint);
+                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, SKTextAlign.Center, gridLabelFont, glowPaint);
 
                     using SKPaint paint = new()
                     {
@@ -161,7 +161,7 @@ namespace RealmStudioShapeRenderingLib
                         IsAntialias = true,
                     };
 
-                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, gridLabelFont, paint);
+                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, SKTextAlign.Center, gridLabelFont, paint);
                 }
 
             }
@@ -249,7 +249,7 @@ namespace RealmStudioShapeRenderingLib
                         IsAntialias = true,
                     };
 
-                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, gridLabelFont, glowPaint);
+                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, SKTextAlign.Center, gridLabelFont, glowPaint);
 
                     using SKPaint paint = new()
                     {
@@ -257,7 +257,7 @@ namespace RealmStudioShapeRenderingLib
                         IsAntialias = true,
                     };
 
-                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, gridLabelFont, paint);
+                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, SKTextAlign.Center, gridLabelFont, paint);
                 }
             }
         }
@@ -344,7 +344,7 @@ namespace RealmStudioShapeRenderingLib
                         IsAntialias = true,
                     };
 
-                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, gridLabelFont, glowPaint);
+                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, SKTextAlign.Center, gridLabelFont, glowPaint);
 
                     using SKPaint paint = new()
                     {
@@ -352,7 +352,7 @@ namespace RealmStudioShapeRenderingLib
                         IsAntialias = true,
                     };
 
-                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, gridLabelFont, paint);
+                    canvas.DrawText(gridScaleString, 20, Bounds.Height - 40, SKTextAlign.Center, gridLabelFont, paint);
                 }
 
             }

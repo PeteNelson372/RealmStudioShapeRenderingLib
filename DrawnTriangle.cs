@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class DrawnTriangle : MapComponent2D, IRectangularShape, IAlignable
+    public class DrawnTriangle : MapComponent2D, IRectangularShape, IAlignable, IRotatable
     {
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
@@ -36,7 +36,7 @@ namespace RealmStudioShapeRenderingLib
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
         private int _brushSize = 2;
-        private int _rotation;
+        private float _rotation;
         private DrawingFillType _fillType = DrawingFillType.None;
         private string _fillImageId = string.Empty;
         private SKImage? _fillImage;
@@ -138,7 +138,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int Rotation
+        public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
@@ -210,7 +210,6 @@ namespace RealmStudioShapeRenderingLib
                 _fillPaint.Style = SKPaintStyle.Stroke;
             }
 
-            SKPath path = new();
             SKPoint triangleTop = new(_topLeft.X + (_bottomRight.X - _topLeft.X) / 2, _topLeft.Y);
             SKPoint triangleBottomLeft = new(_topLeft.X, _bottomRight.Y);
             SKPoint triangleBottomRight = new(_bottomRight.X, _bottomRight.Y);
@@ -222,10 +221,15 @@ namespace RealmStudioShapeRenderingLib
                 triangleBottomRight = new(_bottomRight.X, _bottomRight.Y);
             }
 
-            path.MoveTo(triangleTop);
-            path.LineTo(triangleBottomLeft);
-            path.LineTo(triangleBottomRight);
-            path.Close();
+            using SKPathBuilder pathBuilder = new();
+
+            pathBuilder.MoveTo(triangleTop);
+            pathBuilder.LineTo(triangleBottomLeft);
+            pathBuilder.LineTo(triangleBottomRight);
+            pathBuilder.Close();
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             Bounds = path.Bounds;
 

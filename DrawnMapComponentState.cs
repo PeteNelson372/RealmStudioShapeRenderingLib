@@ -14,12 +14,12 @@ namespace RealmStudioShapeRenderingLib
         public float TextureOpacity { get; set; } = 1.0f;
         public float TextureScale { get; set; } = 1.0f;
         public int BrushSize { get; set; } = 2;
-        public int Rotation { get; set; } = 0;
+        public float Rotation { get; set; } = 0;
         public DrawingFillType FillType { get; set; } = DrawingFillType.None;
         public string FillImageId { get; set; } = string.Empty;
         public SKImage? FillImage { get; set; }
         public string StampPath { get; set; } = string.Empty;
-        public SKImage? StampImage { get; set; }
+        public SKImage StampImage { get; set; } = SKImage.FromBitmap(new SKBitmap());
         public PathRenderStyle? RenderStyle { get; set; }
         public bool DrawPathOverSymbols { get; set; } = false;
         public string Name { get; set; } = string.Empty;

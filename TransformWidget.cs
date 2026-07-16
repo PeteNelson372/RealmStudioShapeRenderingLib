@@ -222,13 +222,16 @@
             var rotateHoverPaint = PaintObjects.TransformRotateHoverPaint.Clone();
 
             // Draw rotated selection quad
-            using (var path = new SKPath())
+            using (var pathBuilder = new SKPathBuilder())
             {
-                path.MoveTo(_corners[0]);
-                path.LineTo(_corners[1]);
-                path.LineTo(_corners[2]);
-                path.LineTo(_corners[3]);
-                path.Close();
+                pathBuilder.MoveTo(_corners[0]);
+                pathBuilder.LineTo(_corners[1]);
+                pathBuilder.LineTo(_corners[2]);
+                pathBuilder.LineTo(_corners[3]);
+                pathBuilder.Close();
+
+                using var path = pathBuilder.Snapshot();
+                pathBuilder.Detach();
 
                 canvas.DrawPath(path, outlinePaint);
             }
@@ -352,7 +355,7 @@
                     // -------------------------------------------------
                     // Draw text
                     // -------------------------------------------------
-                    canvas.DrawText(label.Text, x, y, f, paint);
+                    canvas.DrawText(label.Text, x, y, SKTextAlign.Left, f, paint);
 
                     // -------------------------------------------------
                     // Draw the curve path

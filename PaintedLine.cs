@@ -261,7 +261,7 @@ namespace RealmStudioShapeRenderingLib
                         _surfaceCanvas.Translate(-point.X, -point.Y);
                     }
 
-                    _surfaceCanvas.DrawBitmap(renderBitmap, destRect);
+                    _surfaceCanvas.DrawBitmap(renderBitmap, destRect, SKSamplingOptions.Default);
                 }
             }
 
@@ -351,7 +351,7 @@ namespace RealmStudioShapeRenderingLib
                 {
                     using SKImage image = _surface.Snapshot();
 
-                    canvas.DrawImage(image, 0, 0);
+                    canvas.DrawImage(image, 0, 0, SKSamplingOptions.Default);
 
                     return;
                 }
@@ -362,7 +362,7 @@ namespace RealmStudioShapeRenderingLib
 
                 if (_cachedImage != null)
                 {
-                    canvas.DrawImage(_cachedImage, 0, 0);
+                    canvas.DrawImage(_cachedImage, 0, 0, SKSamplingOptions.Default);
                 }
             }
         }

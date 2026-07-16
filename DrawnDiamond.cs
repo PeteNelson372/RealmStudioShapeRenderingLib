@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnDiamond : MapComponent2D, IRectangularShape, IAlignable
+    public sealed class DrawnDiamond : MapComponent2D, IRectangularShape, IAlignable, IRotatable
     {
         private SKPoint _topLeft;
         private SKPoint _bottomRight;
@@ -36,7 +36,7 @@ namespace RealmStudioShapeRenderingLib
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
         private int _brushSize = 2;
-        private int _rotation;
+        private float _rotation;
         private DrawingFillType _fillType = DrawingFillType.None;
         private string _fillImageId = string.Empty;
         private SKImage? _fillImage;
@@ -137,7 +137,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int Rotation
+        public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
@@ -219,12 +219,15 @@ namespace RealmStudioShapeRenderingLib
             SKPoint p3 = new((TopLeft.X + BottomRight.X) / 2, BottomRight.Y);
             SKPoint p4 = new(TopLeft.X, (TopLeft.Y + BottomRight.Y) / 2);
 
-            using SKPath path = new();
-            path.MoveTo(p1);
-            path.LineTo(p2);
-            path.LineTo(p3);
-            path.LineTo(p4);
-            path.Close();
+            using SKPathBuilder pathBuilder = new();
+            pathBuilder.MoveTo(p1);
+            pathBuilder.LineTo(p2);
+            pathBuilder.LineTo(p3);
+            pathBuilder.LineTo(p4);
+            pathBuilder.Close();
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             if (FillType != DrawingFillType.None)
             {

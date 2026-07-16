@@ -120,7 +120,8 @@ namespace RealmStudioShapeRenderingLib
             }
 
             MergedGeometry?.Dispose();
-            MergedGeometry = new SKPath();
+
+            using var mergedGeometryBuilder = new SKPathBuilder();
 
             if (WaterBodies.Count == 0)
             {
@@ -172,7 +173,10 @@ namespace RealmStudioShapeRenderingLib
                 } while (expanded);
 
                 // Append cluster to final geometry
-                MergedGeometry.AddPath(clusterUnion);
+                mergedGeometryBuilder.AddPath(clusterUnion);
+
+                MergedGeometry = mergedGeometryBuilder.Snapshot();
+                mergedGeometryBuilder.Detach();
 
                 clusterUnion.Dispose();
             }
@@ -193,11 +197,6 @@ namespace RealmStudioShapeRenderingLib
 
         public void Render(SKCanvas canvas)
         {
-            if (MergedGeometry == null || MergedGeometry.IsEmpty)
-            {
-                return;
-            }
-
             EnsureMergedGeometry();
 
             if (_interactive)
@@ -377,7 +376,7 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
-            canvas.DrawImage(_shadingMask, _maskOriginX, _maskOriginY, paint);
+            canvas.DrawImage(_shadingMask, _maskOriginX, _maskOriginY, SKSamplingOptions.Default, paint);
         }
 
         public void RenderShoreline(SKCanvas canvas, SKPath geometry)

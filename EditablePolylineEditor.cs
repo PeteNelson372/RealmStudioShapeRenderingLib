@@ -4,10 +4,22 @@ namespace RealmStudioShapeRenderingLib
 {
     public class EditablePolylineEditor
     {
-        public List<SKPoint> _points;
+        private List<SKPoint> _points;
+
+        public List<SKPoint> Points
+        {
+            get { return _points; }
+            set { _points = value; }
+        }
+
         private int _hoverIndex = -1;
         private int _activeIndex = -1;
         private bool _isDragging = false;
+
+        public EditablePolylineEditor(List<SKPoint> points)
+        {
+            _points = points;
+        }
 
         public Action? OnChanged;
 
@@ -45,10 +57,7 @@ namespace RealmStudioShapeRenderingLib
 
         private SKPoint? _lastPoint;
 
-        public EditablePolylineEditor(List<SKPoint> points)
-        {
-            _points = points;
-        }
+
 
         private void NotifyChanged()
         {
@@ -160,11 +169,16 @@ namespace RealmStudioShapeRenderingLib
             }
 
             if (!EditableIndices.Contains(0))
+            {
                 EditableIndices.Insert(0, 0);
+            }
 
             int last = _points.Count - 1;
+
             if (!EditableIndices.Contains(last))
+            {
                 EditableIndices.Add(last);
+            }
         }
 
         // ----------------------------
@@ -173,6 +187,16 @@ namespace RealmStudioShapeRenderingLib
 
         public int HitTestEditable(SKPoint worldPos, float radius)
         {
+            if (EditableIndices.Count == 0)
+            {
+                throw new Exception("Editable Polyline Editor. HitTestEditable. EditableIndices count is zero");
+            }
+
+            if (_points.Count == 0)
+            {
+                throw new Exception("Editable Polyline Editor. HitTestEditable, _points count is zero");
+            }
+
             float r2 = radius * radius;
 
             for (int i = 0; i < EditableIndices.Count; i++)
@@ -207,6 +231,9 @@ namespace RealmStudioShapeRenderingLib
             {
                 DragHandle(worldPos);
                 SmoothPoints(1, 0.3f);
+
+                //NotifyChanged();
+
                 return;
             }
 
@@ -241,14 +268,16 @@ namespace RealmStudioShapeRenderingLib
                 int idx = pointIndex + i;
 
                 if (idx < 0 || idx >= _points.Count)
+                {
                     continue;
+                }
 
                 float sigma = falloffRange * 0.5f;
                 float t = MathF.Exp(-(i * i) / (2 * sigma * sigma));
 
                 _points[idx] = new SKPoint(
-                    _points[idx].X + dx * t,
-                    _points[idx].Y + dy * t);
+                    (int)(Math.Round(_points[idx].X + dx * t)),
+                    (int)(Math.Round(_points[idx].Y + dy * t)));
             }
 
             NotifyChanged();
@@ -317,6 +346,11 @@ namespace RealmStudioShapeRenderingLib
             for (int i = 0; i < EditableIndices.Count; i++)
             {
                 int idx = EditableIndices[i];
+
+                if (idx < 0 || idx >= _points.Count)
+                {
+                    continue;
+                }
 
                 if (i == _hoverIndex)
                 {

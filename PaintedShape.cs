@@ -27,11 +27,12 @@ namespace RealmStudioShapeRenderingLib
         // Stroke state (transient)
         // -------------------------------------------------
 
-        private SKPoint? _lastPoint;
-        private readonly SKPath _strokePath = new()
+        private SKPathBuilder _pathBuilder = new()
         {
             FillType = SKPathFillType.EvenOdd
         };
+
+        private SKPoint? _lastPoint;
 
 
         // -------------------------------------------------
@@ -40,6 +41,13 @@ namespace RealmStudioShapeRenderingLib
 
         public void BeginStroke(SKPoint point)
         {
+            _pathBuilder.Dispose();
+
+            _pathBuilder = new()
+            {
+                FillType = SKPathFillType.EvenOdd
+            };
+
             _lastPoint = point;
             Stamp(point);
             CommitStroke();
@@ -62,7 +70,8 @@ namespace RealmStudioShapeRenderingLib
         public void EndStroke()
         {
             _lastPoint = null;
-            _strokePath.Reset();
+            _pathBuilder.Detach();
+            _pathBuilder.Dispose();
         }
 
         // -------------------------------------------------
@@ -74,8 +83,11 @@ namespace RealmStudioShapeRenderingLib
             if (HitPath.IsEmpty)
                 return;
 
-            using var erasePath = new SKPath();
-            erasePath.AddCircle(point.X, point.Y, radius);
+            using var erasePathBuilder = new SKPathBuilder();
+            erasePathBuilder.AddCircle(point.X, point.Y, radius);
+
+            using var erasePath = erasePathBuilder.Snapshot();
+            erasePathBuilder.Detach();
 
             SKPath result = HitPath.Op(erasePath, SKPathOp.Difference);
             SetGeometry(result);
@@ -87,7 +99,7 @@ namespace RealmStudioShapeRenderingLib
 
         private void Stamp(SKPoint point)
         {
-            _strokePath.AddCircle(point.X, point.Y, BrushRadius);
+            _pathBuilder.AddCircle(point.X, point.Y, BrushRadius);
         }
 
         /// <summary>
@@ -96,18 +108,17 @@ namespace RealmStudioShapeRenderingLib
         /// </summary>
         private void CommitStroke()
         {
-            if (_strokePath.IsEmpty)
+            var strokePath = _pathBuilder.Snapshot();
+
+            if (strokePath.IsEmpty)
                 return;
 
             SKPath result = HitPath.IsEmpty
-                ? new SKPath(_strokePath)
+                ? new SKPath(strokePath)
                 {
                     FillType = SKPathFillType.EvenOdd
                 }
-                : HitPath.Op(_strokePath, SKPathOp.Union);
-
-            _strokePath.Reset();
-            _strokePath.FillType = SKPathFillType.EvenOdd;
+                : HitPath.Op(strokePath, SKPathOp.Union);
 
             SetGeometry(result);
         }

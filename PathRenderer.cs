@@ -9,7 +9,7 @@ namespace RealmStudioShapeRenderingLib
             if (points.Count < 2)
                 return;
 
-            using var path = Utilities.BuildPath(points);
+            SKPath path = Utilities.BuildPath(points);
 
             switch (style.MapPathType)
             {
@@ -169,8 +169,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
-            using var fillPath = new SKPath();
-            strokePaint.GetFillPath(path, fillPath);
+            using SKPathBuilder strokePathBuilder = new();
+
+            strokePaint.GetFillPath(path, strokePathBuilder, 1.0f);
+            var fillPath = strokePathBuilder.Snapshot();
+            strokePathBuilder.Detach();
 
             // --- 2. Draw texture ---
             using var shader = SKShader.CreateBitmap(
@@ -208,8 +211,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
-            using var fillPath = new SKPath();
-            strokePaint.GetFillPath(path, fillPath);
+            using SKPathBuilder strokePathBuilder = new();
+
+            strokePaint.GetFillPath(path, strokePathBuilder, 1.0f);
+            var fillPath = strokePathBuilder.Snapshot();
+            strokePathBuilder.Detach();
 
             using var shader = SKShader.CreateBitmap(
                 style.Texture,
@@ -898,8 +904,11 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true
             };
 
-            using var fillPath = new SKPath();
-            strokePaint.GetFillPath(path, fillPath);
+            using SKPathBuilder strokePathBuilder = new();
+
+            strokePaint.GetFillPath(path, strokePathBuilder, 1.0f);
+            var fillPath = strokePathBuilder.Snapshot();
+            strokePathBuilder.Detach();
 
             // --- 3. Draw texture inside ---
             using var fillPaint = new SKPaint
@@ -1127,13 +1136,16 @@ namespace RealmStudioShapeRenderingLib
 
                 // --- draw filled shape (optional) ---
                 // If you want textured interior but open edge:
-                using (var path = new SKPath())
+                using (var pathBuilder = new SKPathBuilder())
                 {
-                    path.MoveTo(-hw, -hh);  // top-left
-                    path.LineTo(hw, -hh);   // top-right
-                    path.LineTo(hw, hh);    // bottom-right
-                    path.LineTo(-hw, hh);   // bottom-left
-                    path.Close();
+                    pathBuilder.MoveTo(-hw, -hh);  // top-left
+                    pathBuilder.LineTo(hw, -hh);   // top-right
+                    pathBuilder.LineTo(hw, hh);    // bottom-right
+                    pathBuilder.LineTo(-hw, hh);   // bottom-left
+                    pathBuilder.Close();
+
+                    using var path = pathBuilder.Snapshot();
+                    pathBuilder.Detach();
 
                     canvas.DrawPath(path, fill);
                 }

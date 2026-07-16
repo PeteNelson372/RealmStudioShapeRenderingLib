@@ -135,21 +135,24 @@
                 }
             }
 
-            var path = new SKPath();
+            using var pathBuilder = new SKPathBuilder();
 
-            path.MoveTo(left[0]);
+            pathBuilder.MoveTo(left[0]);
 
             for (int i = 1; i < left.Count; i++)
             {
-                path.LineTo(left[i]);
+                pathBuilder.LineTo(left[i]);
             }
 
             for (int i = right.Count - 1; i >= 0; i--)
             {
-                path.LineTo(right[i]);
+                pathBuilder.LineTo(right[i]);
             }
 
-            path.Close();
+            pathBuilder.Close();
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             var returnGeometry = new RiverGeometry()
             {

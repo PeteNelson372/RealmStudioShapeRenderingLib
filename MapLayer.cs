@@ -24,6 +24,7 @@
 #nullable enable
 
 using SkiaSharp;
+using System.Diagnostics;
 using System.Xml.Serialization;
 
 
@@ -752,7 +753,7 @@ namespace RealmStudioShapeRenderingLib
 
                         if (tile.Image != null)
                         {
-                            canvas.DrawImage(tile.Image, tile.Bounds.Location);
+                            canvas.DrawImage(tile.Image, tile.Bounds.Location, SKSamplingOptions.Default);
                         }
                     }
                 }

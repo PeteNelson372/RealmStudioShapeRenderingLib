@@ -47,7 +47,7 @@ namespace RealmStudioShapeRenderingLib
         // -------------------------------------------------
 
         private SKPoint? _lastPoint;
-        private readonly SKPath _strokePath = new();
+        private readonly SKPathBuilder _strokePathBuilder = new();
 
         // -------------------------------------------------
         // Painting API (called by tools / commands)
@@ -77,7 +77,7 @@ namespace RealmStudioShapeRenderingLib
         public void EndStroke()
         {
             _lastPoint = null;
-            _strokePath.Reset();
+            _strokePathBuilder.Reset();
         }
 
 
@@ -88,7 +88,7 @@ namespace RealmStudioShapeRenderingLib
 
         private void Stamp(SKPoint point)
         {
-            _strokePath.AddCircle(point.X, point.Y, BrushRadius);
+            _strokePathBuilder.AddCircle(point.X, point.Y, BrushRadius);
         }
 
         /// <summary>
@@ -97,6 +97,9 @@ namespace RealmStudioShapeRenderingLib
         /// </summary>
         private void CommitStroke()
         {
+            var _strokePath = _strokePathBuilder.Snapshot();
+            _strokePathBuilder.Detach();
+
             if (_strokePath.IsEmpty)
                 return;
 
@@ -104,7 +107,6 @@ namespace RealmStudioShapeRenderingLib
                 ? new SKPath(_strokePath)
                 : HitPath.Op(_strokePath, SKPathOp.Union);
 
-            _strokePath.Reset();
             SetGeometry(result);
         }
 

@@ -1,11 +1,13 @@
-﻿using RealmStudioX.WPF.EditorUtilities;
+﻿using log4net.Layout;
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class MapLabel : MapComponent2D, ITransformable2D, IAlignable
+    public class MapLabel : MapComponent2D, ITransformable2D, IAlignable, IRotatable
     {
         [XmlElement]
         public string Text { get; set; } = string.Empty;
@@ -13,7 +15,8 @@ namespace RealmStudioShapeRenderingLib
         [XmlElement]
         public SKPoint Location { get; set; }
 
-        private SKPoint _baselineLocation;
+        [XmlIgnore]
+        public SKPoint BaselineLocation { get; set; } = SKPoint.Empty;
 
         [XmlElement]
         public float Rotation { get; set; }
@@ -91,6 +94,13 @@ namespace RealmStudioShapeRenderingLib
             }
         }
 
+        [XmlElement]
+        public float CurvePathOffset { get; set; }
+
+        [XmlElement]
+        [DefaultValue(false)]
+        public bool ReverseText { get; set; } = false;
+
         [XmlIgnore]
         public bool BoundsModified { get; set; } = true;
 
@@ -102,7 +112,7 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlIgnore]
         // accurate curved bounds
-        public SKRect CurveBounds { get; private set; }
+        public SKRect CurveBounds { get; set; }
 
         private FontManager? _fontManager;
         private float _startFontSize;
@@ -128,127 +138,38 @@ namespace RealmStudioShapeRenderingLib
             if (string.IsNullOrEmpty(Text))
                 return;
 
-            _fontManager ??= fontManager;
-
-            using var font = GetFont();
-            _renderFont ??= font;
-
-            UpdateBounds(font);
-
             if (IsEditing)
                 return;
 
-            canvas.Save();
+            _fontManager = fontManager;
 
-            // Rotate around anchor (Location)
-            if (Math.Abs(Rotation) > 0.001f)
+            var font = GetFont();
+            if (_renderFont == null)
             {
-                canvas.Translate(Location.X, Location.Y);
-                canvas.RotateDegrees(Rotation);
-                canvas.Translate(-Location.X, -Location.Y);
-            }
-
-            using var fillPaint = new SKPaint
-            {
-                Color = FontColor,
-                IsAntialias = true
-            };
-
-            if (CurvePath != null)
-            {
-                using var measure = new SKPathMeasure(CurvePath, false);
-
-                float pathLength = measure.Length;
-                float textWidth = font.MeasureText(Text);
-                //float hOffset = (pathLength - textWidth) * 0.5f;
-
-                DrawOnPath(canvas, font, fillPaint);
-
-                // -------------------------------------------------
-                // Accurate CurveBounds via SKTextBlob
-                // -------------------------------------------------
-                using var blob = SKTextBlob.CreatePathPositioned(
-                    Text,
-                    font,
-                    CurvePath,
-                    SKTextAlign.Center,
-                    new SKPoint(0, 0)
-                );
-
-                CurveBounds = blob != null ? blob.Bounds : Bounds;
+                // keep this font instance for future rendering (do NOT dispose here)
+                _renderFont = font;
+                UpdateBounds(_renderFont);
             }
             else
             {
-                DrawStraight(canvas, font, fillPaint);
-                CurveBounds = Bounds;
+                // temporary font used only for bounds update; dispose after use
+                using (font)
+                {
+                    UpdateBounds(font);
+                }
             }
 
-            canvas.Restore();
+            UpdateBounds(font);
+
+            SKRect textBounds = TextRenderer.RenderLabelText(canvas, this);
+
+            Bounds = textBounds;
+
+            canvas.DrawRect(Bounds, PaintObjects.DebugPaint);
+
+            canvas.DrawRect(CurveBounds, PaintObjects.DebugPaint4);
         }
 
-        private void DrawStraight(SKCanvas canvas, SKFont font, SKPaint fillPaint)
-        {
-            float x = _baselineLocation.X;
-            float y = _baselineLocation.Y;
-
-            if (GlowStrength > 0)
-            {
-                using var glow = new SKPaint
-                {
-                    Color = GlowColor,
-                    IsAntialias = true,
-                    MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, GlowStrength)
-                };
-                canvas.DrawText(Text, x, y, font, glow);
-            }
-
-            if (OutlineWidth > 0)
-            {
-                using var stroke = new SKPaint
-                {
-                    Color = OutlineColor,
-                    IsAntialias = true,
-                    Style = SKPaintStyle.Stroke,
-                    StrokeWidth = OutlineWidth,
-                    StrokeJoin = SKStrokeJoin.Round
-                };
-                canvas.DrawText(Text, x, y, font, stroke);
-            }
-
-            canvas.DrawText(Text, x, y, font, fillPaint);
-        }
-
-        private void DrawOnPath(SKCanvas canvas, SKFont font, SKPaint fillPaint)
-        {
-            if (GlowStrength > 0)
-            {
-                using var glow = new SKPaint
-                {
-                    Color = GlowColor,
-                    IsAntialias = true,
-                    MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, GlowStrength)
-                };
-                canvas.DrawTextOnPath(Text, CurvePath, new SKPoint(0, 0),
-                    false, SKTextAlign.Center, font, glow);
-            }
-
-            if (OutlineWidth > 0)
-            {
-                using var stroke = new SKPaint
-                {
-                    Color = OutlineColor,
-                    IsAntialias = true,
-                    Style = SKPaintStyle.Stroke,
-                    StrokeWidth = OutlineWidth,
-                    StrokeJoin = SKStrokeJoin.Round
-                };
-                canvas.DrawTextOnPath(Text, CurvePath, new SKPoint(0, 0),
-                    false, SKTextAlign.Center, font, stroke);
-            }
-
-            canvas.DrawTextOnPath(Text, CurvePath, new SKPoint(0, 0),
-                false, SKTextAlign.Center, font, fillPaint);
-        }
 
         // =========================
         // Bounds
@@ -270,7 +191,7 @@ namespace RealmStudioShapeRenderingLib
             float cx = (bounds.Left + bounds.Right) * 0.5f;
             float cy = (bounds.Top + bounds.Bottom) * 0.5f;
 
-            _baselineLocation = new SKPoint(
+            BaselineLocation = new SKPoint(
                 Location.X - cx,
                 Location.Y - cy
             );
@@ -286,8 +207,6 @@ namespace RealmStudioShapeRenderingLib
 
             BoundsModified = false;
         }
-
-        private SKPoint GetCenter() => Location;
 
         public SKPoint[] GetTransformedCorners()
         {
@@ -305,8 +224,8 @@ namespace RealmStudioShapeRenderingLib
                 x *= sx;
                 y *= sy;
 
-                float wx = _baselineLocation.X + x;
-                float wy = _baselineLocation.Y + y;
+                float wx = BaselineLocation.X + x;
+                float wy = BaselineLocation.Y + y;
 
                 float dx = wx - Location.X;
                 float dy = wy - Location.Y;
@@ -382,8 +301,8 @@ namespace RealmStudioShapeRenderingLib
             float wy = center.Y + ry;
 
             return new SKPoint(
-                wx - _baselineLocation.X,
-                wy - _baselineLocation.Y
+                wx - BaselineLocation.X,
+                wy - BaselineLocation.Y
             );
         }
 
@@ -400,6 +319,18 @@ namespace RealmStudioShapeRenderingLib
         {
             FontStyle.Size = _startFontSize * factor;
             BoundsModified = true;
+        }
+
+        public void MoveTo(SKPoint newLocation)
+        {
+            SKPoint oldLocation = Location;
+
+            float deltaX = newLocation.X - oldLocation.X;
+            float deltaY = newLocation.Y - oldLocation.Y;
+
+            Location = newLocation;
+
+            CurvePath?.Offset(deltaX, deltaY);
         }
 
         // =========================
@@ -448,6 +379,7 @@ namespace RealmStudioShapeRenderingLib
                 GlowStrength = GlowStrength,
                 GlowColor = GlowColor,
                 CurvePath = CurvePath,
+                CurvePathOffset = CurvePathOffset,
             };
         }
 
@@ -470,7 +402,7 @@ namespace RealmStudioShapeRenderingLib
             GlowStrength = s.GlowStrength;
             GlowColor = s.GlowColor;
             CurvePath = s.CurvePath;
-
+            CurvePathOffset= s.CurvePathOffset;
             BoundsModified = true;
         }
     }

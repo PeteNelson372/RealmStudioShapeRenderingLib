@@ -44,7 +44,10 @@ namespace RealmStudioShapeRenderingLib
         public EditablePolylineEditor Editor { get; }
 
         private List<SKPoint>? _leftBank;
+        public List<SKPoint>? LeftBank => _leftBank;
+
         private List<SKPoint>? _rightBank;
+        public List<SKPoint>? RightBank => _rightBank;
 
         public River()
         {
@@ -147,25 +150,31 @@ namespace RealmStudioShapeRenderingLib
                 IsAntialias = true,
             };
 
-            using var leftpath = new SKPath();
+            using var leftPathBuilder = new SKPathBuilder();
 
-            leftpath.MoveTo(_leftBank[0]);
+            leftPathBuilder.MoveTo(_leftBank[0]);
 
             for (int i = 1; i < _leftBank.Count; i++)
             {
-                leftpath.LineTo(_leftBank[i]);
+                leftPathBuilder.LineTo(_leftBank[i]);
             }
+
+            using var leftpath = leftPathBuilder.Snapshot();
+            leftPathBuilder.Detach();
 
             canvas.DrawPath(leftpath, paint);
 
-            using var rightpath = new SKPath();
+            using var rightPathBuilder = new SKPathBuilder();
 
-            rightpath.MoveTo(_rightBank[0]);
+            rightPathBuilder.MoveTo(_rightBank[0]);
 
             for (int i = 1; i < _rightBank.Count; ++i)
             {
-                rightpath.LineTo(_rightBank[i]);
+                rightPathBuilder.LineTo(_rightBank[i]);
             }
+
+            using var rightpath = rightPathBuilder.Snapshot();
+            rightPathBuilder.Detach();
 
             canvas.DrawPath(rightpath, paint);
         }

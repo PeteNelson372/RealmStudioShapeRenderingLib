@@ -137,16 +137,18 @@ namespace RealmStudioShapeRenderingLib
             {
                 if (MeasureArea && MeasurePoints.Count > 2)
                 {
-                    SKPath path = new();
+                    using SKPathBuilder pathBuilder = new();
 
-                    path.MoveTo(MeasurePoints.First());
+                    pathBuilder.MoveTo(MeasurePoints.First());
 
                     for (int i = 1; i < MeasurePoints.Count; i++)
                     {
-                        path.LineTo(MeasurePoints[i]);
+                        pathBuilder.LineTo(MeasurePoints[i]);
                     }
 
-                    path.Close();
+                    pathBuilder.Close();
+                    var path = pathBuilder.Snapshot();
+                    pathBuilder.Detach();
 
                     canvas.DrawPath(path, MeasureAreaPaint);
                 }

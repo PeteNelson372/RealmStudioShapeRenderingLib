@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public class MapSymbol() : MapComponent2D, ITransformable2D, IAlignable
+    public class MapSymbol() : MapComponent2D, ITransformable2D, IAlignable, IRotatable
     {
         [XmlElement]
         public required MapSymbolDefinition SymbolDefinition { get; init; }
@@ -410,7 +410,7 @@ namespace RealmStudioShapeRenderingLib
                 case BitmapResource bmp:
                     {
                         var src = new SKRect(0, 0, bmp.Image.Width, bmp.Image.Height);
-                        canvas.DrawImage(bmp.Image, src, localBounds, paint);
+                        canvas.DrawImage(bmp.Image, src, localBounds, SKSamplingOptions.Default, paint);
                         break;
                     }
 
@@ -419,7 +419,7 @@ namespace RealmStudioShapeRenderingLib
                         var image = svg.GetImage(scale);
 
                         var src = new SKRect(0, 0, image.Width, image.Height);
-                        canvas.DrawImage(image, src, localBounds, paint);
+                        canvas.DrawImage(image, src, localBounds, SKSamplingOptions.Default, paint);
                         break;
                     }
 

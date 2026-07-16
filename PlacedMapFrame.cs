@@ -264,10 +264,7 @@ namespace RealmStudioShapeRenderingLib
             SKRectI dest,
             SKPaint paint)
         {
-            canvas.DrawBitmap(
-                bitmap,
-                dest,
-                paint);
+            canvas.DrawBitmap(bitmap, dest, SKSamplingOptions.Default, paint);
         }
 
         private static void DrawHorizontalTiledEdge(
@@ -309,10 +306,7 @@ namespace RealmStudioShapeRenderingLib
                     right,
                     y + height);
 
-                canvas.DrawBitmap(
-                    bitmap,
-                    dest,
-                    paint);
+                canvas.DrawBitmap(bitmap, dest, SKSamplingOptions.Default, paint);
 
                 left = right;
             }
@@ -357,10 +351,7 @@ namespace RealmStudioShapeRenderingLib
                     x + width,
                     bottom);
 
-                canvas.DrawBitmap(
-                    bitmap,
-                    dest,
-                    paint);
+                canvas.DrawBitmap(bitmap, dest,SKSamplingOptions.Default, paint);
 
                 top = bottom;
             }
@@ -424,10 +415,7 @@ namespace RealmStudioShapeRenderingLib
                         right,
                         bottom);
 
-                    canvas.DrawBitmap(
-                        bitmap,
-                        dest,
-                        paint);
+                    canvas.DrawBitmap(bitmap, dest, SKSamplingOptions.Default, paint);
 
                     left = right;
                 }

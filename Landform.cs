@@ -1,5 +1,6 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
+    using log4net;
     using SkiaSharp;
     using System;
     using System.Xml.Serialization;
@@ -492,8 +493,11 @@
                 IsAntialias = true
             };
 
-            using var thickBand = new SKPath();
-            thickStrokePaint.GetFillPath(PerimeterPath, thickBand);
+            using SKPathBuilder thickPathBuilder = new();
+
+            thickStrokePaint.GetFillPath(PerimeterPath, thickPathBuilder, 1.0f);
+            var thickBand = thickPathBuilder.Snapshot();
+            thickPathBuilder.Detach();
 
             // --- Outer band total ---
             using var outerStrokePaint = new SKPaint
@@ -505,8 +509,11 @@
                 IsAntialias = true
             };
 
-            using var outerBandTotal = new SKPath();
-            outerStrokePaint.GetFillPath(PerimeterPath, outerBandTotal);
+            using SKPathBuilder outerBandPathBuilder = new();
+
+            outerStrokePaint.GetFillPath(PerimeterPath, outerBandPathBuilder, 1.0f);
+            var outerBandTotal = outerBandPathBuilder.Snapshot();
+            outerBandPathBuilder.Detach();
 
             // --- Subtract to isolate thin ring ---
             using var darkBand = outerBandTotal.Op(thickBand, SKPathOp.Difference);
@@ -601,11 +608,17 @@
                     IsAntialias = true
                 };
 
-                using var outerPath = new SKPath();
-                using var innerPath = new SKPath();
+                using SKPathBuilder outerPathBuilder = new();
 
-                outerPaint.GetFillPath(PerimeterPath, outerPath);
-                innerPaint.GetFillPath(PerimeterPath, innerPath);
+                outerPaint.GetFillPath(PerimeterPath, outerPathBuilder, 1.0f);
+                var outerPath = outerPathBuilder.Snapshot();
+                outerPathBuilder.Detach();
+
+                using SKPathBuilder innerPathBuilder = new();
+
+                innerPaint.GetFillPath(PerimeterPath, innerPathBuilder, 1.0f);
+                var innerPath = outerPathBuilder.Snapshot();
+                innerPathBuilder.Detach();
 
                 using var ringPath = outerPath.Op(innerPath, SKPathOp.Difference);
 
@@ -809,7 +822,7 @@
 
             canvas.Save();
             canvas.ClipPath(HitPath, SKClipOperation.Intersect, true);
-            canvas.DrawImage(_interiorShadingMask, bounds.Left, bounds.Top, paint);
+            canvas.DrawImage(_interiorShadingMask, bounds.Left, bounds.Top, SKSamplingOptions.Default, paint);
             canvas.Restore();
         }
 

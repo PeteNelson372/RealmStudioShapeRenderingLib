@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 
 namespace RealmStudioShapeRenderingLib
 {
-    public sealed class DrawnFivePointStar : MapComponent2D, ICenterRadiusShape, IAlignable
+    public sealed class DrawnFivePointStar : MapComponent2D, ICenterRadiusShape, IAlignable, IRotatable
     {
         private SKPoint _center;
         private float _radius;
@@ -36,7 +36,7 @@ namespace RealmStudioShapeRenderingLib
         private float _textureOpacity = 1.0f;
         private float _textureScale = 1.0f;
         private int _brushSize = 2;
-        private int _rotation;
+        private float _rotation;
         private DrawingFillType _fillType = DrawingFillType.None;
         private string _fillImageId = string.Empty;
         private SKImage? _fillImage;
@@ -115,7 +115,7 @@ namespace RealmStudioShapeRenderingLib
         }
 
         [XmlElement]
-        public int Rotation
+        public float Rotation
         {
             get => _rotation;
             set => _rotation = value;
@@ -221,20 +221,22 @@ namespace RealmStudioShapeRenderingLib
 
             SKPoint p11 = new(Radius * 0.94783F + Center.X, Radius * -0.31878F + Center.Y);
 
+            using SKPathBuilder pathBuilder = new();
+            pathBuilder.MoveTo(p1);
+            pathBuilder.LineTo(p2);
+            pathBuilder.LineTo(p3);
+            pathBuilder.LineTo(p4);
+            pathBuilder.LineTo(p5);
+            pathBuilder.LineTo(p6);
+            pathBuilder.LineTo(p7);
+            pathBuilder.LineTo(p8);
+            pathBuilder.LineTo(p9);
+            pathBuilder.LineTo(p10);
+            pathBuilder.LineTo(p11);
+            pathBuilder.Close();
 
-            using SKPath path = new();
-            path.MoveTo(p1);
-            path.LineTo(p2);
-            path.LineTo(p3);
-            path.LineTo(p4);
-            path.LineTo(p5);
-            path.LineTo(p6);
-            path.LineTo(p7);
-            path.LineTo(p8);
-            path.LineTo(p9);
-            path.LineTo(p10);
-            path.LineTo(p11);
-            path.Close();
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
 
             path.GetBounds(out SKRect bounds);
             Bounds = bounds;

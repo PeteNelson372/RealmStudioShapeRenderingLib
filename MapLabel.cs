@@ -159,15 +159,16 @@ namespace RealmStudioShapeRenderingLib
                 }
             }
 
-            UpdateBounds(font);
+            TextRenderer.RenderLabelText(canvas, this);
 
-            SKRect textBounds = TextRenderer.RenderLabelText(canvas, this);
+            if (RenderFont != null)
+            {
+                UpdateBounds(RenderFont);
+            }
 
-            Bounds = textBounds;
+            //canvas.DrawRect(Bounds, PaintObjects.DebugPaint);
 
-            canvas.DrawRect(Bounds, PaintObjects.DebugPaint);
-
-            canvas.DrawRect(CurveBounds, PaintObjects.DebugPaint4);
+            //canvas.DrawRect(CurveBounds, PaintObjects.DebugPaint4);
         }
 
 

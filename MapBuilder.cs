@@ -55,10 +55,8 @@ namespace RealmStudioShapeRenderingLib
         public const int MEASURELAYER = 22;
         public const int DRAWINGLAYER = 23;
         public const int VIGNETTELAYER = 24;
-        //public const int SELECTIONLAYER = 25;
-        public const int HEIGHTMAPLAYER = 26;
-        //public const int WORKLAYER = 27;
-        //public const int WORKLAYER2 = 28;
+        public const int HEIGHTMAPLAYER = 25;
+
 
         // landform layers are reused for interior, dungeon, shipdeck, and planet maps
         public const int INTERIOROUTLINELAYER = 6;

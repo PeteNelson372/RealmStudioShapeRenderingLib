@@ -400,6 +400,7 @@ namespace RealmStudioShapeRenderingLib
         MapLayers,
         Heightmap,
         HeightMap3DModel,
+        RealmStudioMapXml
     }
 
     /// <summary>

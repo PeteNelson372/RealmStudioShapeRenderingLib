@@ -1,5 +1,4 @@
 ﻿using SkiaSharp;
-using System.Diagnostics;
 using SKRect = SkiaSharp.SKRect;
 
 namespace RealmStudioShapeRenderingLib
@@ -33,7 +32,17 @@ namespace RealmStudioShapeRenderingLib
 
                 if (label.CurvePath != null)
                 {
-                    DrawOnPath(canvas, label);
+                    SKPath curvePath = new(label.CurvePath);
+                    float offset = label.CurvePathOffset;
+
+                    if (label.ReverseText)
+                    {
+                        curvePath = Utilities.ReversePath(label.CurvePath);
+                    }
+
+                    SKPath layoutPath = BuildTextLayoutPath(curvePath, label.RenderFont, label.Text, label.CurvePathOffset);
+
+                    DrawOnPath(canvas, label, layoutPath);
 
                     // -------------------------------------------------
                     // Accurate CurveBounds via SKTextBlob
@@ -41,20 +50,28 @@ namespace RealmStudioShapeRenderingLib
                     using var blob = SKTextBlob.CreatePathPositioned(
                         label.Text,
                         label.RenderFont,
-                        label.CurvePath,
+                        layoutPath,
                         SKTextAlign.Center,
                         new SKPoint(0, 0)
                     );
 
                     bounds = blob != null ? blob.Bounds : bounds;
-                    label.CurveBounds = bounds;
-                    label.Bounds = bounds;
-                    label.BoundsModified = true;
+
+                    if (label.CurveBounds != bounds)
+                    {
+                        label.CurveBounds = bounds;
+                        label.BoundsModified = true;                        
+                    }
+
                 }
                 else
                 {
                     DrawStraight(canvas, label);
-                    bounds = label.Bounds;
+
+                    if (bounds.IsEmpty)
+                    {
+                        bounds = label.Bounds;
+                    }
                 }
 
                 return bounds;
@@ -62,23 +79,13 @@ namespace RealmStudioShapeRenderingLib
         }
 
         
-        private static void DrawOnPath(SKCanvas canvas, MapLabel label)
+        private static void DrawOnPath(SKCanvas canvas, MapLabel label, SKPath layoutPath)
         {
-            if (label.CurvePath == null || label.CurvePath.IsEmpty || label.RenderFont == null)
+            if (layoutPath == null || layoutPath.IsEmpty || label.RenderFont == null)
             {
                 return;
             }
-
-            SKPath path = new(label.CurvePath);
-            float offset = label.CurvePathOffset;
-
-            if (label.ReverseText)
-            {
-                path = Utilities.ReversePath(label.CurvePath);
-            }
-
-            SKPath layoutPath = BuildTextLayoutPath(path, label.RenderFont, label.Text, label.CurvePathOffset);            
-
+            
             if (label.GlowStrength > 0)
             {
                 using var glow = new SKPaint

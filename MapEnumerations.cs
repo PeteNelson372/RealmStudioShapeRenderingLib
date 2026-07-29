@@ -356,6 +356,19 @@ namespace RealmStudioShapeRenderingLib
         Other,
     }
 
+    public enum MapObjectType
+    {
+        Realm,
+        Map,
+        Landform,
+        WaterSystem,
+        WaterFeature,
+        River,
+        MapPath,
+        Region,
+        Symbol,
+    }
+
     public enum MessageDialogResult
     {
         None,

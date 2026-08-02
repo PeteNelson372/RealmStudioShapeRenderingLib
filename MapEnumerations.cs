@@ -363,6 +363,7 @@ namespace RealmStudioShapeRenderingLib
         Landform,
         WaterSystem,
         WaterFeature,
+        Lake,
         River,
         MapPath,
         Region,

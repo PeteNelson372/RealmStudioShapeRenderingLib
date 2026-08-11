@@ -416,6 +416,7 @@ namespace RealmStudioShapeRenderingLib
 
                 case SvgResource svg:
                     {
+                        // TODO: switch SVG rendering to use SharpVectors so that SVGs are rendered without pixelation
                         var image = svg.GetImage(scale);
 
                         var src = new SKRect(0, 0, image.Width, image.Height);

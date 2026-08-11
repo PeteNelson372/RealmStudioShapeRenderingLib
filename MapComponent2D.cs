@@ -38,8 +38,10 @@ namespace RealmStudioShapeRenderingLib
     [XmlInclude(typeof(DrawnPixelEdits))]
     public abstract class MapComponent2D: IShape2D, ISelectable
     {
+        // IMPORTANT: Do not set the Id directly, use RegenerateIds() to generate a new unique Id, if needed.
+        // The setter is made public only for XML serialization purposes.
         [XmlElement]
-        public string Id { get; } = Guid.NewGuid().ToString();
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
         [XmlIgnore]
         public bool IsSelected { get; set; }
@@ -59,5 +61,15 @@ namespace RealmStudioShapeRenderingLib
         public abstract void RestoreState(IShapeState state);
 
         public virtual void FinalizeShapeGeometry(RealmStudioMap map) {}
+
+        protected void AssignNewId()
+        {
+            Id = Guid.NewGuid().ToString();
+        }
+
+        public virtual void RegenerateIds()
+        {
+            AssignNewId();
+        }
     }
 }

@@ -198,6 +198,11 @@ namespace RealmStudioShapeRenderingLib
                 return;
             }
 
+            if (Brush == null || Brush.Bitmaps.Count == 0)
+            {
+                return;
+            }
+
             SKRect destRect = new(
                 point.X - Brush!.BrushSize / 2f,
                 point.Y - Brush!.BrushSize / 2f,

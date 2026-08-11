@@ -86,6 +86,11 @@ namespace RealmStudioShapeRenderingLib
             return map.MapLayers.FirstOrDefault(l => l.MapLayerName.Equals(layerName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public static MapLayer? GetMapLayerById(RealmStudioMap map, string layerId)
+        {
+            return map.MapLayers.FirstOrDefault(l => l.MapLayerId.Equals(layerId, StringComparison.OrdinalIgnoreCase));
+        }
+
         public static void ShowLayer(RealmStudioMap map, int layerIndex)
         {
             MapLayer l = GetMapLayerByIndex(map, layerIndex);

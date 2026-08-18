@@ -190,7 +190,6 @@ namespace RealmStudioShapeRenderingLib
 
                     _shaderValuesModified = false;
                 }
-                ;
 
                 _fillPaint.Shader = _fillShader;
                 _fillPaint.Style = SKPaintStyle.StrokeAndFill;

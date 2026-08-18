@@ -34,6 +34,11 @@ namespace RealmStudioShapeRenderingLib
             return loaded;
         }
 
+        public void Clear()
+        {
+            _cache.Clear();
+        }
+
         private static BitmapResource? LoadBitmap(string path)
         {
             var img = SKImage.FromBitmap(SKBitmap.Decode(path));

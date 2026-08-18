@@ -30,7 +30,7 @@ namespace RealmStudioShapeRenderingLib
                     IsAntialias = true
                 };
 
-                if (label.CurvePath != null)
+                if (label.CurvePath != null && label.CurvePath.PointCount > 2)
                 {
                     SKPath curvePath = new(label.CurvePath);
                     float offset = label.CurvePathOffset;

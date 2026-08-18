@@ -1,7 +1,5 @@
 ﻿using Clipper2Lib;
 using SkiaSharp;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace RealmStudioShapeRenderingLib
 {
@@ -9,6 +7,14 @@ namespace RealmStudioShapeRenderingLib
     {
         private const float PI_OVER_180 = (float)Math.PI / 180F;
         private const double SELECTION_FUZZINESS = 4;
+
+        public static SKBitmap ResizeSKBitmap(SKBitmap bitmap, SKSizeI newsize)
+        {
+            SKBitmap resizedSKBitmap = new(newsize.Width, newsize.Height);
+            bitmap.ScalePixels(resizedSKBitmap, SKSamplingOptions.Default);
+
+            return resizedSKBitmap;
+        }
 
         public static string MakeSafeFileName(string fileName)
         {

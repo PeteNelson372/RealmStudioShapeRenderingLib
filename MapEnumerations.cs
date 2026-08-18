@@ -96,6 +96,7 @@ namespace RealmStudioShapeRenderingLib
         InteriorWallEdit,
         InteriorWallErase,
         ShapeSelect,
+        AreaSelection,
     }
 
     public enum LandGradientDirection
@@ -310,6 +311,8 @@ namespace RealmStudioShapeRenderingLib
         NotSet,
         CreateMap,
         CreateProject,
+        ResizeMap,
+        DetailMap,
     }
 
     public enum RealmMapType

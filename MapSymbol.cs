@@ -379,10 +379,10 @@ namespace RealmStudioShapeRenderingLib
             var paint = CreatePaint(symbolImage);
             DrawSymbolCentered(canvas, LocalBounds, Scale, symbolImage, paint);
 
-            if (IsSelected && !IsTransformTarget)
-            {
+            //if (IsSelected && !IsTransformTarget)
+            //{
                 //canvas.DrawRect(Bounds, PaintObjects.MapSymbolSelectPaint);
-            }
+            //}
 
 
             // Debug bounds

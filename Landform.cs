@@ -1,6 +1,5 @@
 ﻿namespace RealmStudioShapeRenderingLib
 {
-    using log4net;
     using SkiaSharp;
     using System;
     using System.Xml.Serialization;
@@ -198,7 +197,7 @@
 
                 if (_interiorCache != null)
                 {
-                    canvas.DrawPicture(_interiorCache);
+                    canvas.DrawPicture(_interiorCache, 0, 0);
                 }
             }
         }

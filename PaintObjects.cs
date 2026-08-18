@@ -513,6 +513,15 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.Empty,
         };
 
+        public readonly static SKPaint AreaSelectionPaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            Color = SKColors.Coral,
+            StrokeWidth = 2,
+            PathEffect = SKPathEffect.CreateDash([3F, 3F], 6F),
+        };
+
         public readonly static SKPaint DebugPaint = new()
         {
             Style = SKPaintStyle.Stroke,

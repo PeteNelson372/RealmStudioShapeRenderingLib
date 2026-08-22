@@ -52,9 +52,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlArrayItem("MapScale", Type = typeof(MapScale))]
         [XmlArrayItem("MapRegion", Type = typeof(MapRegion))]
         [XmlArrayItem("MapVignette", Type = typeof(MapVignette))]
-
-        //[XmlArrayItem("MapHeightMap", Type = typeof(MapHeightMap))]
-
+        [XmlArrayItem("MapHeightMap", Type = typeof(MapHeightMap))]
         [XmlArrayItem("DrawnArrow", Type = typeof(DrawnArrow))]
         [XmlArrayItem("DrawingErase", Type = typeof(DrawingErase))]
         [XmlArrayItem("DrawnDiamond", Type = typeof(DrawnDiamond))]

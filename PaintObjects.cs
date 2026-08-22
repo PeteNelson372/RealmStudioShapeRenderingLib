@@ -522,6 +522,23 @@ namespace RealmStudioShapeRenderingLib
             PathEffect = SKPathEffect.CreateDash([3F, 3F], 6F),
         };
 
+        public readonly static SKPaint LandformHeightMapFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = false,
+            BlendMode = SKBlendMode.Src,
+            Color = new(35, 35, 35)
+        };
+
+        public readonly static SKPaint LandformHeightMapOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = false,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColors.Green
+        };
+
         public readonly static SKPaint DebugPaint = new()
         {
             Style = SKPaintStyle.Stroke,

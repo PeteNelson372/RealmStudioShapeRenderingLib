@@ -150,6 +150,41 @@ namespace RealmStudioShapeRenderingLib
             return points;
         }
 
+        public static List<SKPoint> GetPointsInCircle(SKPoint cursorPoint, int radius, int stepSize)
+        {
+            if (radius <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(radius), "Argument must be positive.");
+            }
+
+            List<SKPoint> pointsInCircle = [];
+
+            int minX = (int)Math.Max(0, cursorPoint.X - radius);
+            int maxX = (int)(cursorPoint.X + radius);
+            int minY = (int)Math.Max(0, cursorPoint.Y - radius);
+            int maxY = (int)(cursorPoint.Y + radius);
+
+            for (int i = minX; i <= maxX; i += stepSize)
+            {
+                for (int j = minY; j <= maxY; j += stepSize)
+                {
+                    SKPoint p = new(i, j);
+                    if (PointInCircle(radius, cursorPoint, p))
+                    {
+                        pointsInCircle.Add(p);
+                    }
+                }
+            }
+
+            return pointsInCircle;
+        }
+
+        public static bool PointInCircle(float radius, SKPoint origin, SKPoint pointToTest)
+        {
+            float square_dist = SKPoint.DistanceSquared(origin, pointToTest);
+            return square_dist < (radius * radius);
+        }
+
         public static SKPath BuildPath(IReadOnlyList<SKPoint> points)
         {
             using SKPathBuilder pathBuilder = new();

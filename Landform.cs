@@ -223,7 +223,135 @@
             }
         }
 
-        public void RenderLandformForHeightMap(RealmStudioMap map, SKCanvas canvas)
+        public void RenderLandformForHeightMap(
+                RealmStudioMap map,
+                SKCanvas canvas)
+        {
+            MapLayer heightMapLayer = MapBuilder.GetMapLayerByIndex(map, MapBuilder.HEIGHTMAPLAYER);
+
+            if (heightMapLayer.Shapes.Count == 0)
+            {
+                return;
+            }
+
+
+            if (heightMapLayer.Shapes[0] is not MapHeightMap heightMap || heightMap.HeightMap == null)
+            {
+                return;
+            }
+
+            if (heightMap.HeightMapPalette == null)
+            {
+                return;
+            }
+
+            SKRect clipBounds = new(
+                0,
+                0,
+                map.MapWidth,
+                map.MapHeight);
+
+            canvas.Save();
+
+            // Don't allow anything to be rendered outside the map.
+            canvas.ClipRect(clipBounds);
+
+            // Clip the heightmap rendering to this landform.
+            canvas.ClipPath(PerimeterPath);
+
+            PerimeterPath.GetBounds(out SKRect landformBounds);
+
+            int left = Math.Max(0, (int)Math.Floor(landformBounds.Left));
+            int top = Math.Max(0, (int)Math.Floor(landformBounds.Top));
+
+            int right = Math.Min(
+                map.MapWidth - 1,
+                (int)Math.Ceiling(landformBounds.Right));
+
+            int bottom = Math.Min(
+                map.MapHeight - 1,
+                (int)Math.Ceiling(landformBounds.Bottom));
+
+            if (left <= right && top <= bottom)
+            {
+                using SKBitmap bitmap = new(
+                    new SKImageInfo(
+                        right - left + 1,
+                        bottom - top + 1,
+                        SKColorType.Rgba8888,
+                        SKAlphaType.Premul));
+
+                using SKPixmap? pixmap = bitmap.PeekPixels();
+
+                if (pixmap != null)
+                {
+                    IntPtr pixels = pixmap.GetPixels();
+                    int rowBytes = pixmap.RowBytes;
+
+                    for (int y = top; y <= bottom; y++)
+                    {
+                        IntPtr row = pixels + ((y - top) * rowBytes);
+
+                        for (int x = left; x <= right; x++)
+                        {
+                            float elevation = heightMap.HeightMap[x, y];
+
+                            float normalizedHeight =
+                                MapHeightMap.NormalizeHeight(
+                                    elevation,
+                                    heightMap.MinimumHeight,
+                                    heightMap.MaximumHeight);
+
+                            SKColor color =
+                                MapHeightMap.GetHypsometricColor(
+                                    normalizedHeight,
+                                    heightMap.HeightMapPalette);
+
+                            int pixelX = x - left;
+
+                            int offset = pixelX * 4;
+
+                            System.Runtime.InteropServices.Marshal.WriteByte(
+                                row + offset,
+                                color.Red);
+
+                            System.Runtime.InteropServices.Marshal.WriteByte(
+                                row + offset + 1,
+                                color.Green);
+
+                            System.Runtime.InteropServices.Marshal.WriteByte(
+                                row + offset + 2,
+                                color.Blue);
+
+                            System.Runtime.InteropServices.Marshal.WriteByte(
+                                row + offset + 3,
+                                color.Alpha);
+                        }
+                    }
+                }
+
+                canvas.DrawBitmap(bitmap, left, top, SKSamplingOptions.Default);
+            }
+
+
+            canvas.Restore();
+
+            // Draw the landform perimeter on top of the heightmap.
+            canvas.DrawPath(
+                PerimeterPath,
+                PaintObjects.LandformHeightMapOutlinePaint);
+
+            if (IsSelected)
+            {
+                PerimeterPath.GetBounds(out SKRect boundsRect);
+
+                canvas.DrawRect(
+                    boundsRect,
+                    PaintObjects.LandformSelectPaint);
+            }
+        }
+
+        public void RenderLandformForGrayscaleHeightMap(RealmStudioMap map, SKCanvas canvas)
         {
             SKRect clipBounds = new(0, 0, map.MapWidth, map.MapHeight);
 
@@ -239,7 +367,6 @@
                 PerimeterPath.GetBounds(out SKRect boundsRect);
                 canvas.DrawRect(boundsRect, PaintObjects.LandformSelectPaint);
             }
-
         }
 
         // -------------------------------------------------

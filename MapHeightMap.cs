@@ -21,10 +21,8 @@
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
-using log4net;
 using RealmStudioShapeRenderingLib.Logging;
 using SkiaSharp;
-using System;
 using System.Globalization;
 using System.Xml;
 using System.Xml.Schema;
@@ -34,11 +32,18 @@ namespace RealmStudioShapeRenderingLib
 {
     public class MapHeightMap : MapComponent2D, IXmlSerializable
     {
+        public float MinimumHeight { get; set; }
+        public float MaximumHeight { get; set; }
+        public MapDistanceUnit HeightUnit { get; set; }
+
         [XmlIgnore]
         public float[,]? HeightMap { get; private set; }
 
         [XmlIgnore]
         public SKBitmap? HeightMapBitmap { get; private set; }
+
+        [XmlIgnore]
+        public HypsometricPalette? HeightMapPalette { get; set; }
 
         public XmlSchema? GetSchema()
         {
@@ -345,7 +350,7 @@ namespace RealmStudioShapeRenderingLib
                 height - 1);
         }
 
-        public static void UpdateHeightMapBitmap(
+        public void UpdateHeightMapBitmap(
             SKBitmap bitmap,
             float[,] heightMap,
             int left,
@@ -353,46 +358,131 @@ namespace RealmStudioShapeRenderingLib
             int right,
             int bottom)
         {
-            using SKPixmap? pixmap = bitmap.PeekPixels();
-
-            if (pixmap == null)
+            if (HeightMapPalette == null)
             {
                 return;
             }
 
-            IntPtr pixels = pixmap.GetPixels();
-            int rowBytes = pixmap.RowBytes;
+            using SKPixmap? pixmap = bitmap.PeekPixels();
 
-            for (int y = top; y <= bottom; y++)
+            if (pixmap != null)
             {
-                IntPtr row = pixels + (y * rowBytes);
+                IntPtr pixels = pixmap.GetPixels();
+                int rowBytes = pixmap.RowBytes;
 
-                for (int x = left; x <= right; x++)
+                for (int y = top; y <= bottom; y++)
                 {
-                    byte value = (byte)Math.Clamp(
-                        MathF.Round(heightMap[x, y]),
-                        35.0f,
-                        255.0f);
+                    IntPtr row = pixels + ((y - top) * rowBytes);
 
-                    int offset = x * 4;
+                    for (int x = left; x <= right; x++)
+                    {
+                        float elevation = heightMap[x, y];
 
-                    System.Runtime.InteropServices.Marshal.WriteByte(
-                        row + offset,
-                        value);
+                        float normalizedHeight =
+                            NormalizeHeight(
+                                elevation,
+                                MinimumHeight,
+                                MaximumHeight);
 
-                    System.Runtime.InteropServices.Marshal.WriteByte(
-                        row + offset + 1,
-                        value);
+                        SKColor color =
+                            GetHypsometricColor(
+                                normalizedHeight,
+                                HeightMapPalette);
 
-                    System.Runtime.InteropServices.Marshal.WriteByte(
-                        row + offset + 2,
-                        value);
+                        int pixelX = x - left;
 
-                    System.Runtime.InteropServices.Marshal.WriteByte(
-                        row + offset + 3,
-                        255);
+                        int offset = pixelX * 4;
+
+                        System.Runtime.InteropServices.Marshal.WriteByte(
+                            row + offset,
+                            color.Red);
+
+                        System.Runtime.InteropServices.Marshal.WriteByte(
+                            row + offset + 1,
+                            color.Green);
+
+                        System.Runtime.InteropServices.Marshal.WriteByte(
+                            row + offset + 2,
+                            color.Blue);
+
+                        System.Runtime.InteropServices.Marshal.WriteByte(
+                            row + offset + 3,
+                            color.Alpha);
+                    }
                 }
             }
+        }
+
+        public static float NormalizeHeight(
+            float elevation,
+            float minimumHeight,
+            float maximumHeight)
+        {
+            if (elevation < 0)
+            {
+                if (minimumHeight >= 0)
+                    return 0;
+
+                return Math.Clamp(
+                    elevation / Math.Abs(minimumHeight),
+                    -1.0f,
+                    0.0f);
+            }
+
+            if (maximumHeight <= 0)
+                return 0;
+
+            return Math.Clamp(
+                elevation / maximumHeight,
+                0.0f,
+                1.0f);
+        }
+
+        public static SKColor GetHypsometricColor(
+            float normalizedHeight,
+            HypsometricPalette palette)
+        {
+            if (palette.Tints.Count == 0)
+                return SKColors.Transparent;
+
+            if (palette.Tints.Count == 1)
+                return palette.Tints[0].Color;
+
+            palette.SortTints();
+
+            if (normalizedHeight <= palette.Tints[0].NormalizedHeight)
+                return palette.Tints[0].Color;
+
+            if (normalizedHeight >= palette.Tints[^1].NormalizedHeight)
+                return palette.Tints[^1].Color;
+
+            for (int i = 0; i < palette.Tints.Count - 1; i++)
+            {
+                HypsometricTint lower = palette.Tints[i];
+                HypsometricTint upper = palette.Tints[i + 1];
+
+                if (normalizedHeight >= lower.NormalizedHeight &&
+                    normalizedHeight <= upper.NormalizedHeight)
+                {
+                    float range =
+                        upper.NormalizedHeight -
+                        lower.NormalizedHeight;
+
+                    if (range <= 0)
+                        return lower.Color;
+
+                    float t =
+                        (normalizedHeight - lower.NormalizedHeight) /
+                        range;
+
+                    return Utilities.LerpColor(
+                        lower.Color,
+                        upper.Color,
+                        t);
+                }
+            }
+
+            return palette.Tints[^1].Color;
         }
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)

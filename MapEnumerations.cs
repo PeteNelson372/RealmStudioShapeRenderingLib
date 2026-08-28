@@ -400,6 +400,30 @@ namespace RealmStudioShapeRenderingLib
         USCustomary
     }
 
+    public enum MapDistanceUnit
+    {
+        [Description("Centimeters")]
+        Centimeters,
+        [Description("Inches")]
+        Inches,
+        [Description("Feet")]
+        Feet,
+        [Description("Yards")]
+        Yards,
+        [Description("Meters")]
+        Meters,
+        [Description("Kilometers")]
+        Kilometers,
+        [Description("Miles")]
+        Miles,
+        [Description("Astronomical Units (AU)")]
+        AstronomicalUnits,
+        [Description("Light Years")]
+        LightYears,
+        [Description("Parsecs")]
+        Parsecs
+    }
+
     public enum RealmMapExportFormat
     {
         NotSet,
@@ -509,6 +533,7 @@ namespace RealmStudioShapeRenderingLib
         Box,
         Brush,
         ColorPalette,
+        HeightMapPalette,       // hypsometric color palette for height maps
         Frame,
         Icon,
         LabelPreset,

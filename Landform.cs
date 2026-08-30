@@ -281,55 +281,8 @@
                         SKColorType.Rgba8888,
                         SKAlphaType.Premul));
 
-                using SKPixmap? pixmap = bitmap.PeekPixels();
-
-                if (pixmap != null)
-                {
-                    IntPtr pixels = pixmap.GetPixels();
-                    int rowBytes = pixmap.RowBytes;
-
-                    for (int y = top; y <= bottom; y++)
-                    {
-                        IntPtr row = pixels + ((y - top) * rowBytes);
-
-                        for (int x = left; x <= right; x++)
-                        {
-                            float elevation = heightMap.HeightMap[x, y];
-
-                            float normalizedHeight =
-                                MapHeightMap.NormalizeHeight(
-                                    elevation,
-                                    heightMap.MinimumHeight,
-                                    heightMap.MaximumHeight);
-
-                            SKColor color =
-                                MapHeightMap.GetHypsometricColor(
-                                    normalizedHeight,
-                                    heightMap.HeightMapPalette);
-
-                            int pixelX = x - left;
-
-                            int offset = pixelX * 4;
-
-                            System.Runtime.InteropServices.Marshal.WriteByte(
-                                row + offset,
-                                color.Red);
-
-                            System.Runtime.InteropServices.Marshal.WriteByte(
-                                row + offset + 1,
-                                color.Green);
-
-                            System.Runtime.InteropServices.Marshal.WriteByte(
-                                row + offset + 2,
-                                color.Blue);
-
-                            System.Runtime.InteropServices.Marshal.WriteByte(
-                                row + offset + 3,
-                                color.Alpha);
-                        }
-                    }
-                }
-
+                heightMap.UpdateHeightMapBitmap(bitmap, heightMap.HeightMap, left, top, right, bottom);
+                
                 canvas.DrawBitmap(bitmap, left, top, SKSamplingOptions.Default);
             }
 

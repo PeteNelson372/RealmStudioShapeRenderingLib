@@ -22,6 +22,7 @@
 *
 ***************************************************************************************************************************/
 using RealmStudioShapeRenderingLib.Logging;
+using RealmStudioX.WPF.EditorUtilities;
 using SkiaSharp;
 using System.Globalization;
 using System.Xml;
@@ -34,7 +35,7 @@ namespace RealmStudioShapeRenderingLib
     {
         public float MinimumHeight { get; set; }
         public float MaximumHeight { get; set; }
-        public MapDistanceUnit HeightUnit { get; set; }
+        public string HeightUnit { get; set; } = string.Empty;
 
         [XmlIgnore]
         public float[,]? HeightMap { get; private set; }
@@ -44,6 +45,14 @@ namespace RealmStudioShapeRenderingLib
 
         [XmlIgnore]
         public HypsometricPalette? HeightMapPalette { get; set; }
+
+        private const int HypsometricLookupSize = 4096;
+
+        private SKColor[]? _hypsometricColorLookup;
+
+        private float _lookupMinimumHeight;
+        private float _lookupMaximumHeight;
+        private HypsometricPalette? _lookupPalette;
 
         public XmlSchema? GetSchema()
         {
@@ -68,59 +77,130 @@ namespace RealmStudioShapeRenderingLib
                 "Height",
                 height.ToString(CultureInfo.InvariantCulture));
 
-            // Convert the height map to one byte per pixel.
-            byte[] data = new byte[width * height];
+            writer.WriteAttributeString(
+                "MinimumHeight",
+                MinimumHeight.ToString(CultureInfo.InvariantCulture));
 
-            int index = 0;
+            writer.WriteAttributeString(
+                "MaximumHeight",
+                MaximumHeight.ToString(CultureInfo.InvariantCulture));
+
+            writer.WriteAttributeString(
+                "HeightUnit",
+                HeightUnit);
+
+            // Serialize the hypsometric palette used by this height map.
+            if (HeightMapPalette != null)
+            {
+                writer.WriteStartElement("HypsometricPalette");
+
+                writer.WriteAttributeString(
+                    "Id",
+                    HeightMapPalette.Id);
+
+                writer.WriteAttributeString(
+                    "Name",
+                    HeightMapPalette.Name);
+
+                writer.WriteAttributeString(
+                    "IsLocked",
+                    HeightMapPalette.IsLocked.ToString(
+                        CultureInfo.InvariantCulture));
+
+                foreach (HypsometricTint tint in HeightMapPalette.Tints)
+                {
+                    writer.WriteStartElement("Tint");
+
+                    writer.WriteAttributeString(
+                        "Id",
+                        tint.Id);
+
+                    writer.WriteAttributeString(
+                        "NormalizedHeight",
+                        tint.NormalizedHeight.ToString(
+                            CultureInfo.InvariantCulture));
+
+                    writer.WriteAttributeString(
+                        "Color",
+                        tint.ColorXml);
+
+                    writer.WriteEndElement();
+                }
+
+                writer.WriteEndElement();
+            }
+
+            /*
+             * Serialize the actual floating-point elevation values.
+             *
+             * Each float is represented by its IEEE-754 32-bit value.
+             * Four bytes are stored for every height value.
+             */
+            int valueCount = checked(width * height);
+            int byteCount = checked(valueCount * sizeof(float));
+
+            byte[] data = new byte[byteCount];
+
+            int byteIndex = 0;
 
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    float value = HeightMap[x, y];
+                    int bits = BitConverter.SingleToInt32Bits(
+                        HeightMap[x, y]);
 
-                    // Height values are ultimately grayscale values.
-                    value = Math.Clamp(value, 0.0f, 255.0f);
-
-                    data[index++] = (byte)MathF.Round(value);
+                    data[byteIndex++] = (byte)bits;
+                    data[byteIndex++] = (byte)(bits >> 8);
+                    data[byteIndex++] = (byte)(bits >> 16);
+                    data[byteIndex++] = (byte)(bits >> 24);
                 }
             }
 
-            string base64 = Convert.ToBase64String(data);
+            writer.WriteStartElement("Data");
 
-            writer.WriteString(base64);
+            writer.WriteString(
+                Convert.ToBase64String(data));
+
+            writer.WriteEndElement();
         }
 
         public void ReadXml(XmlReader reader)
         {
-            int width = 0;
-            int height = 0;
 
             try
             {
-                // Read dimensions from the MapHeightMap element.
-                string? widthString = reader.GetAttribute("Width");
-                string? heightString = reader.GetAttribute("Height");
+                string? widthString =
+                    reader.GetAttribute("Width");
+
+                string? heightString =
+                    reader.GetAttribute("Height");
+
+                string? minimumHeightString =
+                    reader.GetAttribute("MinimumHeight");
+
+                string? maximumHeightString =
+                    reader.GetAttribute("MaximumHeight");
+
+                string? heightUnit =
+                    reader.GetAttribute("HeightUnit");
 
                 if (!int.TryParse(
                         widthString,
                         NumberStyles.Integer,
                         CultureInfo.InvariantCulture,
-                        out width) ||
+                        out int width) ||
                     !int.TryParse(
                         heightString,
                         NumberStyles.Integer,
                         CultureInfo.InvariantCulture,
-                        out height))
+                        out int height))
                 {
                     RealmStudioXLogger.Error(
                         $"Unable to load height map: invalid or missing dimensions. " +
                         $"Width='{widthString}', Height='{heightString}'.");
 
                     ClearHeightMap();
-
-                    // Skip the entire MapHeightMap element, including any old
-                    // or malformed content it may contain.
                     reader.Skip();
 
                     return;
@@ -138,10 +218,10 @@ namespace RealmStudioShapeRenderingLib
                     return;
                 }
 
-                // Protect against overflow before allocating anything.
-                long expectedLength64 = (long)width * height;
+                long valueCount64 =
+                    (long)width * height;
 
-                if (expectedLength64 > int.MaxValue)
+                if (valueCount64 > int.MaxValue)
                 {
                     RealmStudioXLogger.Error(
                         $"Unable to load height map: dimensions " +
@@ -153,43 +233,152 @@ namespace RealmStudioShapeRenderingLib
                     return;
                 }
 
-                int expectedLength = (int)expectedLength64;
+                int valueCount = (int)valueCount64;
 
-                /*
-                 * ReadElementContentAsString() consumes:
-                 *
-                 *     <MapHeightMap ...>
-                 *         Base64 data
-                 *     </MapHeightMap>
-                 *
-                 * and leaves the reader positioned on the next element.
-                 */
-                string base64;
+                int expectedByteCount;
 
                 try
                 {
-                    base64 = reader.ReadElementContentAsString();
+                    expectedByteCount =
+                        checked(valueCount * sizeof(float));
                 }
-                catch (XmlException ex)
+                catch (OverflowException)
                 {
-                    RealmStudioXLogger.Exception(
-                        "Unable to load height map: invalid height map XML.",
-                        ex);
+                    RealmStudioXLogger.Error(
+                        $"Unable to load height map: dimensions " +
+                        $"{width} x {height} result in an " +
+                        $"invalid data size.");
 
                     ClearHeightMap();
-
-                    // ReadElementContentAsString may have failed somewhere
-                    // inside the element. Try to get past the bad element.
-                    SkipCurrentElementSafely(reader);
+                    reader.Skip();
 
                     return;
                 }
 
-                // An empty element is valid. It simply represents an empty
-                // height map (all pixels at sea level = 0).
-                if (string.IsNullOrWhiteSpace(base64))
+                /*
+                 * Minimum and maximum height are metadata. If either value is
+                 * invalid, retain a safe default rather than rejecting the
+                 * entire map.
+                 */
+                if (!float.TryParse(
+                        minimumHeightString,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out float minimumHeight))
                 {
-                    HeightMap = new float[width, height];
+                    RealmStudioXLogger.Error(
+                        $"Unable to load height map: invalid MinimumHeight " +
+                        $"'{minimumHeightString}'. Using 0.");
+
+                    minimumHeight = 0.0f;
+                }
+
+                if (!float.TryParse(
+                        maximumHeightString,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out float maximumHeight))
+                {
+                    RealmStudioXLogger.Error(
+                        $"Unable to load height map: invalid MaximumHeight " +
+                        $"'{maximumHeightString}'. Using 0.");
+
+                    maximumHeight = 0.0f;
+                }
+
+                MinimumHeight = minimumHeight;
+                MaximumHeight = maximumHeight;
+                HeightUnit = heightUnit ?? string.Empty;
+
+                HeightMapPalette = null;
+
+                /*
+                 * An empty MapHeightMap element represents an empty height map.
+                 */
+                if (reader.IsEmptyElement)
+                {
+                    HeightMap =
+                        new float[width, height];
+
+                    RebuildHeightMapBitmap();
+
+                    return;
+                }
+
+                /*
+                 * Enter the MapHeightMap element.
+                 */
+                reader.ReadStartElement("MapHeightMap");
+
+                string? base64Data = null;
+
+                while (reader.NodeType != XmlNodeType.EndElement ||
+                       reader.LocalName != "MapHeightMap")
+                {
+                    if (reader.NodeType == XmlNodeType.Whitespace ||
+                        reader.NodeType == XmlNodeType.SignificantWhitespace)
+                    {
+                        reader.Read();
+                        continue;
+                    }
+
+                    if (reader.NodeType != XmlNodeType.Element)
+                    {
+                        reader.Read();
+                        continue;
+                    }
+
+                    switch (reader.LocalName)
+                    {
+                        case "HypsometricPalette":
+
+                            HeightMapPalette =
+                                ReadHypsometricPalette(reader);
+
+                            break;
+
+                        case "Data":
+
+                            try
+                            {
+                                base64Data =
+                                    reader.ReadElementContentAsString();
+                            }
+                            catch (XmlException ex)
+                            {
+                                RealmStudioXLogger.Exception(
+                                    "Unable to load height map: invalid " +
+                                    "height map data XML.",
+                                    ex);
+
+                                base64Data = null;
+
+                                SkipCurrentElementSafely(reader);
+                            }
+
+                            break;
+
+                        default:
+
+                            RealmStudioXLogger.Error(
+                                $"Ignoring unknown element " +
+                                $"'{reader.LocalName}' in MapHeightMap.");
+
+                            reader.Skip();
+
+                            break;
+                    }
+                }
+
+                reader.ReadEndElement();
+
+                /*
+                 * No data means an empty height map.
+                 */
+                if (string.IsNullOrWhiteSpace(base64Data))
+                {
+                    HeightMap =
+                        new float[width, height];
 
                     RebuildHeightMapBitmap();
 
@@ -200,60 +389,76 @@ namespace RealmStudioShapeRenderingLib
 
                 try
                 {
-                    data = Convert.FromBase64String(base64);
+                    data =
+                        Convert.FromBase64String(base64Data);
                 }
                 catch (FormatException ex)
                 {
                     RealmStudioXLogger.Exception(
-                        "Unable to load height map: height map data is not " +
-                        "valid Base64 data.",
+                        "Unable to load height map: height map data " +
+                        "is not valid Base64 data.",
                         ex);
 
-                    // We know the dimensions are valid, so recover with an
-                    // empty height map rather than losing the MapHeightMap.
-                    HeightMap = new float[width, height];
+                    HeightMap =
+                        new float[width, height];
 
                     RebuildHeightMapBitmap();
 
                     return;
                 }
 
-                if (data.Length != expectedLength)
+                if (data.Length != expectedByteCount)
                 {
                     RealmStudioXLogger.Error(
                         $"Unable to load height map: incorrect data size. " +
-                        $"Expected {expectedLength} bytes for a " +
+                        $"Expected {expectedByteCount} bytes for a " +
                         $"{width} x {height} height map, but found " +
                         $"{data.Length} bytes.");
 
-                    HeightMap = new float[width, height];
+                    HeightMap =
+                        new float[width, height];
 
                     RebuildHeightMapBitmap();
 
                     return;
                 }
 
-                // Everything is valid. Reconstruct the runtime height array.
-                HeightMap = new float[width, height];
+                /*
+                 * Reconstruct the runtime float[,] array.
+                 */
+                HeightMap =
+                    new float[width, height];
 
-                int index = 0;
+                int byteIndex = 0;
 
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)
                     {
-                        HeightMap[x, y] = data[index++];
+                        int bits =
+                            data[byteIndex]
+                            | (data[byteIndex + 1] << 8)
+                            | (data[byteIndex + 2] << 16)
+                            | (data[byteIndex + 3] << 24);
+
+                        HeightMap[x, y] =
+                            BitConverter.Int32BitsToSingle(bits);
+
+                        byteIndex += sizeof(float);
                     }
                 }
 
-                // HeightMap is now valid, so recreate its rendering bitmap.
+                /*
+                 * The actual height data has been reconstructed.
+                 * Recreate the rendering bitmap from it.
+                 */
                 RebuildHeightMapBitmap();
             }
             catch (Exception ex)
             {
                 /*
-                 * A damaged height map should never prevent the rest of the
-                 * RealmStudioX map from loading.
+                 * A damaged height map should never prevent the remainder
+                 * of the RealmStudioX map from loading.
                  */
                 RealmStudioXLogger.Exception(
                     "Unexpected error while loading height map. " +
@@ -262,9 +467,164 @@ namespace RealmStudioShapeRenderingLib
 
                 ClearHeightMap();
 
-                // If we're still somewhere inside the MapHeightMap XML,
-                // make a best effort to advance beyond it.
                 SkipCurrentElementSafely(reader);
+            }
+        }
+
+        private static HypsometricPalette? ReadHypsometricPalette(
+            XmlReader reader)
+        {
+            try
+            {
+                HypsometricPalette palette = new();
+
+                string? id = reader.GetAttribute("Id");
+                string? name = reader.GetAttribute("Name");
+                string? isLocked = reader.GetAttribute("IsLocked");
+
+                if (!string.IsNullOrWhiteSpace(id))
+                    palette.Id = id;
+
+                if (!string.IsNullOrWhiteSpace(name))
+                    palette.Name = name;
+
+                if (bool.TryParse(isLocked, out bool locked))
+                    palette.IsLocked = locked;
+
+                if (reader.IsEmptyElement)
+                {
+                    reader.Read();
+                    return palette;
+                }
+
+                reader.ReadStartElement("HypsometricPalette");
+
+                while (reader.NodeType != XmlNodeType.EndElement ||
+                       reader.LocalName != "HypsometricPalette")
+                {
+                    if (reader.NodeType == XmlNodeType.Whitespace ||
+                        reader.NodeType == XmlNodeType.SignificantWhitespace)
+                    {
+                        reader.Read();
+                        continue;
+                    }
+
+                    if (reader.NodeType != XmlNodeType.Element)
+                    {
+                        reader.Read();
+                        continue;
+                    }
+
+                    if (reader.LocalName != "Tint")
+                    {
+                        reader.Skip();
+                        continue;
+                    }
+
+                    HypsometricTint? tint =
+                        ReadHypsometricTint(reader);
+
+                    if (tint != null)
+                        palette.Tints.Add(tint);
+                }
+
+                reader.ReadEndElement();
+
+                palette.SortTints();
+
+                return palette;
+            }
+            catch (Exception ex)
+            {
+                RealmStudioXLogger.Exception(
+                    "Unable to load hypsometric palette. " +
+                    "The palette will be ignored.",
+                    ex);
+
+                SkipCurrentElementSafely(reader);
+
+                return null;
+            }
+        }
+
+        private static HypsometricTint? ReadHypsometricTint(
+            XmlReader reader)
+        {
+            try
+            {
+                string? id = reader.GetAttribute("Id");
+                string? heightString =
+                    reader.GetAttribute("NormalizedHeight");
+                string? colorString =
+                    reader.GetAttribute("Color");
+
+                if (!float.TryParse(
+                        heightString,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out float normalizedHeight))
+                {
+                    RealmStudioXLogger.Error(
+                        $"Ignoring hypsometric tint with invalid " +
+                        $"NormalizedHeight '{heightString}'.");
+
+                    reader.Skip();
+                    return null;
+                }
+
+                normalizedHeight =
+                    Math.Clamp(normalizedHeight, -1.0f, 1.0f);
+
+                if (string.IsNullOrWhiteSpace(colorString))
+                {
+                    RealmStudioXLogger.Error(
+                        "Ignoring hypsometric tint with missing color.");
+
+                    reader.Skip();
+                    return null;
+                }
+
+                SKColor color;
+
+                try
+                {
+                    color =
+                        XmlColorConverter.Deserialize(colorString);
+                }
+                catch (Exception ex)
+                {
+                    RealmStudioXLogger.Exception(
+                        $"Ignoring hypsometric tint with invalid color " +
+                        $"'{colorString}'.",
+                        ex);
+
+                    reader.Skip();
+                    return null;
+                }
+
+                HypsometricTint tint = new()
+                {
+                    NormalizedHeight = normalizedHeight,
+                    Color = color
+                };
+
+                if (!string.IsNullOrWhiteSpace(id))
+                    tint.Id = id;
+
+                reader.Skip();
+
+                return tint;
+            }
+            catch (Exception ex)
+            {
+                RealmStudioXLogger.Exception(
+                    "Unable to load hypsometric tint. " +
+                    "The tint will be ignored.",
+                    ex);
+
+                SkipCurrentElementSafely(reader);
+
+                return null;
             }
         }
 
@@ -350,7 +710,7 @@ namespace RealmStudioShapeRenderingLib
                 height - 1);
         }
 
-        public void UpdateHeightMapBitmap(
+        public unsafe void UpdateHeightMapBitmap(
             SKBitmap bitmap,
             float[,] heightMap,
             int left,
@@ -358,57 +718,94 @@ namespace RealmStudioShapeRenderingLib
             int right,
             int bottom)
         {
-            if (HeightMapPalette == null)
+            if (HeightMapPalette == null
+                || HeightMapPalette.Tints.Count == 0)
             {
                 return;
             }
 
+            if (_hypsometricColorLookup == null
+                || !ReferenceEquals(
+                    _lookupPalette,
+                    HeightMapPalette)
+                || _lookupMinimumHeight != MinimumHeight
+                || _lookupMaximumHeight != MaximumHeight)
+            {
+                RebuildHypsometricColorLookup();
+            }
+
+            if (_hypsometricColorLookup == null)
+                return;
+
             using SKPixmap? pixmap = bitmap.PeekPixels();
 
-            if (pixmap != null)
+            if (pixmap == null)
+                return;
+
+            IntPtr pixels = pixmap.GetPixels();
+
+            if (pixels == IntPtr.Zero)
+                return;
+
+            int rowBytes = pixmap.RowBytes;
+
+            // Clamp the supplied map rectangle.
+            left = Math.Max(0, left);
+            top = Math.Max(0, top);
+
+            right = Math.Min(heightMap.GetLength(0) - 1, right);
+            bottom = Math.Min(heightMap.GetLength(1) - 1, bottom);
+
+            if (left > right || top > bottom)
+                return;
+
+            const float lookupScale =
+                (HypsometricLookupSize - 1) / 2.0f;
+
+            byte* pixelBase = (byte*)pixels;
+
+            for (int y = top; y <= bottom; y++)
             {
-                IntPtr pixels = pixmap.GetPixels();
-                int rowBytes = pixmap.RowBytes;
+                // y is in map coordinates, so convert it to
+                // the temporary bitmap's local coordinates.
+                int pixelY = y - top;
 
-                for (int y = top; y <= bottom; y++)
+                byte* row =
+                    pixelBase + (pixelY * rowBytes);
+
+                for (int x = left; x <= right; x++)
                 {
-                    IntPtr row = pixels + ((y - top) * rowBytes);
+                    float elevation = heightMap[x, y];
 
-                    for (int x = left; x <= right; x++)
-                    {
-                        float elevation = heightMap[x, y];
+                    float normalizedHeight =
+                        NormalizeHeight(
+                            elevation,
+                            MinimumHeight,
+                            MaximumHeight);
 
-                        float normalizedHeight =
-                            NormalizeHeight(
-                                elevation,
-                                MinimumHeight,
-                                MaximumHeight);
+                    int lookupIndex =
+                        (int)Math.Round(
+                            (normalizedHeight + 1.0f) *
+                            lookupScale);
 
-                        SKColor color =
-                            GetHypsometricColor(
-                                normalizedHeight,
-                                HeightMapPalette);
+                    lookupIndex = Math.Clamp(
+                        lookupIndex,
+                        0,
+                        HypsometricLookupSize - 1);
 
-                        int pixelX = x - left;
+                    SKColor color =
+                        _hypsometricColorLookup[lookupIndex];
 
-                        int offset = pixelX * 4;
+                    // Convert map X coordinate to the
+                    // temporary bitmap's local X coordinate.
+                    int pixelX = x - left;
 
-                        System.Runtime.InteropServices.Marshal.WriteByte(
-                            row + offset,
-                            color.Red);
+                    int offset = pixelX * 4;
 
-                        System.Runtime.InteropServices.Marshal.WriteByte(
-                            row + offset + 1,
-                            color.Green);
-
-                        System.Runtime.InteropServices.Marshal.WriteByte(
-                            row + offset + 2,
-                            color.Blue);
-
-                        System.Runtime.InteropServices.Marshal.WriteByte(
-                            row + offset + 3,
-                            color.Alpha);
-                    }
+                    row[offset] = color.Red;
+                    row[offset + 1] = color.Green;
+                    row[offset + 2] = color.Blue;
+                    row[offset + 3] = color.Alpha;
                 }
             }
         }
@@ -418,10 +815,10 @@ namespace RealmStudioShapeRenderingLib
             float minimumHeight,
             float maximumHeight)
         {
-            if (elevation < 0)
+            if (elevation < 0.0f)
             {
-                if (minimumHeight >= 0)
-                    return 0;
+                if (minimumHeight >= 0.0f)
+                    return 0.0f;
 
                 return Math.Clamp(
                     elevation / Math.Abs(minimumHeight),
@@ -429,8 +826,8 @@ namespace RealmStudioShapeRenderingLib
                     0.0f);
             }
 
-            if (maximumHeight <= 0)
-                return 0;
+            if (maximumHeight <= 0.0f)
+                return 0.0f;
 
             return Math.Clamp(
                 elevation / maximumHeight,
@@ -448,34 +845,39 @@ namespace RealmStudioShapeRenderingLib
             if (palette.Tints.Count == 1)
                 return palette.Tints[0].Color;
 
-            palette.SortTints();
-
-            if (normalizedHeight <= palette.Tints[0].NormalizedHeight)
+            if (normalizedHeight <=
+                palette.Tints[0].NormalizedHeight)
+            {
                 return palette.Tints[0].Color;
+            }
 
-            if (normalizedHeight >= palette.Tints[^1].NormalizedHeight)
+            if (normalizedHeight >=
+                palette.Tints[^1].NormalizedHeight)
+            {
                 return palette.Tints[^1].Color;
+            }
 
             for (int i = 0; i < palette.Tints.Count - 1; i++)
             {
                 HypsometricTint lower = palette.Tints[i];
                 HypsometricTint upper = palette.Tints[i + 1];
 
-                if (normalizedHeight >= lower.NormalizedHeight &&
-                    normalizedHeight <= upper.NormalizedHeight)
+                if (normalizedHeight >= lower.NormalizedHeight
+                    && normalizedHeight <= upper.NormalizedHeight)
                 {
                     float range =
                         upper.NormalizedHeight -
                         lower.NormalizedHeight;
 
-                    if (range <= 0)
+                    if (range <= 0.0f)
                         return lower.Color;
 
                     float t =
-                        (normalizedHeight - lower.NormalizedHeight) /
+                        (normalizedHeight -
+                         lower.NormalizedHeight) /
                         range;
 
-                    return Utilities.LerpColor(
+                    return InterpolateColor(
                         lower.Color,
                         upper.Color,
                         t);
@@ -483,6 +885,64 @@ namespace RealmStudioShapeRenderingLib
             }
 
             return palette.Tints[^1].Color;
+        }
+
+        private static SKColor InterpolateColor(
+            SKColor first,
+            SKColor second,
+            float amount)
+        {
+            amount = Math.Clamp(amount, 0.0f, 1.0f);
+
+            byte r = (byte)Math.Round(
+                first.Red +
+                ((second.Red - first.Red) * amount));
+
+            byte g = (byte)Math.Round(
+                first.Green +
+                ((second.Green - first.Green) * amount));
+
+            byte b = (byte)Math.Round(
+                first.Blue +
+                ((second.Blue - first.Blue) * amount));
+
+            byte a = (byte)Math.Round(
+                first.Alpha +
+                ((second.Alpha - first.Alpha) * amount));
+
+            return new SKColor(r, g, b, a);
+        }
+
+        public void RebuildHypsometricColorLookup()
+        {
+            if (HeightMapPalette == null || HeightMapPalette.Tints.Count == 0)
+            {
+                _hypsometricColorLookup = null;
+                _lookupPalette = null;
+                return;
+            }
+
+            HeightMapPalette.SortTints();
+
+            SKColor[] lookup =
+                new SKColor[HypsometricLookupSize];
+
+            for (int i = 0; i < HypsometricLookupSize; i++)
+            {
+                float normalizedHeight =
+                    -1.0f +
+                    (2.0f * i / (HypsometricLookupSize - 1));
+
+                lookup[i] = GetHypsometricColor(
+                    normalizedHeight,
+                    HeightMapPalette);
+            }
+
+            _hypsometricColorLookup = lookup;
+
+            _lookupMinimumHeight = MinimumHeight;
+            _lookupMaximumHeight = MaximumHeight;
+            _lookupPalette = HeightMapPalette;
         }
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)

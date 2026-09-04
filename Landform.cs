@@ -304,24 +304,6 @@
             }
         }
 
-        public void RenderLandformForGrayscaleHeightMap(RealmStudioMap map, SKCanvas canvas)
-        {
-            SKRect clipBounds = new(0, 0, map.MapWidth, map.MapHeight);
-
-            canvas.ClipRect(clipBounds);
-
-            canvas.DrawPath(PerimeterPath, PaintObjects.LandformHeightMapFillPaint);
-
-            canvas.DrawPath(PerimeterPath, PaintObjects.LandformHeightMapOutlinePaint);
-
-            if (IsSelected)
-            {
-                // draw an outline around the landform to show that it is selected
-                PerimeterPath.GetBounds(out SKRect boundsRect);
-                canvas.DrawRect(boundsRect, PaintObjects.LandformSelectPaint);
-            }
-        }
-
         // -------------------------------------------------
         // Render cache construction
         // -------------------------------------------------

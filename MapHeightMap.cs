@@ -54,6 +54,11 @@ namespace RealmStudioShapeRenderingLib
         private float _lookupMaximumHeight;
         private HypsometricPalette? _lookupPalette;
 
+        private Dictionary<int, SKPath>? _contourPaths;
+
+        private float _contourInterval;
+        private int _majorContourInterval;
+
         public XmlSchema? GetSchema()
         {
             return null;
@@ -951,6 +956,687 @@ namespace RealmStudioShapeRenderingLib
             {
                 canvas.DrawBitmap(HeightMapBitmap, 0, 0, SKSamplingOptions.Default);
             }
+        }
+
+        public void RenderContours(
+            SKCanvas canvas,
+            float contourInterval,
+            int majorContourInterval,
+            SKPaint contourPaint,
+            SKPaint majorContourPaint)
+        {
+            if (HeightMap == null)
+                return;
+
+            if (contourInterval <= 0.0f)
+                return;
+
+            if (majorContourInterval < 1)
+                majorContourInterval = 1;
+
+            if (_contourPaths == null ||
+                _contourInterval != contourInterval ||
+                _majorContourInterval != majorContourInterval)
+            {
+                RebuildContours(
+                    contourInterval,
+                    majorContourInterval);
+            }
+
+            if (_contourPaths == null)
+                return;
+
+            foreach (var pair in _contourPaths)
+            {
+                int contourIndex = pair.Key;
+
+                SKPaint paint =
+                    contourIndex % majorContourInterval == 0
+                        ? majorContourPaint
+                        : contourPaint;
+
+                canvas.DrawPath(
+                    pair.Value,
+                    paint);
+            }
+        }
+
+        private void RebuildContours(
+            float contourInterval,
+            int majorContourInterval)
+        {
+            if (HeightMap == null)
+                return;
+
+            int width = HeightMap.GetLength(0);
+            int height = HeightMap.GetLength(1);
+
+            if (width < 2 || height < 2)
+                return;
+
+            InvalidateContours();
+
+            _contourInterval = contourInterval;
+            _majorContourInterval = majorContourInterval;
+
+            _contourPaths =
+                new Dictionary<int, SKPath>();
+
+            float minimumHeight = MinimumHeight;
+            float maximumHeight = MaximumHeight;
+
+            int firstContourIndex =
+                (int)MathF.Ceiling(
+                    minimumHeight / contourInterval);
+
+            int lastContourIndex =
+                (int)MathF.Floor(
+                    maximumHeight / contourInterval);
+
+            if (firstContourIndex > lastContourIndex)
+                return;
+
+            var builders =
+                new Dictionary<int, SKPathBuilder>();
+
+            for (int y = 0; y < height - 1; y++)
+            {
+                for (int x = 0; x < width - 1; x++)
+                {
+                    float h00 = HeightMap[x, y];
+                    float h10 = HeightMap[x + 1, y];
+                    float h11 = HeightMap[x + 1, y + 1];
+                    float h01 = HeightMap[x, y + 1];
+
+                    float minimumCell =
+                        MathF.Min(
+                            MathF.Min(h00, h10),
+                            MathF.Min(h11, h01));
+
+                    float maximumCell =
+                        MathF.Max(
+                            MathF.Max(h00, h10),
+                            MathF.Max(h11, h01));
+
+                    int cellFirstContour =
+                        Math.Max(
+                            firstContourIndex,
+                            (int)MathF.Ceiling(
+                                minimumCell / contourInterval));
+
+                    int cellLastContour =
+                        Math.Min(
+                            lastContourIndex,
+                            (int)MathF.Floor(
+                                maximumCell / contourInterval));
+
+                    if (cellFirstContour > cellLastContour)
+                        continue;
+
+                    for (int contourIndex = cellFirstContour;
+                         contourIndex <= cellLastContour;
+                         contourIndex++)
+                    {
+                        float contourHeight =
+                            contourIndex * contourInterval;
+
+                        int caseIndex =
+                            GetMarchingSquaresCase(
+                                h00,
+                                h10,
+                                h11,
+                                h01,
+                                contourHeight);
+
+                        if (caseIndex == 0 ||
+                            caseIndex == 15)
+                        {
+                            continue;
+                        }
+
+                        if (!builders.TryGetValue(
+                                contourIndex,
+                                out SKPathBuilder? builder))
+                        {
+                            builder = new SKPathBuilder();
+
+                            builders.Add(
+                                contourIndex,
+                                builder);
+                        }
+
+                        AddContourSegments(
+                            builder,
+                            x,
+                            y,
+                            h00,
+                            h10,
+                            h11,
+                            h01,
+                            contourHeight,
+                            caseIndex);
+                    }
+                }
+            }
+
+            foreach (var pair in builders)
+            {
+                SKPathBuilder builder = pair.Value;
+
+                SKPath path =
+                    builder.Detach();
+
+                builder.Dispose();
+
+                _contourPaths.Add(
+                    pair.Key,
+                    path);
+            }
+        }
+
+        public void InvalidateContours()
+        {
+            if (_contourPaths != null)
+            {
+                foreach (SKPath path in _contourPaths.Values)
+                {
+                    path.Dispose();
+                }
+
+                _contourPaths.Clear();
+                _contourPaths = null;
+            }
+        }
+
+        private static int GetMarchingSquaresCase(
+            float h00,
+            float h10,
+            float h11,
+            float h01,
+            float contourHeight)
+        {
+            int caseIndex = 0;
+
+            if (h00 >= contourHeight)
+                caseIndex |= 1;
+
+            if (h10 >= contourHeight)
+                caseIndex |= 2;
+
+            if (h11 >= contourHeight)
+                caseIndex |= 4;
+
+            if (h01 >= contourHeight)
+                caseIndex |= 8;
+
+            return caseIndex;
+        }
+
+        private static void AddContourSegments(
+            SKPathBuilder builder,
+            int x,
+            int y,
+            float h00,
+            float h10,
+            float h11,
+            float h01,
+            float contourHeight,
+            int caseIndex)
+        {
+            switch (caseIndex)
+            {
+                case 1:
+                case 14:
+                    {
+                        SKPoint left =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x,
+                                y + 1,
+                                h00,
+                                h01,
+                                contourHeight);
+
+                        SKPoint top =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x + 1,
+                                y,
+                                h00,
+                                h10,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            left,
+                            top);
+
+                        break;
+                    }
+
+                case 2:
+                case 13:
+                    {
+                        SKPoint top =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x + 1,
+                                y,
+                                h00,
+                                h10,
+                                contourHeight);
+
+                        SKPoint right =
+                            InterpolatePoint(
+                                x + 1,
+                                y,
+                                x + 1,
+                                y + 1,
+                                h10,
+                                h11,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            top,
+                            right);
+
+                        break;
+                    }
+
+                case 3:
+                case 12:
+                    {
+                        SKPoint left =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x,
+                                y + 1,
+                                h00,
+                                h01,
+                                contourHeight);
+
+                        SKPoint right =
+                            InterpolatePoint(
+                                x + 1,
+                                y,
+                                x + 1,
+                                y + 1,
+                                h10,
+                                h11,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            left,
+                            right);
+
+                        break;
+                    }
+
+                case 4:
+                case 11:
+                    {
+                        SKPoint right =
+                            InterpolatePoint(
+                                x + 1,
+                                y,
+                                x + 1,
+                                y + 1,
+                                h10,
+                                h11,
+                                contourHeight);
+
+                        SKPoint bottom =
+                            InterpolatePoint(
+                                x,
+                                y + 1,
+                                x + 1,
+                                y + 1,
+                                h01,
+                                h11,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            right,
+                            bottom);
+
+                        break;
+                    }
+
+                case 5:
+                    {
+                        SKPoint top =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x + 1,
+                                y,
+                                h00,
+                                h10,
+                                contourHeight);
+
+                        SKPoint right =
+                            InterpolatePoint(
+                                x + 1,
+                                y,
+                                x + 1,
+                                y + 1,
+                                h10,
+                                h11,
+                                contourHeight);
+
+                        SKPoint bottom =
+                            InterpolatePoint(
+                                x,
+                                y + 1,
+                                x + 1,
+                                y + 1,
+                                h01,
+                                h11,
+                                contourHeight);
+
+                        SKPoint left =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x,
+                                y + 1,
+                                h00,
+                                h01,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            top,
+                            right);
+
+                        AddSegment(
+                            builder,
+                            bottom,
+                            left);
+
+                        break;
+                    }
+
+                case 6:
+                case 9:
+                    {
+                        SKPoint top =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x + 1,
+                                y,
+                                h00,
+                                h10,
+                                contourHeight);
+
+                        SKPoint bottom =
+                            InterpolatePoint(
+                                x,
+                                y + 1,
+                                x + 1,
+                                y + 1,
+                                h01,
+                                h11,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            top,
+                            bottom);
+
+                        break;
+                    }
+
+                case 7:
+                case 8:
+                    {
+                        SKPoint left =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x,
+                                y + 1,
+                                h00,
+                                h01,
+                                contourHeight);
+
+                        SKPoint bottom =
+                            InterpolatePoint(
+                                x,
+                                y + 1,
+                                x + 1,
+                                y + 1,
+                                h01,
+                                h11,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            left,
+                            bottom);
+
+                        break;
+                    }
+
+                case 10:
+                    {
+                        SKPoint top =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x + 1,
+                                y,
+                                h00,
+                                h10,
+                                contourHeight);
+
+                        SKPoint left =
+                            InterpolatePoint(
+                                x,
+                                y,
+                                x,
+                                y + 1,
+                                h00,
+                                h01,
+                                contourHeight);
+
+                        SKPoint right =
+                            InterpolatePoint(
+                                x + 1,
+                                y,
+                                x + 1,
+                                y + 1,
+                                h10,
+                                h11,
+                                contourHeight);
+
+                        SKPoint bottom =
+                            InterpolatePoint(
+                                x,
+                                y + 1,
+                                x + 1,
+                                y + 1,
+                                h01,
+                                h11,
+                                contourHeight);
+
+                        AddSegment(
+                            builder,
+                            top,
+                            left);
+
+                        AddSegment(
+                            builder,
+                            right,
+                            bottom);
+
+                        break;
+                    }
+            }
+        }
+
+        private static void AddSegment(
+            SKPathBuilder builder,
+            SKPoint first,
+            SKPoint second)
+        {
+            builder.MoveTo(first);
+            builder.LineTo(second);
+        }
+
+        private readonly record struct ContourPointKey(int X, int Y);
+
+        private static ContourPointKey GetContourPointKey(SKPoint point)
+        {
+            const float scale = 100000.0f;
+
+            return new ContourPointKey(
+                (int)MathF.Round(
+                    point.X * scale),
+
+                (int)MathF.Round(
+                    point.Y * scale));
+        }
+
+        private sealed class ContourPath
+        {
+            public List<SKPoint> Points { get; } = [];
+
+            public bool Closed { get; set; }
+
+            public ContourPointKey Start =>
+                GetContourPointKey(
+                    Points[0]);
+
+            public ContourPointKey End =>
+                GetContourPointKey(
+                    Points[^1]);
+        }
+
+        private sealed class ContourCollection
+        {
+            public Dictionary<
+                ContourPointKey,
+                ContourPath> PathsByEndpoint
+            { get; } = [];
+
+            public List<ContourPath> Paths { get; } = [];
+        }
+
+        private static SKPoint InterpolatePoint(
+            float x1,
+            float y1,
+            float x2,
+            float y2,
+            float height1,
+            float height2,
+            float contourHeight)
+        {
+            float difference =
+                height2 - height1;
+
+            if (MathF.Abs(difference) < 0.000001f)
+            {
+                return new SKPoint(
+                    (x1 + x2) * 0.5f,
+                    (y1 + y2) * 0.5f);
+            }
+
+            float t =
+                (contourHeight - height1) /
+                difference;
+
+            t = Math.Clamp(
+                t,
+                0.0f,
+                1.0f);
+
+            return new SKPoint(
+                x1 + ((x2 - x1) * t),
+                y1 + ((y2 - y1) * t));
+        }
+
+        private static void ExtendContourPath(
+            ContourCollection collection,
+            ContourPath path,
+            ContourPointKey existingEndpoint,
+            SKPoint newPoint)
+        {
+            ContourPointKey oldStart =
+                path.Start;
+
+            ContourPointKey oldEnd =
+                path.End;
+
+            collection.PathsByEndpoint.Remove(
+                oldStart);
+
+            collection.PathsByEndpoint.Remove(
+                oldEnd);
+
+            if (oldStart == existingEndpoint)
+            {
+                path.Points.Insert(
+                    0,
+                    newPoint);
+            }
+            else
+            {
+                path.Points.Add(
+                    newPoint);
+            }
+
+            collection.PathsByEndpoint[
+                path.Start] =
+                path;
+
+            collection.PathsByEndpoint[
+                path.End] =
+                path;
+        }
+
+        private static void DrawContourSegment(
+            SKCanvas canvas,
+            SKPaint paint,
+            SKPoint first,
+            SKPoint second)
+        {
+            canvas.DrawLine(
+                first,
+                second,
+                paint);
+        }
+
+        private static bool IsMajorContour(
+            float contourHeight,
+            float contourInterval,
+            int majorContourInterval)
+        {
+            if (majorContourInterval <= 1)
+                return true;
+
+            float majorInterval =
+                contourInterval * majorContourInterval;
+
+            if (majorInterval <= 0.0f)
+                return false;
+
+            float remainder =
+                MathF.Abs(
+                    contourHeight % majorInterval);
+
+            const float tolerance = 0.0001f;
+
+            return remainder < tolerance ||
+                   MathF.Abs(remainder - majorInterval) < tolerance;
         }
 
         public override bool HitTest(SKPoint worldPos)

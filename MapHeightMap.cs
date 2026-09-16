@@ -33,9 +33,9 @@ namespace RealmStudioShapeRenderingLib
 {
     public class MapHeightMap : MapComponent2D, IXmlSerializable
     {
-        public float MinimumHeight { get; set; }
-        public float MaximumHeight { get; set; }
-        public string HeightUnit { get; set; } = string.Empty;
+        public float MinimumElevation { get; set; }
+        public float MaximumElevation { get; set; }
+        public string ElevationUnit { get; set; } = string.Empty;
 
         [XmlIgnore]
         public float[,]? HeightMap { get; private set; }
@@ -50,8 +50,8 @@ namespace RealmStudioShapeRenderingLib
 
         private SKColor[]? _hypsometricColorLookup;
 
-        private float _lookupMinimumHeight;
-        private float _lookupMaximumHeight;
+        private float _lookupMinimumElevation;
+        private float _lookupMaximumElevation;
         private HypsometricPalette? _lookupPalette;
 
         private Dictionary<int, SKPath>? _contourPaths;
@@ -83,16 +83,16 @@ namespace RealmStudioShapeRenderingLib
                 height.ToString(CultureInfo.InvariantCulture));
 
             writer.WriteAttributeString(
-                "MinimumHeight",
-                MinimumHeight.ToString(CultureInfo.InvariantCulture));
+                "MinimumElevation",
+                MinimumElevation.ToString(CultureInfo.InvariantCulture));
 
             writer.WriteAttributeString(
-                "MaximumHeight",
-                MaximumHeight.ToString(CultureInfo.InvariantCulture));
+                "MaximumElevation",
+                MaximumElevation.ToString(CultureInfo.InvariantCulture));
 
             writer.WriteAttributeString(
-                "HeightUnit",
-                HeightUnit);
+                "ElevationUnit",
+                ElevationUnit);
 
             // Serialize the hypsometric palette used by this height map.
             if (HeightMapPalette != null)
@@ -172,7 +172,6 @@ namespace RealmStudioShapeRenderingLib
 
         public void ReadXml(XmlReader reader)
         {
-
             try
             {
                 string? widthString =
@@ -181,14 +180,23 @@ namespace RealmStudioShapeRenderingLib
                 string? heightString =
                     reader.GetAttribute("Height");
 
-                string? minimumHeightString =
+                string? minimumElevationString =
                     reader.GetAttribute("MinimumHeight");
 
-                string? maximumHeightString =
+                string? maximumElevationString =
                     reader.GetAttribute("MaximumHeight");
 
-                string? heightUnit =
+                minimumElevationString =
+                    reader.GetAttribute("MinimumElevation");
+
+                maximumElevationString =
+                    reader.GetAttribute("MaximumElevation");
+
+                string? elevationUnit =
                     reader.GetAttribute("HeightUnit");
+
+                elevationUnit =
+                    reader.GetAttribute("ElevationUnit");
 
                 if (!int.TryParse(
                         widthString,
@@ -261,39 +269,39 @@ namespace RealmStudioShapeRenderingLib
                 }
 
                 /*
-                 * Minimum and maximum height are metadata. If either value is
+                 * Minimum and maximum elevation are metadata. If either value is
                  * invalid, retain a safe default rather than rejecting the
                  * entire map.
                  */
                 if (!float.TryParse(
-                        minimumHeightString,
+                        minimumElevationString,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
-                        out float minimumHeight))
+                        out float minimumElevation))
                 {
                     RealmStudioXLogger.Error(
                         $"Unable to load height map: invalid MinimumHeight " +
-                        $"'{minimumHeightString}'. Using 0.");
+                        $"'{minimumElevationString}'. Using 0.");
 
-                    minimumHeight = 0.0f;
+                    minimumElevation = 0.0f;
                 }
 
                 if (!float.TryParse(
-                        maximumHeightString,
+                        maximumElevationString,
                         NumberStyles.Float,
                         CultureInfo.InvariantCulture,
-                        out float maximumHeight))
+                        out float maximumElevation))
                 {
                     RealmStudioXLogger.Error(
                         $"Unable to load height map: invalid MaximumHeight " +
-                        $"'{maximumHeightString}'. Using 0.");
+                        $"'{maximumElevationString}'. Using 0.");
 
-                    maximumHeight = 0.0f;
+                    maximumElevation = 0.0f;
                 }
 
-                MinimumHeight = minimumHeight;
-                MaximumHeight = maximumHeight;
-                HeightUnit = heightUnit ?? string.Empty;
+                MinimumElevation = minimumElevation;
+                MaximumElevation = maximumElevation;
+                ElevationUnit = elevationUnit ?? string.Empty;
 
                 HeightMapPalette = null;
 
@@ -733,8 +741,8 @@ namespace RealmStudioShapeRenderingLib
                 || !ReferenceEquals(
                     _lookupPalette,
                     HeightMapPalette)
-                || _lookupMinimumHeight != MinimumHeight
-                || _lookupMaximumHeight != MaximumHeight)
+                || _lookupMinimumElevation != MinimumElevation
+                || _lookupMaximumElevation != MaximumElevation)
             {
                 RebuildHypsometricColorLookup();
             }
@@ -785,8 +793,8 @@ namespace RealmStudioShapeRenderingLib
                     float normalizedHeight =
                         NormalizeHeight(
                             elevation,
-                            MinimumHeight,
-                            MaximumHeight);
+                            MinimumElevation,
+                            MaximumElevation);
 
                     int lookupIndex =
                         (int)Math.Round(
@@ -945,8 +953,8 @@ namespace RealmStudioShapeRenderingLib
 
             _hypsometricColorLookup = lookup;
 
-            _lookupMinimumHeight = MinimumHeight;
-            _lookupMaximumHeight = MaximumHeight;
+            _lookupMinimumElevation = MinimumElevation;
+            _lookupMaximumElevation = MaximumElevation;
             _lookupPalette = HeightMapPalette;
         }
 
@@ -1022,8 +1030,8 @@ namespace RealmStudioShapeRenderingLib
             _contourPaths =
                 new Dictionary<int, SKPath>();
 
-            float minimumHeight = MinimumHeight;
-            float maximumHeight = MaximumHeight;
+            float minimumHeight = MinimumElevation;
+            float maximumHeight = MaximumElevation;
 
             int firstContourIndex =
                 (int)MathF.Ceiling(

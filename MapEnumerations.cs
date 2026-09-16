@@ -70,6 +70,7 @@ namespace RealmStudioShapeRenderingLib
         HeightMapPaint,
         MapHeightIncrease,
         MapHeightDecrease,
+        MapHeightSmooth,
         DrawingSelect,
         DrawingLine,
         DrawingPaint,
@@ -496,6 +497,29 @@ namespace RealmStudioShapeRenderingLib
     {
         Oval,
         Rectangle
+    }
+
+    public enum ModelViewDirection
+    {
+        Front,
+        Back,
+        Left,
+        Right,
+        Top,
+        Bottom,
+    }
+
+    public enum ModelUpDirection
+    {
+        XUp,
+        YUp,
+        ZUp,
+    }
+
+    public enum CameraProjection
+    {
+        Perspective,
+        Orthographic
     }
 
     public enum LocalStarImageType

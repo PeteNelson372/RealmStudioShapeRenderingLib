@@ -223,9 +223,7 @@
             }
         }
 
-        public void RenderLandformForHeightMap(
-                RealmStudioMap map,
-                SKCanvas canvas)
+        public void RenderLandformForHeightMap(RealmStudioMap map, SKCanvas canvas)
         {
             MapLayer heightMapLayer = MapBuilder.GetMapLayerByIndex(map, MapBuilder.HEIGHTMAPLAYER);
 
@@ -233,7 +231,6 @@
             {
                 return;
             }
-
 
             if (heightMapLayer.Shapes[0] is not MapHeightMap heightMap || heightMap.HeightMap == null)
             {
@@ -245,11 +242,7 @@
                 return;
             }
 
-            SKRect clipBounds = new(
-                0,
-                0,
-                map.MapWidth,
-                map.MapHeight);
+            SKRect clipBounds = new(0, 0, map.MapWidth, map.MapHeight);
 
             canvas.Save();
 
@@ -290,17 +283,13 @@
             canvas.Restore();
 
             // Draw the landform perimeter on top of the heightmap.
-            canvas.DrawPath(
-                PerimeterPath,
-                PaintObjects.LandformHeightMapOutlinePaint);
+            canvas.DrawPath(PerimeterPath, PaintObjects.LandformHeightMapOutlinePaint);
 
             if (IsSelected)
             {
                 PerimeterPath.GetBounds(out SKRect boundsRect);
 
-                canvas.DrawRect(
-                    boundsRect,
-                    PaintObjects.LandformSelectPaint);
+                canvas.DrawRect(boundsRect, PaintObjects.LandformSelectPaint);
             }
         }
 

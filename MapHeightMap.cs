@@ -41,9 +41,6 @@ namespace RealmStudioShapeRenderingLib
         public float[,]? HeightMap { get; private set; }
 
         [XmlIgnore]
-        public SKBitmap? HeightMapBitmap { get; private set; }
-
-        [XmlIgnore]
         public HypsometricPalette? HeightMapPalette { get; set; }
 
         private const int HypsometricLookupSize = 4096;
@@ -313,8 +310,6 @@ namespace RealmStudioShapeRenderingLib
                     HeightMap =
                         new float[width, height];
 
-                    RebuildHeightMapBitmap();
-
                     return;
                 }
 
@@ -393,8 +388,6 @@ namespace RealmStudioShapeRenderingLib
                     HeightMap =
                         new float[width, height];
 
-                    RebuildHeightMapBitmap();
-
                     return;
                 }
 
@@ -415,8 +408,6 @@ namespace RealmStudioShapeRenderingLib
                     HeightMap =
                         new float[width, height];
 
-                    RebuildHeightMapBitmap();
-
                     return;
                 }
 
@@ -430,8 +421,6 @@ namespace RealmStudioShapeRenderingLib
 
                     HeightMap =
                         new float[width, height];
-
-                    RebuildHeightMapBitmap();
 
                     return;
                 }
@@ -460,12 +449,6 @@ namespace RealmStudioShapeRenderingLib
                         byteIndex += sizeof(float);
                     }
                 }
-
-                /*
-                 * The actual height data has been reconstructed.
-                 * Recreate the rendering bitmap from it.
-                 */
-                RebuildHeightMapBitmap();
             }
             catch (Exception ex)
             {
@@ -644,9 +627,6 @@ namespace RealmStudioShapeRenderingLib
         private void ClearHeightMap()
         {
             HeightMap = null;
-
-            HeightMapBitmap?.Dispose();
-            HeightMapBitmap = null;
         }
 
         private static void SkipCurrentElementSafely(XmlReader reader)
@@ -687,40 +667,90 @@ namespace RealmStudioShapeRenderingLib
         public void Initialize(int width, int height)
         {
             HeightMap = new float[width, height];
-
-            RebuildHeightMapBitmap();
         }
 
-        public void RebuildHeightMapBitmap()
+        public unsafe void UpdateHeightMapBitmap(
+    SKBitmap bitmap,
+    float[,] heightMap,
+    int left,
+    int top,
+    int right,
+    int bottom,
+    SKColor[] colorLookup)
         {
-            if (HeightMap == null)
-            {
-                HeightMapBitmap?.Dispose();
-                HeightMapBitmap = null;
+            if (colorLookup == null || colorLookup.Length == 0)
                 return;
+
+            using SKPixmap? pixmap = bitmap.PeekPixels();
+
+            if (pixmap == null)
+                return;
+
+            IntPtr pixels = pixmap.GetPixels();
+
+            if (pixels == IntPtr.Zero)
+                return;
+
+            int rowBytes = pixmap.RowBytes;
+
+            left = Math.Max(0, left);
+            top = Math.Max(0, top);
+
+            right = Math.Min(
+                heightMap.GetLength(0) - 1,
+                right);
+
+            bottom = Math.Min(
+                heightMap.GetLength(1) - 1,
+                bottom);
+
+            if (left > right || top > bottom)
+                return;
+
+            const float lookupScale =
+                (HypsometricLookupSize - 1) / 2.0f;
+
+            byte* pixelBase = (byte*)pixels;
+
+            for (int y = top; y <= bottom; y++)
+            {
+                int pixelY = y - top;
+
+                byte* row =
+                    pixelBase + (pixelY * rowBytes);
+
+                for (int x = left; x <= right; x++)
+                {
+                    float elevation = heightMap[x, y];
+
+                    float normalizedHeight =
+                        NormalizeHeight(
+                            elevation,
+                            MinimumElevation,
+                            MaximumElevation);
+
+                    int lookupIndex =
+                        (int)Math.Round(
+                            (normalizedHeight + 1.0f) *
+                            lookupScale);
+
+                    lookupIndex = Math.Clamp(
+                        lookupIndex,
+                        0,
+                        colorLookup.Length - 1);
+
+                    SKColor color =
+                        colorLookup[lookupIndex];
+
+                    int pixelX = x - left;
+                    int offset = pixelX * 4;
+
+                    row[offset] = color.Red;
+                    row[offset + 1] = color.Green;
+                    row[offset + 2] = color.Blue;
+                    row[offset + 3] = color.Alpha;
+                }
             }
-
-            int width = HeightMap.GetLength(0);
-            int height = HeightMap.GetLength(1);
-
-            HeightMapBitmap?.Dispose();
-
-            HeightMapBitmap = new SKBitmap(
-                new SKImageInfo(
-                    width,
-                    height,
-                    SKColorType.Rgba8888,
-                    SKAlphaType.Premul));
-
-            HeightMapBitmap.Erase(SKColors.Transparent);
-
-            UpdateHeightMapBitmap(
-                HeightMapBitmap,
-                HeightMap,
-                0,
-                0,
-                width - 1,
-                height - 1);
         }
 
         public unsafe void UpdateHeightMapBitmap(
@@ -729,7 +759,9 @@ namespace RealmStudioShapeRenderingLib
             int left,
             int top,
             int right,
-            int bottom)
+            int bottom,
+            int destinationLeft = 0,
+            int destinationTop = 0)
         {
             if (HeightMapPalette == null
                 || HeightMapPalette.Tints.Count == 0)
@@ -762,12 +794,17 @@ namespace RealmStudioShapeRenderingLib
 
             int rowBytes = pixmap.RowBytes;
 
-            // Clamp the supplied map rectangle.
+            // Clamp the supplied map rectangle to the height map.
             left = Math.Max(0, left);
             top = Math.Max(0, top);
 
-            right = Math.Min(heightMap.GetLength(0) - 1, right);
-            bottom = Math.Min(heightMap.GetLength(1) - 1, bottom);
+            right = Math.Min(
+                heightMap.GetLength(0) - 1,
+                right);
+
+            bottom = Math.Min(
+                heightMap.GetLength(1) - 1,
+                bottom);
 
             if (left > right || top > bottom)
                 return;
@@ -779,16 +816,18 @@ namespace RealmStudioShapeRenderingLib
 
             for (int y = top; y <= bottom; y++)
             {
-                // y is in map coordinates, so convert it to
-                // the temporary bitmap's local coordinates.
-                int pixelY = y - top;
+                // Convert the map Y coordinate to the destination
+                // bitmap's local Y coordinate.
+                int pixelY =
+                    destinationTop + (y - top);
 
                 byte* row =
                     pixelBase + (pixelY * rowBytes);
 
                 for (int x = left; x <= right; x++)
                 {
-                    float elevation = heightMap[x, y];
+                    float elevation =
+                        heightMap[x, y];
 
                     float normalizedHeight =
                         NormalizeHeight(
@@ -809,9 +848,10 @@ namespace RealmStudioShapeRenderingLib
                     SKColor color =
                         _hypsometricColorLookup[lookupIndex];
 
-                    // Convert map X coordinate to the
-                    // temporary bitmap's local X coordinate.
-                    int pixelX = x - left;
+                    // Convert the map X coordinate to the
+                    // destination bitmap's local X coordinate.
+                    int pixelX =
+                        destinationLeft + (x - left);
 
                     int offset = pixelX * 4;
 
@@ -958,12 +998,72 @@ namespace RealmStudioShapeRenderingLib
             _lookupPalette = HeightMapPalette;
         }
 
+        internal void EnsureHypsometricColorLookup()
+        {
+            if (HeightMapPalette == null ||
+                HeightMapPalette.Tints.Count == 0)
+            {
+                return;
+            }
+
+            if (_hypsometricColorLookup == null ||
+                !ReferenceEquals(
+                    _lookupPalette,
+                    HeightMapPalette) ||
+                _lookupMinimumElevation != MinimumElevation ||
+                _lookupMaximumElevation != MaximumElevation)
+            {
+                RebuildHypsometricColorLookup();
+            }
+        }
+
+        internal SKColor GetHeightMapColorFast(float elevation)
+        {
+            if (_hypsometricColorLookup == null)
+                return SKColors.Transparent;
+
+            float normalizedHeight =
+                NormalizeHeight(
+                    elevation,
+                    MinimumElevation,
+                    MaximumElevation);
+
+            const float lookupScale =
+                (HypsometricLookupSize - 1) / 2.0f;
+
+            int lookupIndex =
+                (int)Math.Round(
+                    (normalizedHeight + 1.0f) *
+                    lookupScale);
+
+            lookupIndex =
+                Math.Clamp(
+                    lookupIndex,
+                    0,
+                    HypsometricLookupSize - 1);
+
+            return _hypsometricColorLookup[lookupIndex];
+        }
+
+        public SKColor[] GetHypsometricColorLookupSnapshot()
+        {
+            if (_hypsometricColorLookup == null
+                || !ReferenceEquals(_lookupPalette, HeightMapPalette)
+                || _lookupMinimumElevation != MinimumElevation
+                || _lookupMaximumElevation != MaximumElevation)
+            {
+                RebuildHypsometricColorLookup();
+            }
+
+            if (_hypsometricColorLookup == null)
+                return [];
+
+            return (SKColor[])_hypsometricColorLookup.Clone();
+        }
+
         public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)
         {
-            if (HeightMapBitmap != null)
-            {
-                canvas.DrawBitmap(HeightMapBitmap, 0, 0, SKSamplingOptions.Default);
-            }
+            // no op
         }
 
         public void RenderContours(

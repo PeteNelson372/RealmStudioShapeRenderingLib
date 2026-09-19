@@ -50,6 +50,15 @@
         [XmlIgnore]
         public bool IsInteractive { get; private set; }
 
+        [XmlIgnore]
+        private SKBitmap? _heightMapBitmap;
+        [XmlIgnore]
+        private SKBitmap? _heightMapBackBitmap;
+        [XmlIgnore]
+        private SKRect _heightMapBitmapBounds;
+        [XmlIgnore]
+        private readonly object _heightMapBitmapLock = new();
+
         public override void FinalizeShapeGeometry(RealmStudioMap map)
         {
             RebuildPerimeter();
@@ -223,76 +232,370 @@
             }
         }
 
-        public void RenderLandformForHeightMap(RealmStudioMap map, SKCanvas canvas)
+        // -------------------------------------------------
+        // Heightmap rendering
+        // -------------------------------------------------
+
+        public void RenderLandformHeightMap(SKCanvas canvas)
         {
-            MapLayer heightMapLayer = MapBuilder.GetMapLayerByIndex(map, MapBuilder.HEIGHTMAPLAYER);
+            SKBitmap? bitmap;
+            SKRect bitmapBounds;
 
-            if (heightMapLayer.Shapes.Count == 0)
+            lock (_heightMapBitmapLock)
             {
-                return;
+                bitmap = _heightMapBitmap;
+                bitmapBounds = _heightMapBitmapBounds;
             }
 
-            if (heightMapLayer.Shapes[0] is not MapHeightMap heightMap || heightMap.HeightMap == null)
-            {
+            if (bitmap == null || bitmap.IsEmpty)
                 return;
-            }
-
-            if (heightMap.HeightMapPalette == null)
-            {
-                return;
-            }
-
-            SKRect clipBounds = new(0, 0, map.MapWidth, map.MapHeight);
 
             canvas.Save();
 
-            // Don't allow anything to be rendered outside the map.
-            canvas.ClipRect(clipBounds);
+            canvas.ClipPath(
+                PerimeterPath,
+                SKClipOperation.Intersect,
+                true);
 
-            // Clip the heightmap rendering to this landform.
-            canvas.ClipPath(PerimeterPath);
+            canvas.DrawBitmap(
+                bitmap,
+                bitmapBounds.Left,
+                bitmapBounds.Top,
+                SKSamplingOptions.Default);
 
-            PerimeterPath.GetBounds(out SKRect landformBounds);
-
-            int left = Math.Max(0, (int)Math.Floor(landformBounds.Left));
-            int top = Math.Max(0, (int)Math.Floor(landformBounds.Top));
-
-            int right = Math.Min(
-                map.MapWidth - 1,
-                (int)Math.Ceiling(landformBounds.Right));
-
-            int bottom = Math.Min(
-                map.MapHeight - 1,
-                (int)Math.Ceiling(landformBounds.Bottom));
-
-            if (left <= right && top <= bottom)
-            {
-                using SKBitmap bitmap = new(
-                    new SKImageInfo(
-                        right - left + 1,
-                        bottom - top + 1,
-                        SKColorType.Rgba8888,
-                        SKAlphaType.Premul));
-
-                heightMap.UpdateHeightMapBitmap(bitmap, heightMap.HeightMap, left, top, right, bottom);
-                
-                canvas.DrawBitmap(bitmap, left, top, SKSamplingOptions.Default);
-            }
-
-
-            canvas.Restore();
-
-            // Draw the landform perimeter on top of the heightmap.
-            canvas.DrawPath(PerimeterPath, PaintObjects.LandformHeightMapOutlinePaint);
+            canvas.DrawPath(
+                PerimeterPath,
+                PaintObjects.LandformHeightMapOutlinePaint);
 
             if (IsSelected)
             {
-                PerimeterPath.GetBounds(out SKRect boundsRect);
+                PerimeterPath.GetBounds(
+                    out SKRect boundsRect);
 
-                canvas.DrawRect(boundsRect, PaintObjects.LandformSelectPaint);
+                canvas.DrawRect(
+                    boundsRect,
+                    PaintObjects.LandformSelectPaint);
+            }
+
+            canvas.Restore();
+        }
+
+        public void RebuildHeightMapBitmap(MapHeightMap heightMap)
+        {
+            if (heightMap.HeightMap == null ||
+                heightMap.HeightMapPalette == null ||
+                heightMap.HeightMapPalette.Tints.Count == 0)
+            {
+                lock (_heightMapBitmapLock)
+                {
+                    _heightMapBitmap?.Dispose();
+                    _heightMapBitmap = null;
+
+                    _heightMapBackBitmap?.Dispose();
+                    _heightMapBackBitmap = null;
+
+                    _heightMapBitmapBounds = SKRect.Empty;
+                }
+
+                return;
+            }
+
+            int mapWidth =
+                heightMap.HeightMap.GetLength(0);
+
+            int mapHeight =
+                heightMap.HeightMap.GetLength(1);
+
+            PerimeterPath.GetBounds(
+                out SKRect bounds);
+
+            int left = Math.Max(
+                0,
+                (int)MathF.Floor(bounds.Left));
+
+            int top = Math.Max(
+                0,
+                (int)MathF.Floor(bounds.Top));
+
+            int right = Math.Min(
+                mapWidth - 1,
+                (int)MathF.Ceiling(bounds.Right));
+
+            int bottom = Math.Min(
+                mapHeight - 1,
+                (int)MathF.Ceiling(bounds.Bottom));
+
+            if (left > right || top > bottom)
+            {
+                lock (_heightMapBitmapLock)
+                {
+                    _heightMapBitmap?.Dispose();
+                    _heightMapBitmap = null;
+
+                    _heightMapBackBitmap?.Dispose();
+                    _heightMapBackBitmap = null;
+
+                    _heightMapBitmapBounds = SKRect.Empty;
+                }
+
+                return;
+            }
+
+            int width = right - left + 1;
+            int height = bottom - top + 1;
+
+            SKBitmap displayBitmap = new(
+                new SKImageInfo(
+                    width,
+                    height,
+                    SKColorType.Rgba8888,
+                    SKAlphaType.Premul));
+
+            SKBitmap backBitmap = new(
+                new SKImageInfo(
+                    width,
+                    height,
+                    SKColorType.Rgba8888,
+                    SKAlphaType.Premul));
+
+            try
+            {
+                displayBitmap.Erase(SKColors.Transparent);
+                backBitmap.Erase(SKColors.Transparent);
+
+                /*
+                 * Both buffers start identical. From this point onward the
+                 * worker updates only the back buffer. The UI commits a
+                 * rendered patch by updating the displayed buffer and then
+                 * swapping the two references.
+                 */
+                heightMap.UpdateHeightMapBitmap(
+                    displayBitmap,
+                    heightMap.HeightMap,
+                    left,
+                    top,
+                    right,
+                    bottom);
+
+                heightMap.UpdateHeightMapBitmap(
+                    backBitmap,
+                    heightMap.HeightMap,
+                    left,
+                    top,
+                    right,
+                    bottom);
+
+                lock (_heightMapBitmapLock)
+                {
+                    SKBitmap? oldDisplay = _heightMapBitmap;
+                    SKBitmap? oldBack = _heightMapBackBitmap;
+
+                    _heightMapBitmap = displayBitmap;
+                    _heightMapBackBitmap = backBitmap;
+
+                    _heightMapBitmapBounds = new SKRect(
+                        left,
+                        top,
+                        right + 1,
+                        bottom + 1);
+
+                    oldDisplay?.Dispose();
+                    oldBack?.Dispose();
+                }
+            }
+            catch
+            {
+                displayBitmap.Dispose();
+                backBitmap.Dispose();
+                throw;
             }
         }
 
+        /// <summary>
+        /// Creates an off-screen bitmap containing only the portion of this
+        /// landform's heightmap affected by <paramref name="modifiedRect"/>.
+        /// The patch is rendered independently of both Landform buffers.
+        /// </summary>
+        public SKBitmap? CreateHeightMapPatch(
+            MapHeightMap heightMap,
+            SKRect modifiedRect,
+            out SKRect patchBounds)
+        {
+            patchBounds = SKRect.Empty;
+
+            SKRect bitmapBounds;
+
+            lock (_heightMapBitmapLock)
+            {
+                if (_heightMapBitmap == null ||
+                    _heightMapBitmap.IsEmpty)
+                {
+                    return null;
+                }
+
+                bitmapBounds = _heightMapBitmapBounds;
+            }
+
+            if (heightMap.HeightMap == null)
+                return null;
+
+            SKRect intersection =
+                SKRect.Intersect(
+                    bitmapBounds,
+                    modifiedRect);
+
+            if (intersection.IsEmpty)
+                return null;
+
+            int left = Math.Max(
+                (int)bitmapBounds.Left,
+                (int)MathF.Floor(intersection.Left));
+
+            int top = Math.Max(
+                (int)bitmapBounds.Top,
+                (int)MathF.Floor(intersection.Top));
+
+            int right = Math.Min(
+                (int)bitmapBounds.Right - 1,
+                (int)MathF.Ceiling(intersection.Right) - 1);
+
+            int bottom = Math.Min(
+                (int)bitmapBounds.Bottom - 1,
+                (int)MathF.Ceiling(intersection.Bottom) - 1);
+
+            if (left > right || top > bottom)
+                return null;
+
+            int width = right - left + 1;
+            int height = bottom - top + 1;
+
+            SKBitmap patch = new(
+                new SKImageInfo(
+                    width,
+                    height,
+                    SKColorType.Rgba8888,
+                    SKAlphaType.Premul));
+
+            try
+            {
+                patch.Erase(SKColors.Transparent);
+
+                heightMap.UpdateHeightMapBitmap(
+                    patch,
+                    heightMap.HeightMap,
+                    left,
+                    top,
+                    right,
+                    bottom);
+
+                patchBounds = new SKRect(
+                    left,
+                    top,
+                    right + 1,
+                    bottom + 1);
+
+                return patch;
+            }
+            catch
+            {
+                patch.Dispose();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Applies a rendered patch to the Landform's back buffer.
+        /// This is called from the background heightmap renderer.
+        /// </summary>
+        public void ApplyHeightMapPatchToBackBuffer(
+            SKBitmap patch,
+            SKRect patchBounds)
+        {
+            lock (_heightMapBitmapLock)
+            {
+                if (_heightMapBackBitmap == null ||
+                    _heightMapBackBitmap.IsEmpty ||
+                    patch.IsEmpty ||
+                    patchBounds.IsEmpty)
+                {
+                    return;
+                }
+
+                int destinationLeft =
+                    (int)MathF.Round(
+                        patchBounds.Left -
+                        _heightMapBitmapBounds.Left);
+
+                int destinationTop =
+                    (int)MathF.Round(
+                        patchBounds.Top -
+                        _heightMapBitmapBounds.Top);
+
+                using SKCanvas canvas =
+                    new(_heightMapBackBitmap);
+
+                canvas.DrawBitmap(
+                    patch,
+                    destinationLeft,
+                    destinationTop,
+                    SKSamplingOptions.Default);
+            }
+        }
+
+        /// <summary>
+        /// Commits the already-rendered patch. Both buffers receive the
+        /// patch first, so the buffer that becomes the new back buffer is
+        /// kept identical to the newly displayed buffer.
+        /// </summary>
+        public void CommitHeightMapPatch(
+            SKBitmap patch,
+            SKRect patchBounds)
+        {
+            lock (_heightMapBitmapLock)
+            {
+                if (_heightMapBitmap == null ||
+                    _heightMapBackBitmap == null ||
+                    patch.IsEmpty ||
+                    patchBounds.IsEmpty)
+                {
+                    return;
+                }
+
+                int destinationLeft =
+                    (int)MathF.Round(
+                        patchBounds.Left -
+                        _heightMapBitmapBounds.Left);
+
+                int destinationTop =
+                    (int)MathF.Round(
+                        patchBounds.Top -
+                        _heightMapBitmapBounds.Top);
+
+                /*
+                 * The back buffer already contains this patch. Apply it to
+                 * the displayed buffer, then swap. This leaves both buffers
+                 * identical and avoids a full-size bitmap copy.
+                 */
+                using (SKCanvas canvas =
+                    new(_heightMapBitmap))
+                {
+                    canvas.DrawBitmap(
+                        patch,
+                        destinationLeft,
+                        destinationTop,
+                        SKSamplingOptions.Default);
+                }
+
+                SKBitmap temp =
+                    _heightMapBitmap;
+
+                _heightMapBitmap =
+                    _heightMapBackBitmap;
+
+                _heightMapBackBitmap =
+                    temp;
+            }
+        }
         // -------------------------------------------------
         // Render cache construction
         // -------------------------------------------------
@@ -326,7 +629,7 @@
             {
                 _interiorShadingMask?.Dispose();
                 _interiorShadingMask = BuildInteriorShadingMask();
-            
+
                 RenderInteriorShading(canvas);
             }
 
@@ -972,11 +1275,11 @@
 
                 if (dashImage != null)
                 {
-                        SKBitmap dashBitmap = SKBitmap.FromImage(dashImage);
+                    SKBitmap dashBitmap = SKBitmap.FromImage(dashImage);
 
-                        SKBitmap resizedSKBitmap = dashBitmap.Resize(new SKImageInfo(100, 100), SKSamplingOptions.Default);
+                    SKBitmap resizedSKBitmap = dashBitmap.Resize(new SKImageInfo(100, 100), SKSamplingOptions.Default);
 
-                        Coastline.DashTexture = SKImage.FromBitmap(resizedSKBitmap);
+                    Coastline.DashTexture = SKImage.FromBitmap(resizedSKBitmap);
                 }
             }
 

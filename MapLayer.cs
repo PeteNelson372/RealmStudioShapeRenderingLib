@@ -1,10 +1,10 @@
 ﻿/**************************************************************************************************************************
-* Copyright 2024, Peter R. Nelson
+* Copyright 2026, Peter R. Nelson
 *
-* This file is part of the RealmStudio application. The RealmStudio application is intended
+* This file is part of the RealmStudioX application. The RealmStudioX application is intended
 * for creating fantasy maps for gaming and world building.
 *
-* RealmStudio is free software: you can redistribute it and/or modify it under the terms
+* RealmStudioX is free software: you can redistribute it and/or modify it under the terms
 * of the GNU General Public License as published by the Free Software Foundation,
 * either version 3 of the License, or (at your option) any later version.
 *
@@ -17,13 +17,14 @@
 * If the LICENSE.txt file is not present or the text of the GNU GPL is not present in the LICENSE.txt file,
 * see https://www.gnu.org/licenses/.
 *
-* For questions about the RealmStudio application or about licensing, please email
+* For questions about the RealmStudioX application or about licensing, please email
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
 #nullable enable
 
 using SkiaSharp;
+using System.Diagnostics;
 using System.Xml.Serialization;
 
 
@@ -144,7 +145,7 @@ namespace RealmStudioShapeRenderingLib
         [XmlIgnore]
         private readonly Dictionary<(int x, int y), LayerTile> _tiles = [];
 
-        private const int TileSize = 1024;
+        private const int TileSize = 512;
 
         private static (int x, int y) GetTileCoord(SKPoint p)
         {
@@ -426,6 +427,29 @@ namespace RealmStudioShapeRenderingLib
             {
                 tile.IsModified = true;
             }
+        }
+
+        public void InvalidateTiles(SKRect bounds)
+        {
+            int minTileX = (int)MathF.Floor(bounds.Left / TileSize);
+            int maxTileX = (int)MathF.Floor(bounds.Right / TileSize);
+
+            int minTileY = (int)MathF.Floor(bounds.Top / TileSize);
+            int maxTileY = (int)MathF.Floor(bounds.Bottom / TileSize);
+
+            for (int x = minTileX; x <= maxTileX; x++)
+            {
+                for (int y = minTileY; y <= maxTileY; y++)
+                {
+                    if (_tiles.TryGetValue((x, y), out LayerTile? tile))
+                        tile.IsModified = true;
+                }
+            }
+        }
+
+        public void InvalidateTiles(SKRect oldBounds, SKRect newBounds)
+        {
+            InvalidateTiles(SKRect.Union(oldBounds, newBounds));
         }
 
         public void UpdateShapeTiles(MapComponent2D shape, SKRect oldBounds, SKRect newBounds)
@@ -735,13 +759,23 @@ namespace RealmStudioShapeRenderingLib
             if (!ShowLayer || !Drawable)
                 return;
 
-            var topLeft = new SKPoint(viewport.Left, viewport.Top);
-            var bottomRight = new SKPoint(viewport.Right, viewport.Bottom);
+            // The camera viewport can be much larger than the map when zoomed out.
+            // Only search for tiles within the portion of the viewport that
+            // actually overlaps the map.
+            SKRect mapBounds = new(0, 0, LayerRect.Width, LayerRect.Height);
+            SKRect visibleBounds = SKRect.Intersect(viewport, mapBounds);
+
+            if (visibleBounds.IsEmpty)
+                return;
+
+            var topLeft = new SKPoint(visibleBounds.Left, visibleBounds.Top);
+            var bottomRight = new SKPoint(visibleBounds.Right, visibleBounds.Bottom);
 
             var minTile = GetTileCoord(topLeft);
             var maxTile = GetTileCoord(bottomRight);
 
             for (int x = minTile.x; x <= maxTile.x; x++)
+            {
                 for (int y = minTile.y; y <= maxTile.y; y++)
                 {
                     if (_tiles.TryGetValue((x, y), out var tile))
@@ -750,10 +784,14 @@ namespace RealmStudioShapeRenderingLib
 
                         if (tile.Image != null)
                         {
-                            canvas.DrawImage(tile.Image, tile.Bounds.Location, SKSamplingOptions.Default);
+                            canvas.DrawImage(
+                                tile.Image,
+                                tile.Bounds.Location,
+                                SKSamplingOptions.Default);
                         }
                     }
                 }
+            }
         }
 
         private void EnsureTileCache(LayerTile tile, SKPath? landClip = null, SKPath? waterClip = null)

@@ -1,4 +1,5 @@
 ﻿using RealmStudioX.WPF.EditorUtilities;
+using SharpVectors.Dom;
 using SkiaSharp;
 using System.Xml.Serialization;
 
@@ -153,12 +154,27 @@ namespace RealmStudioShapeRenderingLib
 
         public override IShapeState CaptureState()
         {
-            throw new NotImplementedException();
+            return new DrawnMapComponentState
+            {
+                Points = Points,
+                ComponentColor = LineColor,          
+                TextureOpacity = TextureOpacity,
+                TextureScale = TextureScale,
+                BrushSize = BrushSize,
+            };
         }
 
         public override void RestoreState(IShapeState state)
         {
-            throw new NotImplementedException();
+            if (state is not DrawnMapComponentState s)
+            {
+                return;
+            }
+
+            LineColor = s.ComponentColor;
+            TextureOpacity = (int)s.TextureOpacity;
+            TextureScale = s.TextureScale;
+            BrushSize = s.BrushSize;
         }
 
         public override void Render(SKCanvas canvas, FontManager? fontManager = null, SKPath? clipPath = null)

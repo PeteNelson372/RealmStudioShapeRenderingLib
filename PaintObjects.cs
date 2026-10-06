@@ -539,6 +539,85 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.Green
         };
 
+        public readonly static SKPaint ImportRegionOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColors.DarkOrange
+        };
+
+        public readonly static SKPaint SelectedImportRegionOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColor.Parse("#FFFFAA0F"),
+            PathEffect = SKPathEffect.CreateDash([4F, 2F], 6F),
+        };
+
+        public readonly static SKPaint SelectedImportRegionFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.SrcOver,
+            Color = SKColor.Parse("#50FFAA0F")
+        };
+
+        public readonly static SKPaint ImportRegionHighConfidenceOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColors.DeepSkyBlue
+        };
+
+        public readonly static SKPaint ImportRegionLowConfidenceOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColors.SkyBlue
+        };
+
+        public readonly static SKPaint AcceptedImportRegionOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 3,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColor.Parse("#FF7EA829"),
+        };
+
+        public readonly static SKPaint AcceptedImportRegionFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.SrcOver,
+            Color = SKColor.Parse("#707EA829")
+        };
+
+        public readonly static SKPaint RejectedImportRegionOutlinePaint = new()
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 3,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.Src,
+            Color = SKColor.Parse("#FF999999"),
+        };
+
+        public readonly static SKPaint RejectedImportRegionFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.SrcOver,
+            Color = SKColor.Parse("#70999999")
+        };
+
         public readonly static SKPaint DebugPaint = new()
         {
             Style = SKPaintStyle.Stroke,

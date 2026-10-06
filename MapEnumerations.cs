@@ -98,6 +98,24 @@ namespace RealmStudioShapeRenderingLib
         InteriorWallErase,
         ShapeSelect,
         AreaSelection,
+        ImportLandforms,
+        SelectImportRegions,
+        TraceImportRegion,
+    }
+
+    public enum ImportRegionSource
+    {
+        Automatic,
+        User
+    }
+
+    public enum ImportRegionState
+    {
+        ProposedHighConfidence,
+        ProposedLowConfidence,
+        Preview,
+        Accepted,
+        Rejected
     }
 
     public enum LandGradientDirection

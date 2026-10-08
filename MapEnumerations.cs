@@ -103,6 +103,12 @@ namespace RealmStudioShapeRenderingLib
         TraceImportRegion,
     }
 
+    public enum PerimeterPipelineType
+    {
+        Extraction,
+        Refinement
+    }
+
     public enum ImportRegionSource
     {
         Automatic,

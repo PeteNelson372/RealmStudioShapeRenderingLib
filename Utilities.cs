@@ -253,6 +253,30 @@ namespace RealmStudioShapeRenderingLib
             return path;
         }
 
+        public static SKPath BuildClosedPath(IReadOnlyList<System.Drawing.Point> points)
+        {
+            using SKPathBuilder pathBuilder = new();
+
+            if (points == null || points.Count < 2)
+            {
+                return new SKPath();
+            }
+
+            pathBuilder.MoveTo(new SKPoint(points[0].X, points[0].Y));
+
+            for (int i = 1; i < points.Count; i++)
+            {
+                pathBuilder.LineTo(new SKPoint(points[i].X, points[i].Y));
+            }
+
+            pathBuilder.Close();
+
+            var path = pathBuilder.Snapshot();
+            pathBuilder.Detach();
+
+            return path;
+        }
+
         public static SKPath BuildPath2(IReadOnlyList<SKPoint> points)
         {
             using SKPathBuilder pathBuilder = new();

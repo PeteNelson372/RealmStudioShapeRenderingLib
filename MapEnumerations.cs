@@ -117,11 +117,9 @@ namespace RealmStudioShapeRenderingLib
 
     public enum ImportRegionState
     {
-        ProposedHighConfidence,
-        ProposedLowConfidence,
-        Preview,
+        Proposed,
         Accepted,
-        Rejected
+        Committed,
     }
 
     public enum LandGradientDirection

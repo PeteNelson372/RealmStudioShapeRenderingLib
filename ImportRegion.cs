@@ -52,27 +52,19 @@ namespace RealmStudioShapeRenderingLib
             }
             else
             {
-                if (State == ImportRegionState.ProposedHighConfidence)
+                if (State == ImportRegionState.Proposed)
                 {
-                    canvas.DrawPath(HitPath, PaintObjects.ImportRegionHighConfidenceOutlinePaint);
-                }
-                else if (State == ImportRegionState.ProposedLowConfidence)
-                {
-                    canvas.DrawPath(HitPath, PaintObjects.ImportRegionLowConfidenceOutlinePaint);
+                    canvas.DrawPath(HitPath, PaintObjects.ImportRegionProposedOutlinePaint);
                 }
                 else if (State == ImportRegionState.Accepted)
                 {
                     canvas.DrawPath(HitPath, PaintObjects.AcceptedImportRegionFillPaint);
                     canvas.DrawPath(HitPath, PaintObjects.AcceptedImportRegionOutlinePaint);
                 }
-                else if (State == ImportRegionState.Rejected)
+                else if (State == ImportRegionState.Committed)
                 {
-                    canvas.DrawPath(HitPath, PaintObjects.RejectedImportRegionFillPaint);
-                    canvas.DrawPath(HitPath, PaintObjects.RejectedImportRegionOutlinePaint);
-                }
-                else if (State == ImportRegionState.Preview)
-                {
-                    canvas.DrawPath(HitPath, PaintObjects.ImportRegionOutlinePaint);
+                    canvas.DrawPath(HitPath, PaintObjects.CommittedImportRegionFillPaint);
+                    canvas.DrawPath(HitPath, PaintObjects.CommittedImportRegionOutlinePaint);
                 }
                 else
                 {

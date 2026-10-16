@@ -566,22 +566,13 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColor.Parse("#50FFAA0F")
         };
 
-        public readonly static SKPaint ImportRegionHighConfidenceOutlinePaint = new()
+        public readonly static SKPaint ImportRegionProposedOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 2,
             IsAntialias = true,
             BlendMode = SKBlendMode.Src,
             Color = SKColors.DeepSkyBlue
-        };
-
-        public readonly static SKPaint ImportRegionLowConfidenceOutlinePaint = new()
-        {
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 2,
-            IsAntialias = true,
-            BlendMode = SKBlendMode.Src,
-            Color = SKColors.SkyBlue
         };
 
         public readonly static SKPaint AcceptedImportRegionOutlinePaint = new()
@@ -601,21 +592,21 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColor.Parse("#707EA829")
         };
 
-        public readonly static SKPaint RejectedImportRegionOutlinePaint = new()
+        public readonly static SKPaint CommittedImportRegionOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 3,
             IsAntialias = true,
             BlendMode = SKBlendMode.Src,
-            Color = SKColor.Parse("#FF999999"),
+            Color = SKColor.Parse("#FFFF40C8"),
         };
 
-        public readonly static SKPaint RejectedImportRegionFillPaint = new()
+        public readonly static SKPaint CommittedImportRegionFillPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
             BlendMode = SKBlendMode.SrcOver,
-            Color = SKColor.Parse("#70999999")
+            Color = SKColor.Parse("#50FF40C8")
         };
 
         public readonly static SKPaint DebugPaint = new()

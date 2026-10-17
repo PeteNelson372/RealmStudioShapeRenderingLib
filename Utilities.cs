@@ -592,7 +592,10 @@ namespace RealmStudioShapeRenderingLib
         {
             var contours = ExtractContours(path);
 
-            var newPathBuilder = new SKPathBuilder();
+            using var newPathBuilder = new SKPathBuilder()
+            {
+                FillType = SKPathFillType.EvenOdd
+            };
 
             foreach (var contour in contours)
             {
@@ -610,7 +613,6 @@ namespace RealmStudioShapeRenderingLib
             }
 
             var newPath = newPathBuilder.Snapshot();
-            newPathBuilder.Detach();
 
             return newPath;
         }
@@ -899,12 +901,16 @@ namespace RealmStudioShapeRenderingLib
             do
             {
                 float length = measure.Length;
+
                 if (length <= 0f)
+                {
                     continue;
+                }
 
                 using var contourPathBuilder = new SKPathBuilder();
+                contourPathBuilder.FillType = SKPathFillType.EvenOdd;
 
-                const int sampleCount = 128; // increase if shapes are complex
+                const int sampleCount = 2048; // increase if shapes are complex
                 bool first = true;
 
                 for (int i = 0; i < sampleCount; i++)
@@ -928,7 +934,6 @@ namespace RealmStudioShapeRenderingLib
                 contourPathBuilder.Close();
 
                 var contourPath = contourPathBuilder.Snapshot();
-                contourPathBuilder.Detach();
 
                 result.Add(contourPath);
 

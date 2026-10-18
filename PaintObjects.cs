@@ -575,6 +575,14 @@ namespace RealmStudioShapeRenderingLib
             Color = SKColors.DeepSkyBlue
         };
 
+        public readonly static SKPaint ImportRegionProposedFillPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            BlendMode = SKBlendMode.SrcOver,
+            Color = SKColor.Parse("#5000BFFF")
+        };
+
         public readonly static SKPaint AcceptedImportRegionOutlinePaint = new()
         {
             Style = SKPaintStyle.Stroke,

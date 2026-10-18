@@ -45,26 +45,42 @@ namespace RealmStudioShapeRenderingLib
 
         public override void Render(SKCanvas canvas, FontManager? fontManager, SKPath? clipPath = null)
         {
-            if (IsSelected)
-            {
-                canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionFillPaint);
-                canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionOutlinePaint);
-            }
-            else
+            //if (IsSelected)
+            //{
+            //    canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionFillPaint);
+            //    canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionOutlinePaint);
+            //}
+            //else
             {
                 if (State == ImportRegionState.Proposed)
                 {
+                    canvas.DrawPath(HitPath, PaintObjects.ImportRegionProposedFillPaint);
                     canvas.DrawPath(HitPath, PaintObjects.ImportRegionProposedOutlinePaint);
+
+                    if (IsSelected)
+                    {
+                        canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionOutlinePaint);
+                    }
                 }
                 else if (State == ImportRegionState.Accepted)
                 {
                     canvas.DrawPath(HitPath, PaintObjects.AcceptedImportRegionFillPaint);
                     canvas.DrawPath(HitPath, PaintObjects.AcceptedImportRegionOutlinePaint);
+
+                    if (IsSelected)
+                    {
+                        canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionOutlinePaint);
+                    }
                 }
                 else if (State == ImportRegionState.Committed)
                 {
                     canvas.DrawPath(HitPath, PaintObjects.CommittedImportRegionFillPaint);
                     canvas.DrawPath(HitPath, PaintObjects.CommittedImportRegionOutlinePaint);
+
+                    if (IsSelected)
+                    {
+                        canvas.DrawPath(HitPath, PaintObjects.SelectedImportRegionOutlinePaint);
+                    }
                 }
                 else
                 {

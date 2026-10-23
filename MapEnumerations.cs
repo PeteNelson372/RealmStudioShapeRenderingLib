@@ -122,6 +122,12 @@ namespace RealmStudioShapeRenderingLib
         Committed,
     }
 
+    public enum WorldRotationDirection
+    {
+        Prograde,
+        Retrograde
+    }
+
     public enum LandGradientDirection
     {
         None,

@@ -550,12 +550,17 @@ namespace RealmStudioShapeRenderingLib
         Orthographic
     }
 
-    public enum LocalStarImageType
+    public enum LocalStarType
     {
+        [Description("Sun")]
         Sun,
+        [Description("Nebula")]
         Nebula,
+        [Description("Gas Giant")]
         GasGiant,
+        [Description("Corona")]
         Corona,
+        [Description("Black Hole")]
         BlackHole,
     }
 

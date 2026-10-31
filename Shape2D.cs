@@ -65,6 +65,11 @@ namespace RealmStudioShapeRenderingLib
 
         protected virtual void SetGeometry(SKPath newGeometry)
         {
+            if (newGeometry is null || newGeometry.IsEmpty)
+            {
+                return;
+            }
+
             HitPath.Dispose();
 
             HitPath = new SKPath(newGeometry)

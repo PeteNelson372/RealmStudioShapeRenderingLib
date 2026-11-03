@@ -388,6 +388,44 @@ namespace RealmStudioShapeRenderingLib
         Other,
     }
 
+    public enum CelestialBodyRendererType
+    {
+        None,
+        Sun,
+        Planet,
+        BlackHole,
+        Nebula,
+        Corona,
+    }
+
+    public enum CelestialBodyAnimationType
+    {
+        None,
+        BasicRotation,
+        SolarActivity,
+        AtmosphereTurbulenceActivity,
+        RingTurbulenceActivity,
+        BlackHoleActivity,
+        NebulaActivity
+    }
+
+    public enum CelestialBodyAttachmentType
+    {
+        CloudLayer,
+        PlanetaryRings,
+        GasCloud,
+        ParticleSystem
+    }
+
+    public enum CelestialTextureSourceType
+    {
+        None,
+        RealmMap,
+        Asset,
+        BitmapFile,
+        Procedural
+    }
+
     public enum MapObjectType
     {
         Realm,

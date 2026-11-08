@@ -588,18 +588,31 @@ namespace RealmStudioShapeRenderingLib
         Orthographic
     }
 
-    public enum LocalStarType
+    public enum OrbitalBodyType
     {
         [Description("Sun")]
         Sun,
+
+        [Description("Terrestrial Planet")]
+        TerrestrialPlanet,
+
         [Description("Nebula")]
         Nebula,
+
         [Description("Gas Giant")]
         GasGiant,
+
         [Description("Corona")]
         Corona,
+
         [Description("Black Hole")]
         BlackHole,
+
+        [Description("Artificial Satellite")]
+        ArtificialSatellite,
+
+        [Description("Asteroid Belt")]
+        AsteroidBelt
     }
 
     public enum DrawingFillType

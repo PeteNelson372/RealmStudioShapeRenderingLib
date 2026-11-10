@@ -388,6 +388,35 @@ namespace RealmStudioShapeRenderingLib
         Other,
     }
 
+    public enum CelestialBodyType
+    {
+        [Description("Sun")]
+        Sun,
+
+        [Description("Terrestrial Planet")]
+        TerrestrialPlanet,
+
+        [Description("Nebula")]
+        Nebula,
+
+        [Description("Gas Giant")]
+        GasGiant,
+
+        [Description("Corona")]
+        Corona,
+
+        [Description("Black Hole")]
+        BlackHole,
+
+        /*  Future Orbital Body Types *
+        [Description("Artificial Satellite")]
+        ArtificialSatellite,
+
+        [Description("Asteroid Belt")]
+        AsteroidBelt
+        */
+    }
+
     public enum CelestialBodyRendererType
     {
         None,
@@ -586,33 +615,6 @@ namespace RealmStudioShapeRenderingLib
     {
         Perspective,
         Orthographic
-    }
-
-    public enum OrbitalBodyType
-    {
-        [Description("Sun")]
-        Sun,
-
-        [Description("Terrestrial Planet")]
-        TerrestrialPlanet,
-
-        [Description("Nebula")]
-        Nebula,
-
-        [Description("Gas Giant")]
-        GasGiant,
-
-        [Description("Corona")]
-        Corona,
-
-        [Description("Black Hole")]
-        BlackHole,
-
-        [Description("Artificial Satellite")]
-        ArtificialSatellite,
-
-        [Description("Asteroid Belt")]
-        AsteroidBelt
     }
 
     public enum DrawingFillType

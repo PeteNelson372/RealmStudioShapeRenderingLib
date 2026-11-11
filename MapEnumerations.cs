@@ -467,6 +467,7 @@ namespace RealmStudioShapeRenderingLib
         MapPath,
         Region,
         Symbol,
+        CelestialBody,
     }
 
     public enum MessageDialogResult

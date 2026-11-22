@@ -1,10 +1,10 @@
 ﻿/**************************************************************************************************************************
-* Copyright 2025, Peter R. Nelson
+* Copyright 2026, Peter R. Nelson
 *
-* This file is part of the RealmStudio application. The RealmStudio application is intended
+* This file is part of the RealmStudioX application. The RealmStudioX application is intended
 * for creating fantasy maps for gaming and world building.
 *
-* RealmStudio is free software: you can redistribute it and/or modify it under the terms
+* RealmStudioX is free software: you can redistribute it and/or modify it under the terms
 * of the GNU General Public License as published by the Free Software Foundation,
 * either version 3 of the License, or (at your option) any later version.
 *
@@ -17,7 +17,7 @@
 * If the LICENSE.txt file is not present or the text of the GNU GPL is not present in the LICENSE.txt file,
 * see https://www.gnu.org/licenses/.
 *
-* For questions about the RealmStudio application or about licensing, please email
+* For questions about the RealmStudioX application or about licensing, please email
 * support@brookmonte.com
 *
 ***************************************************************************************************************************/
